@@ -320,6 +320,15 @@ svg.chart { display: block; }
 .m-detail .dl .k .dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
 .m-detail .dl .v { font-variant-numeric: tabular-nums; }
 .m-detail .dl.tot { border-top: 1px solid var(--hairline); margin-top: 6px; padding-top: 10px; font-weight: 600; }
+/* desglose de una categoría compuesta (vida fija, MSI, suscripciones) */
+.m-detail .sub-items { margin: 0 0 6px 16px; padding-left: 12px; border-left: 2px solid var(--card-3); }
+.m-detail .dl.si { padding: 4px 0; font-size: 12.5px; }
+.m-detail .dl.si .k { color: var(--ink-muted); display: block; }
+.m-detail .dl.si .v { color: var(--ink-2); }
+.si-nota { display: block; font-size: 11.5px; color: var(--ink-faint); margin-top: 1px; }
+/* la fila de prefondeo lleva nota debajo: no puede heredar el flex en línea */
+.m-detail .dl.pref { align-items: flex-start; }
+.m-detail .dl.pref .k { display: block; }
 
 /* ─────────────────────────── controles ─────────────────────────── */
 .btn {
