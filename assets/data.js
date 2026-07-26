@@ -35,25 +35,19 @@ const DATA = {
     diaPago: 15
   },
 
-  /* ── Gastos fijos de vida (todos los meses) ── */
+  /* ── Gastos fijos de vida (todos los meses) ──
+     `corto` es el nombre que usan las gráficas, donde el espacio manda. */
   vidaFija: [
-    { concepto: "Gasolina y pastillas", monto: 2200,    detalle: "commute Atizapán → Ajusco" },
-    { concepto: "Tag Pase (casetas)",   monto: 2200,    detalle: "$156 por día de oficina, cobrado a débito" },
-    { concepto: "Gym FITSI",            monto: 1283.40, detalle: "cargo día 23 a la Amex Gold de servicios" },
-    { concepto: "Teléfono",             monto: 350,     detalle: "" }
+    { concepto: "Gasolina y pastillas", corto: "Gasolina",  monto: 2200,    detalle: "commute Atizapán → Ajusco" },
+    { concepto: "Tag Pase (casetas)",   corto: "Tag Pase",  monto: 2200,    detalle: "$156 por día de oficina, cobrado a débito" },
+    { concepto: "Gym FITSI",            corto: "Gym",       monto: 1283.40, detalle: "cargo día 23 a la Amex Gold de servicios" },
+    { concepto: "Teléfono",             corto: "Teléfono",  monto: 350,     detalle: "" }
   ],
 
   /* ── Suscripciones ── */
   suscripciones: [
     { servicio: "Claude (Anthropic)", monto: 359.56, nota: "USD $20", tarjeta: "Amex Gold Elite" },
     { servicio: "ChatGPT",            monto: 399.00, nota: "",         tarjeta: "Amex Gold Elite" }
-  ],
-  suscripcionesCanceladas: [
-    { servicio: "CapCut",          monto: 330.00 },
-    { servicio: "Cafe Live Video", monto: 119.00 },
-    { servicio: "FaceApp",         monto: 100.00 },
-    { servicio: "Meshy",           monto: 52.35 },
-    { servicio: "Facebook / Meta", monto: 19.00 }
   ],
 
   /* ── Meses sin intereses vigentes ──
@@ -161,6 +155,9 @@ const DATA = {
     { fecha:"2026-09-30", concepto:"Pago 3 de 4 a mamá",        monto:10659.00, tipo:"salida",   nota:"" }
   ],
 
-  /* ── Horizonte de la proyección ── */
-  horizonte: { desde: "2026-08", hasta: "2027-09" }
+  /* ── Horizonte de la proyección de compromisos ── */
+  horizonte: { desde: "2026-08", hasta: "2027-09" },
+
+  /* ── Hasta dónde llega el calendario de quincenas ── */
+  horizonteIngresos: { hasta: "2027-12" }
 };
