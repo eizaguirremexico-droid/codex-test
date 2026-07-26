@@ -84,7 +84,39 @@ function diasOficinaMes(k) {
   }
   return out;
 }
-const tagMes = k => diasOficinaMes(k).length * OFI.costoRecarga;
+/* ─── simulación del saldo del tag ───
+   El saldo se acumula, así que el costo real no es "días × recarga": hay
+   que arrastrar el saldo día por día y ver cuándo toca recargar de verdad.
+   Se simula desde el primer mes del horizonte para que cada recarga caiga
+   en el mes en que de verdad ocurre. */
+function simularTag(estrategia, montoRecarga) {
+  const est = estrategia || OFI.estrategia;
+  const monto = montoRecarga || OFI.montoRecarga;
+  const porMes = {};
+  let saldo = OFI.saldoInicial;
+
+  mRange(DATA.horizonte.desde, DATA.horizonteIngresos.hasta).forEach(k => {
+    const dias = diasOficinaMes(k);
+    let recargas = 0;
+    dias.forEach(() => {
+      if (est === "cada-dia" || saldo < OFI.costoCaseta) {
+        saldo += monto; recargas++;
+      }
+      saldo -= OFI.costoCaseta;
+    });
+    porMes[k] = {
+      dias: dias.length, recargas,
+      casetas: dias.length * OFI.costoCaseta,
+      comision: recargas * OFI.comision,
+      salida: recargas * (monto + OFI.comision),
+      saldoFin: saldo
+    };
+  });
+  return porMes;
+}
+
+let TAG = simularTag();
+const tagMes = k => (TAG[k] ? TAG[k].salida : 0);
 
 const VIDA_BASE = sum(DATA.vidaFija.map(x => x.monto));
 const vidaMes = k => VIDA_BASE + tagMes(k);
@@ -93,7 +125,7 @@ const MESES     = mRange(DATA.horizonte.desde, DATA.horizonte.hasta);
 
 const msiEnMes = k => DATA.msi.filter(s => mDiff(s.desde, k) >= 0 && mDiff(k, s.hasta) >= 0);
 
-const MODEL = MESES.map(k => {
+function construirModelo() { return MESES.map(k => {
   const streams = msiEnMes(k);
   const c = {
     auto:  mDiff(DATA.auto.primerPago, k) >= 0 ? DATA.auto.mensualidad : 0,
@@ -112,18 +144,29 @@ const MODEL = MESES.map(k => {
   const deEsteIngreso = total - prefondeado;
   return { k, c, total, prefondeado, pre, deEsteIngreso,
            libre: DATA.ingreso.mensual - deEsteIngreso, streams };
-});
-const byMonth = Object.fromEntries(MODEL.map(r => [r.k, r]));
+}); }
+
+let MODEL   = construirModelo();
+let byMonth = Object.fromEntries(MODEL.map(r => [r.k, r]));
 
 /* Piso fijo = primer mes sin crédito a mamá ni anualidad */
-const PRIMER_MES_LIBRE = MESES.find(k => !byMonth[k].c.mama && !byMonth[k].c.anual);
-const PISO_FIJO = byMonth[PRIMER_MES_LIBRE].total;
-
 const AHORRO_MESES = mRange(DATA.metaMuebles.inicioAhorro, DATA.metaMuebles.fechaLimite);
-const CAP_LIBRE    = AHORRO_MESES.map(k => byMonth[k].libre);
-const CAP_MIN      = Math.min(...CAP_LIBRE);
 const REQUERIDO    = DATA.metaMuebles.metaDeclarada / AHORRO_MESES.length;
 const REQ_REAL     = DATA.metaMuebles.estimadoRealista[1] / AHORRO_MESES.length;
+
+let PRIMER_MES_LIBRE, PISO_FIJO, CAP_MIN;
+
+/* Cambiar la estrategia del tag mueve el piso fijo, así que hay que
+   rehacer el modelo y todo lo que cuelga de él. */
+function recalcularModelo() {
+  TAG = simularTag();
+  MODEL = construirModelo();
+  byMonth = Object.fromEntries(MODEL.map(r => [r.k, r]));
+  PRIMER_MES_LIBRE = MESES.find(k => !byMonth[k].c.mama && !byMonth[k].c.anual);
+  PISO_FIJO = byMonth[PRIMER_MES_LIBRE].total;
+  CAP_MIN = Math.min(...AHORRO_MESES.map(k => byMonth[k].libre));
+}
+recalcularModelo();
 
 /* ─── hoy ─── */
 const HOY = new Date();
@@ -554,22 +597,87 @@ function proximosOficina(n) {
 
 function renderOficinaHero() {
   const delMes = diasOficinaMes(mesCal);
-  const restantes = delMes.filter(f => f >= hoyISO);
+  const t = TAG[mesCal] || { dias: delMes.length, casetas: delMes.length * OFI.costoCaseta,
+                             comision: 0, salida: delMes.length * OFI.costoCaseta, recargas: 0 };
   const prox = proximosOficina(1)[0];
   const dias = prox ? daysBetween(hoyISO, prox) : null;
   document.getElementById("oficina-hero").innerHTML = `
     <div class="h-label">Tag Pase de ${mLabel(mesCal, true)}</div>
-    <div class="h-value">${moneyRich(delMes.length * OFI.costoRecarga)}</div>
+    <div class="h-value">${moneyRich(t.salida)}</div>
     <div class="h-chips">
-      <span class="h-chip"><span class="k">días</span> <b>${delMes.length}</b></span>
-      <span class="h-chip"><span class="k">recarga</span> <b>${money(OFI.costoRecarga)}</b></span>
-      ${restantes.length ? `<span class="h-chip"><span class="k">faltan</span> <b>${restantes.length}</b></span>` : ""}
+      <span class="h-chip"><span class="k">días</span> <b>${t.dias}</b></span>
+      <span class="h-chip"><span class="k">casetas</span> <b>${money(t.casetas)}</b></span>
+      <span class="h-chip"><span class="k">comisión</span> <b>${money(t.comision)}</b></span>
     </div>
     <div class="h-foot">
       ${prox ? `Tu próximo día de oficina es el <b>${dLabelLong(prox)}</b>${
         dias === 0 ? " — hoy" : dias === 1 ? " — mañana" : ` — en ${dias} días`}. ` : ""}
-      Quedan ${money(restantes.length * OFI.costoRecarga)} por recargar este mes.
+      El viaje cuesta ${money(OFI.costoCaseta)}, pero la recarga es de
+      ${money(OFI.montoRecarga)} + ${money(OFI.comision)} de comisión.
     </div>`;
+}
+
+/* Comparativa de estrategias de recarga: el saldo se acumula, así que
+   recargar por reflejo cada día estaciona dinero en el tag. */
+const ESTRATEGIAS = [
+  { id:"cada-dia",     monto:200,  titulo:"Recargo cada día que voy",
+    desc:"Por reflejo, aunque me sobre saldo" },
+  { id:"cuando-falta", monto:200,  titulo:"Recargo solo cuando no alcanza",
+    desc:"Dejo que el saldo se acumule" },
+  { id:"cuando-falta", monto:1000, titulo:"Recargo $1,000 cuando no alcanza",
+    desc:"Si la app te deja pasar del mínimo" }
+];
+
+function renderOficinaEstrategia() {
+  const host = document.getElementById("oficina-estrategia");
+  const n = MESES.length;
+  const sims = ESTRATEGIAS.map(e => {
+    const s = simularTag(e.id, e.monto);
+    const ms = MESES.map(k => s[k]);
+    return { ...e,
+      salida:   sum(ms.map(m => m.salida)) / n,
+      comision: sum(ms.map(m => m.comision)) / n,
+      saldoFin: s[MESES.at(-1)].saldoFin,
+      activa: e.id === OFI.estrategia && e.monto === OFI.montoRecarga };
+  });
+  const mejor = sims.reduce((a, b) => (b.salida < a.salida ? b : a));
+  const peor  = sims.reduce((a, b) => (b.salida > a.salida ? b : a));
+  const casetas = sum(MESES.map(k => TAG[k].casetas)) / n;
+
+  host.innerHTML = `
+    <div class="card-head">
+      <div><div class="card-title">Cómo recargas</div>
+        <div class="card-sub">El saldo del tag se acumula, no se pierde — por eso importa
+          cada cuánto recargas, no cuántos días vas</div></div>
+    </div>
+    <div class="row">
+      <div class="row-ic">🛣️</div>
+      <div class="row-main"><div class="row-t">Lo que cuestan las casetas</div>
+        <div class="row-d">${money(OFI.costoCaseta)} por viaje · esto no lo cambia nada</div></div>
+      <div class="row-amt">${money(casetas)}<span class="sub">al mes</span></div>
+    </div>
+    ${sims.map(e => `<div class="row">
+      <div class="row-ic" ${e.activa ? `style="background:var(--tint-1-bg);color:var(--tint-1-ink)"` : ""}>
+        ${e.activa ? "✓" : ""}</div>
+      <div class="row-main">
+        <div class="row-t">${e.titulo}</div>
+        <div class="row-d">${e.desc} · comisión ${money(e.comision)}/mes${
+          e.saldoFin > 600 ? ` · deja ${money(e.saldoFin)} atorados en el tag` : ""}</div>
+      </div>
+      <div class="row-amt"${e.activa ? "" : ' class="row-amt soft"'}>${money(e.salida)}<span class="sub">al mes</span></div>
+    </div>`).join("")}
+    <div class="tip" style="margin-top:16px;padding-top:16px;border-top:1px solid var(--hairline)">
+      <div class="ic">💡</div>
+      <div class="tx">
+        <b>Recargar por reflejo te cuesta ${money(peor.salida - mejor.salida)} al mes de liquidez</b>
+        (${money((peor.salida - mejor.salida) * 12)} al año). De eso,
+        ${money(peor.comision - mejor.comision)} al mes es pérdida pura por comisiones;
+        el resto no se pierde, pero queda estacionado en el tag —
+        ${money(peor.saldoFin)} para ${mLabel(MESES.at(-1), true)} — donde no lo puedes usar
+        para los muebles.
+      </div>
+    </div>`;
+
 }
 
 function renderOficinaCal() {
@@ -679,17 +787,19 @@ function renderOficinaPatron() {
 function renderOficinaCostos() {
   const host = document.getElementById("oficina-costos");
   const filas = MESES.map(k => {
-    const n = diasOficinaMes(k).length;
+    const t = TAG[k];
     return { key: k, label: mLabel(k), tipLabel: mLabel(k, true),
-             values: { tag: n * OFI.costoRecarga }, total: n * OFI.costoRecarga, dias: n };
+             values: { tag: t.salida }, total: t.salida,
+             dias: t.dias, recargas: t.recargas, casetas: t.casetas, comision: t.comision };
   });
   const promedio = sum(filas.map(f => f.total)) / filas.length;
   const promDias = sum(filas.map(f => f.dias)) / filas.length;
+  const promCasetas = sum(filas.map(f => f.casetas)) / filas.length;
 
   host.innerHTML = `
     <div class="card-head">
       <div><div class="card-title">Lo que te cuesta al mes</div>
-        <div class="card-sub">Promedio ${promDias.toFixed(1)} días · ${money(promedio)} al mes · ${money(promedio * 12)} al año</div></div>
+        <div class="card-sub">${promDias.toFixed(1)} días al mes · ${money(promCasetas)} de casetas + comisiones = ${money(promedio)} al mes</div></div>
     </div>
     <div class="chart-scroll"><div id="oficina-chart"></div></div>
     <div class="btn-row">
@@ -697,9 +807,14 @@ function renderOficinaCostos() {
     </div>
     <div class="table-wrap" id="ofi-tbl" hidden>
       <table><caption>Días de oficina y costo del Tag por mes, a ${money(OFI.costoRecarga)} por recarga.</caption>
-      <thead><tr><th>Mes</th><th>Días</th><th>Tag</th></tr></thead>
-      <tbody>${filas.map(f => `<tr><td>${mLabel(f.key, true)}</td><td>${f.dias}</td><td>${money2(f.total)}</td></tr>`).join("")}
+      <thead><tr><th>Mes</th><th>Días</th><th>Casetas</th><th>Recargas</th><th>Comisión</th><th>Sale de tu cuenta</th></tr></thead>
+      <tbody>${filas.map(f => `<tr><td>${mLabel(f.key, true)}</td><td>${f.dias}</td>
+        <td>${money2(f.casetas)}</td><td>${f.recargas}</td><td>${money2(f.comision)}</td>
+        <td>${money2(f.total)}</td></tr>`).join("")}
         <tr class="tot"><td>Total</td><td>${sum(filas.map(f => f.dias))}</td>
+          <td>${money2(sum(filas.map(f => f.casetas)))}</td>
+          <td>${sum(filas.map(f => f.recargas))}</td>
+          <td>${money2(sum(filas.map(f => f.comision)))}</td>
           <td>${money2(sum(filas.map(f => f.total)))}</td></tr>
       </tbody></table>
     </div>`;
@@ -1323,8 +1438,8 @@ function renderNotas() {
     `El piso fijo calculado por componentes da ${money2(PISO_FIJO)} (${mLabel(PRIMER_MES_LIBRE, true)}, ya sin el crédito a mamá). Tu resumen original decía $14,861.49: la diferencia de $200 parece un colchón sobre el Tag Pase. Aquí se usa el cálculo por componentes.`,
     `El ${serv.label} de la ${serv.tarjeta} (${money2(serv.monto)} al mes) está proyectado hasta ${mLabel(serv.hasta, true)} porque no se conocen las parcialidades restantes. Es el supuesto más frágil del modelo.`,
     `La anualidad de Amex está estimada en ${money(DATA.anualidadAmex.total)}; el rango real con IVA va de ${money(DATA.anualidadAmex.rangoConIva[0])} a ${money(DATA.anualidadAmex.rangoConIva[1])}.`,
-    `El Tag Pase ya no es un monto fijo: se calcula con tus días de oficina reales (patrón de dos semanas: ${OFI.patron[0].dias.map(d=>DOW_LARGO[d-1]).join("/")} y ${OFI.patron[1].dias.map(d=>DOW_LARGO[d-1]).join("/")}) por ${money(OFI.costoRecarga)} de recarga. Da un promedio de ${money(sum(MESES.map(k=>tagMes(k)))/MESES.length)} al mes contra los ${money(2200)} que se estimaban antes. No descuenta días festivos ni vacaciones, así que es el techo.`,
-    `La recarga del Tag es de ${money(OFI.costoRecarga)} aunque las casetas cuesten ${money(OFI.costoCasetaReal)} al día: la diferencia se queda de saldo a favor en el tag, no se pierde.`,
+    `El Tag Pase se calcula con tus días de oficina reales (patrón de dos semanas: ${OFI.patron[0].dias.map(d=>DOW_LARGO[d-1]).join("/")} y ${OFI.patron[1].dias.map(d=>DOW_LARGO[d-1]).join("/")}) y simulando el saldo del tag día por día. No descuenta festivos ni vacaciones, así que es el techo.`,
+    `El viaje cuesta ${money(OFI.costoCaseta)} pero la recarga mínima es ${money(OFI.montoRecarga)} + ${money(OFI.comision)} de comisión. Como el saldo se acumula, el modelo asume que recargas solo cuando no alcanza para el viaje. Si recargas cada día que vas a la oficina, salen ${money(sum(MESES.map(k=>simularTag("cada-dia",200)[k].salida))/MESES.length)} al mes en vez de ${money(sum(MESES.map(k=>tagMes(k)))/MESES.length)} — la diferencia no se pierde, se queda estacionada en el tag.`,
     `El gasto libre NO descuenta comida, salidas ni imprevistos: es lo que queda después de compromisos, y de ahí sale todo lo demás.`,
     ...DATA.prefondeo.map(p =>
       `${mLabel(p.mes, true).replace(/^./, c => c.toUpperCase())} tiene ${money2(p.monto)} ya apartados desde julio (${p.concepto}). ` +
@@ -1469,6 +1584,7 @@ function renderAll() {
   renderOficinaCal();
   renderOficinaProximos();
   renderOficinaPatron();
+  renderOficinaEstrategia();
   renderOficinaCostos();
 
   renderCardFaces();
