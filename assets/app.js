@@ -52,14 +52,42 @@ const CATS = [
   { id:"msi",   label:"Tarjetas a meses", v:"--s3",
     items: k => msiEnMes(k).map(s => ({ label: `${s.label} · ${s.tarjeta}`, monto: s.monto })) },
   { id:"vida",  label:"Vida fija",        v:"--s4",
-    items: () => DATA.vidaFija.map(v => ({ label: v.concepto, monto: v.monto, nota: v.detalle })) },
+    items: k => DATA.vidaFija.map(v => ({ label: v.concepto, monto: v.monto, nota: v.detalle }))
+      .concat([{ label: "Tag Pase (casetas)", monto: tagMes(k),
+                 nota: `${diasOficinaMes(k).length} días de oficina × ${money(OFI.costoRecarga)}` }]) },
   { id:"subs",  label:"Suscripciones",    v:"--s5",
     items: () => DATA.suscripciones.map(s => ({ label: s.servicio, monto: s.monto, nota: s.tarjeta })) },
   { id:"anual", label:"Anualidad Amex",   v:"--s6",
     items: () => [{ label: "Anualidad diferida a 3 meses", monto: DATA.anualidadAmex.mensualidad }] }
 ];
 
-const VIDA_FIJA = sum(DATA.vidaFija.map(x => x.monto));
+/* ─── días de oficina ───
+   El patrón alterna semana A / semana B desde el lunes ancla y se repite.
+   De aquí sale el gasto del Tag Pase, que por eso cambia mes a mes. */
+const OFI = DATA.oficina;
+
+function semanaPatron(fechaISO) {
+  const dias = daysBetween(OFI.ancla, fechaISO);
+  if (dias < 0) return null;
+  return OFI.patron[Math.floor(dias / 7) % OFI.patron.length];
+}
+function esDiaOficina(fechaISO) {
+  const p = semanaPatron(fechaISO);
+  return !!p && p.dias.includes(dParse(fechaISO).getDay());
+}
+function diasOficinaMes(k) {
+  const { y, m } = mParse(k);
+  const out = [];
+  for (let d = 1; d <= new Date(y, m + 1, 0).getDate(); d++) {
+    const iso = `${k}-${String(d).padStart(2, "0")}`;
+    if (esDiaOficina(iso)) out.push(iso);
+  }
+  return out;
+}
+const tagMes = k => diasOficinaMes(k).length * OFI.costoRecarga;
+
+const VIDA_BASE = sum(DATA.vidaFija.map(x => x.monto));
+const vidaMes = k => VIDA_BASE + tagMes(k);
 const SUBS_MES  = sum(DATA.suscripciones.map(x => x.monto));
 const MESES     = mRange(DATA.horizonte.desde, DATA.horizonte.hasta);
 
@@ -71,7 +99,7 @@ const MODEL = MESES.map(k => {
     auto:  mDiff(DATA.auto.primerPago, k) >= 0 ? DATA.auto.mensualidad : 0,
     mama:  DATA.prestamoMama.meses.includes(k) ? DATA.prestamoMama.pago : 0,
     msi:   sum(streams.map(s => s.monto)),
-    vida:  VIDA_FIJA,
+    vida:  vidaMes(k),
     subs:  SUBS_MES,
     anual: DATA.anualidadAmex.meses.includes(k) ? DATA.anualidadAmex.mensualidad : 0
   };
@@ -504,6 +532,195 @@ function renderQuincenaResumen() {
 }
 
 /* ══════════════════════════════════════════════════════════════════════
+   RENDER — Días de oficina
+   ══════════════════════════════════════════════════════════════════════ */
+
+const DOW_CORTO = ["L", "M", "M", "J", "V", "S", "D"];       // encabezado del calendario
+/* martes y miércoles comparten inicial: fuera del encabezado hay que distinguirlos */
+const DOW_CHIP  = ["L", "Ma", "Mi", "J", "V", "S", "D"];
+const DOW_LARGO = ["lunes", "martes", "miércoles", "jueves", "viernes", "sábado", "domingo"];
+let mesCal = hoyISO.slice(0, 7);
+
+/* próximos N días de oficina a partir de hoy */
+function proximosOficina(n) {
+  const out = [];
+  let k = hoyISO.slice(0, 7);
+  while (out.length < n && mDiff(k, mAdd(hoyISO.slice(0, 7), 6)) >= 0) {
+    diasOficinaMes(k).forEach(f => { if (f >= hoyISO && out.length < n) out.push(f); });
+    k = mAdd(k, 1);
+  }
+  return out;
+}
+
+function renderOficinaHero() {
+  const delMes = diasOficinaMes(mesCal);
+  const restantes = delMes.filter(f => f >= hoyISO);
+  const prox = proximosOficina(1)[0];
+  const dias = prox ? daysBetween(hoyISO, prox) : null;
+  document.getElementById("oficina-hero").innerHTML = `
+    <div class="h-label">Tag Pase de ${mLabel(mesCal, true)}</div>
+    <div class="h-value">${moneyRich(delMes.length * OFI.costoRecarga)}</div>
+    <div class="h-chips">
+      <span class="h-chip"><span class="k">días</span> <b>${delMes.length}</b></span>
+      <span class="h-chip"><span class="k">recarga</span> <b>${money(OFI.costoRecarga)}</b></span>
+      ${restantes.length ? `<span class="h-chip"><span class="k">faltan</span> <b>${restantes.length}</b></span>` : ""}
+    </div>
+    <div class="h-foot">
+      ${prox ? `Tu próximo día de oficina es el <b>${dLabelLong(prox)}</b>${
+        dias === 0 ? " — hoy" : dias === 1 ? " — mañana" : ` — en ${dias} días`}. ` : ""}
+      Quedan ${money(restantes.length * OFI.costoRecarga)} por recargar este mes.
+    </div>`;
+}
+
+function renderOficinaCal() {
+  const host = document.getElementById("oficina-cal");
+  const { y, m } = mParse(mesCal);
+  const ultimo = new Date(y, m + 1, 0).getDate();
+  const primerDow = (new Date(y, m, 1).getDay() + 6) % 7;   // 0 = lunes
+  const delMes = diasOficinaMes(mesCal);
+
+  let celdas = "";
+  for (let i = 0; i < primerDow; i++) celdas += `<div class="cal-day fuera"></div>`;
+  for (let d = 1; d <= ultimo; d++) {
+    const iso = `${mesCal}-${String(d).padStart(2, "0")}`;
+    const dow = dParse(iso).getDay();
+    const clases = [
+      "cal-day",
+      esDiaOficina(iso) ? "oficina" : (dow === 0 || dow === 6) ? "finde" : "",
+      iso < hoyISO ? "pasado" : "",
+      iso === hoyISO ? "hoy" : ""
+    ].filter(Boolean).join(" ");
+    const titulo = esDiaOficina(iso)
+      ? `${DOW_LARGO[(dow + 6) % 7]} ${d} · oficina · ${money(OFI.costoRecarga)}`
+      : `${DOW_LARGO[(dow + 6) % 7]} ${d}`;
+    celdas += `<div class="${clases}" title="${titulo}">${d}</div>`;
+  }
+
+  const hayAnterior = mDiff(OFI.ancla.slice(0, 7), mesCal) > 0;
+  host.innerHTML = `
+    <div class="cal-nav">
+      <div>
+        <div class="mes">${mLabel(mesCal, true)}</div>
+        <div class="sub">${delMes.length} días de oficina · ${money(delMes.length * OFI.costoRecarga)} de Tag</div>
+      </div>
+      <div class="btns">
+        <button class="cal-arrow" id="cal-prev" type="button" aria-label="Mes anterior" ${hayAnterior ? "" : "disabled"}>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+        </button>
+        <button class="cal-arrow" id="cal-next" type="button" aria-label="Mes siguiente">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+        </button>
+      </div>
+    </div>
+    <div class="cal">
+      ${DOW_CORTO.map(d => `<div class="cal-dow">${d}</div>`).join("")}
+      ${celdas}
+    </div>
+    <div class="cal-leyenda">
+      <span><i style="background:var(--tint-1-bg)"></i> Oficina</span>
+      <span><i style="background:var(--card-2)"></i> Casa</span>
+      <span><i style="box-shadow:inset 0 0 0 2px var(--ink);background:transparent"></i> Hoy</span>
+    </div>`;
+
+  document.getElementById("cal-prev").addEventListener("click", () => {
+    if (!hayAnterior) return;
+    mesCal = mAdd(mesCal, -1); renderOficinaCal(); renderOficinaHero();
+  });
+  document.getElementById("cal-next").addEventListener("click", () => {
+    mesCal = mAdd(mesCal, 1); renderOficinaCal(); renderOficinaHero();
+  });
+}
+
+function renderOficinaProximos() {
+  const prox = proximosOficina(8);
+  document.getElementById("oficina-proximos").innerHTML = `
+    <div class="card-head">
+      <div><div class="card-title">Tus próximos días</div>
+        <div class="card-sub">${money(prox.length * OFI.costoRecarga)} en las siguientes ${prox.length} idas</div></div>
+    </div>
+    ${prox.map(f => {
+      const dias = daysBetween(hoyISO, f);
+      const dow = (dParse(f).getDay() + 6) % 7;
+      const pat = semanaPatron(f);
+      return `<div class="row">
+        <div class="row-ic">${DOW_CHIP[dow]}</div>
+        <div class="row-main">
+          <div class="row-t">${dLabelLong(f)}</div>
+          <div class="row-d">${DOW_LARGO[dow]} · semana ${pat.nombre}${
+            dias === 0 ? " · hoy" : dias === 1 ? " · mañana" : ` · en ${dias} días`}</div>
+        </div>
+        <div class="row-amt">${money(OFI.costoRecarga)}</div>
+      </div>`;
+    }).join("")}`;
+}
+
+function renderOficinaPatron() {
+  const host = document.getElementById("oficina-patron");
+  const semanaHoy = semanaPatron(hoyISO >= OFI.ancla ? hoyISO : OFI.ancla);
+  host.innerHTML = `
+    <div class="card-head">
+      <div><div class="card-title">Tu patrón</div>
+        <div class="card-sub">Dos semanas que se repiten</div></div>
+    </div>
+    <div class="pat">
+      ${OFI.patron.map(p => `<div class="pat-row">
+        <div class="pat-tag" ${p.nombre === semanaHoy.nombre ? `style="background:var(--tint-1-bg);color:var(--tint-1-ink)"` : ""}>${p.nombre}</div>
+        <div class="pat-dias">${[1,2,3,4,5].map(d =>
+          `<i class="${p.dias.includes(d) ? "on" : ""}">${DOW_CHIP[d - 1]}</i>`).join("")}</div>
+      </div>`).join("")}
+    </div>
+    <p class="card-sub" style="margin-top:14px">
+      Semana A: ${OFI.patron[0].dias.map(d => DOW_LARGO[d - 1]).join(", ")}.
+      Semana B: ${OFI.patron[1].dias.map(d => DOW_LARGO[d - 1]).join(", ")}.
+      Siempre son 3 días, así que el costo solo cambia por cómo caen las semanas en el mes.
+    </p>`;
+}
+
+function renderOficinaCostos() {
+  const host = document.getElementById("oficina-costos");
+  const filas = MESES.map(k => {
+    const n = diasOficinaMes(k).length;
+    return { key: k, label: mLabel(k), tipLabel: mLabel(k, true),
+             values: { tag: n * OFI.costoRecarga }, total: n * OFI.costoRecarga, dias: n };
+  });
+  const promedio = sum(filas.map(f => f.total)) / filas.length;
+  const promDias = sum(filas.map(f => f.dias)) / filas.length;
+
+  host.innerHTML = `
+    <div class="card-head">
+      <div><div class="card-title">Lo que te cuesta al mes</div>
+        <div class="card-sub">Promedio ${promDias.toFixed(1)} días · ${money(promedio)} al mes · ${money(promedio * 12)} al año</div></div>
+    </div>
+    <div class="chart-scroll"><div id="oficina-chart"></div></div>
+    <div class="btn-row">
+      <button class="btn" type="button" id="ofi-tbl-btn" aria-pressed="false" aria-controls="ofi-tbl">Ver tabla</button>
+    </div>
+    <div class="table-wrap" id="ofi-tbl" hidden>
+      <table><caption>Días de oficina y costo del Tag por mes, a ${money(OFI.costoRecarga)} por recarga.</caption>
+      <thead><tr><th>Mes</th><th>Días</th><th>Tag</th></tr></thead>
+      <tbody>${filas.map(f => `<tr><td>${mLabel(f.key, true)}</td><td>${f.dias}</td><td>${money2(f.total)}</td></tr>`).join("")}
+        <tr class="tot"><td>Total</td><td>${sum(filas.map(f => f.dias))}</td>
+          <td>${money2(sum(filas.map(f => f.total)))}</td></tr>
+      </tbody></table>
+    </div>`;
+  drawOficinaChart(filas);
+  wireToggle("ofi-tbl-btn", "ofi-tbl");
+}
+
+let _filasOfi = null;
+function drawOficinaChart(filas) {
+  if (filas) _filasOfi = filas;
+  const host = document.getElementById("oficina-chart");
+  if (!host || !_filasOfi) return;
+  stackedColumns(host, {
+    series: [{ id: "tag", label: "Tag Pase", v: "--s4" }],
+    rows: _filasOfi, height: 200, fmt: money, totalLabel: null, compact: true,
+    aria: "Costo mensual del Tag Pase según los días de oficina.",
+    tipExtra: row => `<div class="tt-row"><span class="lhs">Días de oficina</span><span class="val">${row.dias}</span></div>`
+  });
+}
+
+/* ══════════════════════════════════════════════════════════════════════
    RENDER — Tarjetas
    ══════════════════════════════════════════════════════════════════════ */
 
@@ -674,6 +891,8 @@ function fijosDesglose() {
   const items = [
     { label:"Auto BYD", value: DATA.auto.mensualidad, detalle: DATA.auto.modelo },
     ...DATA.vidaFija.map(v => ({ label: v.corto || v.concepto, value: v.monto, detalle: v.detalle })),
+    { label: "Tag Pase", value: tagMes(k),
+      detalle: `${diasOficinaMes(k).length} días de oficina × ${money(OFI.costoRecarga)}` },
     /* varios planes se llaman "Amazon": el nombre de la tarjeta los distingue */
     ...msiEnMes(k).map(s => ({
       label: `${s.label} · ${s.tarjeta.replace("Amex Gold ", "").replace(" Banamex", "")}`,
@@ -1104,7 +1323,8 @@ function renderNotas() {
     `El piso fijo calculado por componentes da ${money2(PISO_FIJO)} (${mLabel(PRIMER_MES_LIBRE, true)}, ya sin el crédito a mamá). Tu resumen original decía $14,861.49: la diferencia de $200 parece un colchón sobre el Tag Pase. Aquí se usa el cálculo por componentes.`,
     `El ${serv.label} de la ${serv.tarjeta} (${money2(serv.monto)} al mes) está proyectado hasta ${mLabel(serv.hasta, true)} porque no se conocen las parcialidades restantes. Es el supuesto más frágil del modelo.`,
     `La anualidad de Amex está estimada en ${money(DATA.anualidadAmex.total)}; el rango real con IVA va de ${money(DATA.anualidadAmex.rangoConIva[0])} a ${money(DATA.anualidadAmex.rangoConIva[1])}.`,
-    `El Tag Pase se estima en ${money(2200)} al mes ($156 por día de oficina). Desde julio 2026 se cobra a débito, así que sale el mismo mes en que lo usas — ya no hay float.`,
+    `El Tag Pase ya no es un monto fijo: se calcula con tus días de oficina reales (patrón de dos semanas: ${OFI.patron[0].dias.map(d=>DOW_LARGO[d-1]).join("/")} y ${OFI.patron[1].dias.map(d=>DOW_LARGO[d-1]).join("/")}) por ${money(OFI.costoRecarga)} de recarga. Da un promedio de ${money(sum(MESES.map(k=>tagMes(k)))/MESES.length)} al mes contra los ${money(2200)} que se estimaban antes. No descuenta días festivos ni vacaciones, así que es el techo.`,
+    `La recarga del Tag es de ${money(OFI.costoRecarga)} aunque las casetas cuesten ${money(OFI.costoCasetaReal)} al día: la diferencia se queda de saldo a favor en el tag, no se pierde.`,
     `El gasto libre NO descuenta comida, salidas ni imprevistos: es lo que queda después de compromisos, y de ahí sale todo lo demás.`,
     ...DATA.prefondeo.map(p =>
       `${mLabel(p.mes, true).replace(/^./, c => c.toUpperCase())} tiene ${money2(p.monto)} ya apartados desde julio (${p.concepto}). ` +
@@ -1124,8 +1344,56 @@ function renderNotas() {
    NAVEGACIÓN Y CICLO DE VIDA
    ══════════════════════════════════════════════════════════════════════ */
 
-const SCREENS = ["inicio", "quincenas", "tarjetas", "fijos", "metas", "plan"];
+const IC = {
+  inicio:    `<path d="M3 10.5 12 3l9 7.5"/><path d="M5.5 9.5V21h13V9.5"/>`,
+  quincenas: `<rect x="2.5" y="6" width="19" height="12" rx="2.5"/><circle cx="12" cy="12" r="2.6"/><path d="M6 12h.01M18 12h.01"/>`,
+  oficina:   `<rect x="3.5" y="8" width="17" height="12.5" rx="2"/><path d="M9 8V5.5h6V8M8 20.5v-5h8v5M3.5 12.5h17"/>`,
+  tarjetas:  `<rect x="2.5" y="5" width="19" height="14" rx="3"/><path d="M2.5 10h19"/>`,
+  fijos:     `<path d="M4 20V10"/><path d="M10 20V4"/><path d="M16 20v-7"/><path d="M2 20h20"/>`,
+  metas:     `<circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r=".6" fill="currentColor"/>`,
+  plan:      `<rect x="3.5" y="4.5" width="17" height="16" rx="3"/><path d="M3.5 9.5h17M8.5 2.5v4M15.5 2.5v4"/>`
+};
+
+const SECCIONES = [
+  { id:"inicio",    titulo:"Inicio",          desc:"Gasto libre, auto y crédito" },
+  { id:"quincenas", titulo:"Quincenas",       desc:"Cuándo te pagan y cuánto" },
+  { id:"oficina",   titulo:"Días de oficina", desc:"Tu patrón y el gasto del Tag" },
+  { id:"tarjetas",  titulo:"Tarjetas",        desc:"Saldos, pagos y meses sin intereses" },
+  { id:"fijos",     titulo:"Gastos fijos",    desc:"Tu piso mensual" },
+  { id:"metas",     titulo:"Metas de ahorro", desc:"La mudanza con Aleli" },
+  { id:"plan",      titulo:"Plan mes a mes",  desc:"A dónde va cada peso" }
+];
+const SCREENS = SECCIONES.map(s => s.id);
 let activa = "inicio";
+
+/* ─── menú lateral ─── */
+function renderDrawer() {
+  document.getElementById("nav").innerHTML = SECCIONES.map(s => `
+    <button type="button" data-screen="${s.id}" aria-current="${s.id === activa}">
+      <span class="dn-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+        stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${IC[s.id]}</svg></span>
+      <span><span class="dn-t">${s.titulo}</span><span class="dn-d">${s.desc}</span></span>
+    </button>`).join("");
+  document.getElementById("drawer-sub").textContent =
+    `${DATA.meta.nombreCorto} · datos al ${dLabel(DATA.meta.corte)}`;
+  document.getElementById("drawer-foot").textContent =
+    `Todo se calcula en tu navegador. Nada se envía a ningún servidor.`;
+}
+
+const drawer = () => document.getElementById("drawer");
+const scrim  = () => document.getElementById("scrim");
+const esEscritorio = () => matchMedia("(min-width: 1080px)").matches;
+
+function abrirMenu(abrir) {
+  if (esEscritorio()) return;                 // ahí el menú vive fijo
+  const d = drawer(), s = scrim();
+  d.classList.toggle("on", abrir);
+  d.setAttribute("aria-hidden", String(!abrir));
+  document.getElementById("menu-btn").setAttribute("aria-expanded", String(abrir));
+  if (abrir) { s.hidden = false; requestAnimationFrame(() => s.classList.add("on")); }
+  else { s.classList.remove("on"); setTimeout(() => { s.hidden = true; }, 240); }
+  document.body.style.overflow = abrir ? "hidden" : "";
+}
 
 function wireToggle(btnId, tblId) {
   const btn = document.getElementById(btnId), tbl = document.getElementById(tblId);
@@ -1142,6 +1410,7 @@ function wireToggle(btnId, tblId) {
    así que se dibujan al activar la pestaña y al cambiar de tamaño. */
 function drawVisible() {
   if (activa === "inicio")   drawLibrePreview();
+  if (activa === "oficina")  drawOficinaChart();
   if (activa === "tarjetas") drawMsiRunoff();
   if (activa === "fijos")    drawFijos();
   if (activa === "metas")    updateMeta();
@@ -1156,6 +1425,7 @@ function show(name) {
   });
   if (location.hash.slice(1) !== name) history.replaceState(null, "", "#" + name);
   ttHide();
+  abrirMenu(false);
   drawVisible();
   scrollTo({ top: 0, behavior: "instant" });
 }
@@ -1164,6 +1434,10 @@ document.getElementById("nav").addEventListener("click", ev => {
   const b = ev.target.closest("button[data-screen]");
   if (b) show(b.dataset.screen);
 });
+document.getElementById("menu-btn").addEventListener("click", () => abrirMenu(!drawer().classList.contains("on")));
+document.getElementById("drawer-close").addEventListener("click", () => abrirMenu(false));
+scrim().addEventListener("click", () => abrirMenu(false));
+addEventListener("keydown", ev => { if (ev.key === "Escape") abrirMenu(false); });
 
 document.getElementById("theme-btn").addEventListener("click", () => {
   const cur = document.documentElement.getAttribute("data-theme");
@@ -1179,6 +1453,7 @@ addEventListener("resize", () => { clearTimeout(rz); rz = setTimeout(drawVisible
 
 function renderAll() {
   renderTopbar();
+  renderDrawer();
   renderHero();
   renderCompromisosClave();
   renderTip();
@@ -1189,6 +1464,12 @@ function renderAll() {
   renderQuincenaHero();
   renderQuincenaResumen();
   renderQuincenaCal();
+
+  renderOficinaHero();
+  renderOficinaCal();
+  renderOficinaProximos();
+  renderOficinaPatron();
+  renderOficinaCostos();
 
   renderCardFaces();
   renderPagosTarjetas();
