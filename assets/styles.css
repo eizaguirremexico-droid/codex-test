@@ -55,7 +55,6 @@
   --r-sm: 12px;
   --sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --app-w: 620px;
-  --nav-h: 74px;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -103,7 +102,7 @@ body {
   font-family: var(--sans); font-size: 15px; line-height: 1.45;
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
-  padding-bottom: calc(var(--nav-h) + env(safe-area-inset-bottom, 0px) + 16px);
+  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 32px);
 }
 h1, h2, h3 { margin: 0; font-weight: 600; letter-spacing: -.015em; }
 p { margin: 0; }
@@ -387,46 +386,60 @@ caption { caption-side: top; text-align: left; font-size: 12.5px; color: var(--i
 .notes li { margin-bottom: 7px; }
 .notes li:last-child { margin-bottom: 0; }
 
-/* ─────────────────────────── navegación inferior ─────────────────────────── */
-.nav {
-  position: fixed; z-index: 80;
-  left: 50%; transform: translateX(-50%);
-  bottom: calc(12px + env(safe-area-inset-bottom, 0px));
-  width: min(calc(100vw - 24px), var(--app-w));
-  /* columnas automáticas: la barra se adapta al número de pestañas */
-  display: grid; grid-auto-flow: column; grid-auto-columns: 1fr;
-  background: color-mix(in srgb, var(--card) 88%, transparent);
-  -webkit-backdrop-filter: blur(18px); backdrop-filter: blur(18px);
-  border: 1px solid var(--hairline); border-radius: 22px; padding: 8px 6px;
-  box-shadow: 0 8px 30px rgba(0,0,0,.12);
+/* ─────────────────────────── menú lateral ─────────────────────────── */
+.scrim {
+  position: fixed; inset: 0; z-index: 70; background: rgba(0,0,0,.45);
+  opacity: 0; transition: opacity .22s ease; -webkit-backdrop-filter: blur(2px); backdrop-filter: blur(2px);
 }
-.nav button {
-  background: none; border: none; cursor: pointer; padding: 6px 1px;
-  display: grid; justify-items: center; gap: 4px; min-width: 0;
-  color: var(--ink-muted); font-size: 9.5px; letter-spacing: -.01em;
-  border-radius: 14px;
+.scrim.on { opacity: 1; }
+
+.drawer {
+  position: fixed; z-index: 75; left: 0; top: 0; height: 100dvh;
+  width: min(84vw, 306px); display: flex; flex-direction: column;
+  background: var(--card); border-right: 1px solid var(--hairline);
+  transform: translateX(-102%); transition: transform .24s cubic-bezier(.3,.8,.4,1);
+  padding: calc(14px + env(safe-area-inset-top, 0px)) 14px calc(14px + env(safe-area-inset-bottom, 0px));
+  overflow-y: auto; overscroll-behavior: contain;
 }
-.nav button span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.nav button svg { width: 20px; height: 20px; }
-.nav button[aria-current="true"] { color: var(--ink); font-weight: 600; }
-.nav button:hover { color: var(--ink-2); }
+.drawer.on { transform: translateX(0); }
+.drawer-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; padding: 6px 6px 16px; }
+.drawer-title { font-size: 15px; font-weight: 600; letter-spacing: -.01em; }
+.drawer-sub { font-size: 12px; color: var(--ink-muted); margin-top: 2px; }
+
+.drawer-nav { display: grid; gap: 2px; }
+.drawer-nav button {
+  display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 12px;
+  width: 100%; text-align: left; background: none; border: none; cursor: pointer;
+  color: var(--ink-2); padding: 11px 12px; border-radius: 14px;
+}
+.drawer-nav button:hover { background: var(--card-2); color: var(--ink); }
+.drawer-nav button[aria-current="true"] { background: var(--card-2); color: var(--ink); }
+.drawer-nav button[aria-current="true"] .dn-t { font-weight: 600; }
+.drawer-nav .dn-ic {
+  width: 34px; height: 34px; border-radius: 11px; flex: none; display: grid; place-items: center;
+  background: var(--card-2); color: var(--ink-2);
+}
+.drawer-nav button[aria-current="true"] .dn-ic { background: var(--tint-1-bg); color: var(--tint-1-ink); }
+.drawer-nav .dn-ic svg { width: 18px; height: 18px; }
+.drawer-nav .dn-t { display: block; font-size: 14px; }
+.drawer-nav .dn-d { display: block; font-size: 11.5px; color: var(--ink-muted); margin-top: 1px; }
+.drawer-foot { margin-top: auto; padding: 16px 12px 4px; font-size: 11.5px; color: var(--ink-faint); }
+
+.menu-btn { margin-right: -2px; }
 
 /* ─────────────────────────── escritorio ─────────────────────────── */
 @media (min-width: 1080px) {
   :root { --app-w: 1040px; }
-  body { padding-bottom: 40px; }
   .app { padding-top: 22px; }
   .screen { grid-template-columns: 1fr 1fr; align-items: start; }
   .screen > .span { grid-column: 1 / -1; }
-  .nav {
-    position: static; transform: none; width: auto; margin: 0 0 20px;
-    grid-auto-columns: auto; justify-content: start;
-    gap: 4px; box-shadow: none; padding: 6px; border-radius: 999px;
-    background: var(--card);
-  }
-  .nav button { grid-auto-flow: column; grid-template-columns: auto auto; align-items: center; gap: 8px; padding: 8px 15px; font-size: 13px; border-radius: 999px; }
-  .nav button svg { width: 17px; height: 17px; }
-  .nav button[aria-current="true"] { background: var(--card-2); }
+  /* el menú deja de ser cajón y se queda fijo a la izquierda */
+  .drawer { position: sticky; transform: none; height: 100dvh; top: 0;
+            width: 250px; flex: none; border-right: 1px solid var(--hairline); }
+  .scrim { display: none !important; }
+  .menu-btn, .drawer-close { display: none; }
+  .shell { display: flex; align-items: flex-start; gap: 0; max-width: 1320px; margin: 0 auto; }
+  .app { flex: 1; min-width: 0; }
 }
 
 footer { font-size: 11.5px; color: var(--ink-faint); text-align: center; padding: 24px 8px 8px; }
@@ -434,3 +447,46 @@ footer { font-size: 11.5px; color: var(--ink-faint); text-align: center; padding
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { transition: none !important; animation: none !important; }
 }
+
+/* ─────────────────────────── calendario de oficina ─────────────────────────── */
+.cal-nav { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 14px; }
+.cal-nav .mes { font-size: 15px; font-weight: 600; text-transform: capitalize; }
+.cal-nav .sub { font-size: 12.5px; color: var(--ink-muted); margin-top: 2px; }
+.cal-nav .btns { display: flex; gap: 6px; flex: none; }
+.cal-arrow {
+  width: 34px; height: 34px; border-radius: 50%; cursor: pointer;
+  background: var(--card-2); border: none; color: var(--ink-2); display: grid; place-items: center;
+}
+.cal-arrow:hover { background: var(--card-3); color: var(--ink); }
+.cal-arrow svg { width: 16px; height: 16px; }
+.cal-arrow[disabled] { opacity: .35; cursor: default; }
+
+/* el tope evita que en escritorio las celdas cuadradas se vuelvan enormes */
+.cal { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; max-width: 430px; }
+.cal-dow { font-size: 10.5px; color: var(--ink-muted); text-align: center; padding-bottom: 4px; }
+.cal-day {
+  aspect-ratio: 1 / 1; display: grid; place-items: center; position: relative;
+  border-radius: 12px; font-size: 13px; color: var(--ink-2);
+  font-variant-numeric: tabular-nums; background: var(--card-2);
+}
+.cal-day.fuera { background: transparent; color: var(--ink-faint); }
+.cal-day.finde { background: transparent; color: var(--ink-faint); }
+.cal-day.oficina { background: var(--tint-1-bg); color: var(--tint-1-ink); font-weight: 600; }
+.cal-day.pasado { opacity: .45; }
+.cal-day.hoy { box-shadow: inset 0 0 0 2px var(--ink); color: var(--ink); }
+.cal-leyenda { display: flex; flex-wrap: wrap; gap: 8px 16px; margin-top: 14px; font-size: 12px; color: var(--ink-2); }
+.cal-leyenda span { display: flex; align-items: center; gap: 7px; }
+.cal-leyenda i { width: 13px; height: 13px; border-radius: 4px; flex: none; display: block; }
+
+.pat { display: grid; gap: 8px; }
+.pat-row { display: grid; grid-template-columns: auto 1fr; gap: 12px; align-items: center; }
+.pat-tag {
+  width: 30px; height: 30px; border-radius: 10px; display: grid; place-items: center;
+  font-size: 12px; font-weight: 600; background: var(--card-2); color: var(--ink-2); flex: none;
+}
+.pat-dias { display: flex; gap: 4px; }
+.pat-dias i {
+  width: 30px; height: 28px; border-radius: 8px; display: grid; place-items: center;
+  font-size: 10.5px; font-style: normal; background: var(--card-2); color: var(--ink-faint);
+}
+.pat-dias i.on { background: var(--tint-1-bg); color: var(--tint-1-ink); font-weight: 600; }

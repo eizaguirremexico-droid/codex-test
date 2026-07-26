@@ -44,11 +44,28 @@ const DATA = {
     diaPago: 15
   },
 
+  /* ── Días de oficina ──
+     El patrón alterna dos semanas y se repite. `ancla` es el lunes donde
+     arranca la semana A. Los números son los días de la semana de
+     JavaScript: 1 = lunes … 5 = viernes.
+     El Tag Pase NO es un monto fijo: se calcula con los días de oficina
+     reales de cada mes por el costo de la recarga. */
+  oficina: {
+    ancla: "2026-07-27",
+    patron: [
+      { nombre: "A", dias: [1, 2, 5] },   // lunes, martes, viernes
+      { nombre: "B", dias: [2, 3, 4] }    // martes, miércoles, jueves
+    ],
+    costoRecarga: 200,
+    costoCasetaReal: 156,
+    nota: "cobrado a débito, sale el mismo día"
+  },
+
   /* ── Gastos fijos de vida (todos los meses) ──
-     `corto` es el nombre que usan las gráficas, donde el espacio manda. */
+     `corto` es el nombre que usan las gráficas, donde el espacio manda.
+     El Tag Pase no está aquí: se calcula mes a mes desde `oficina`. */
   vidaFija: [
     { concepto: "Gasolina y pastillas", corto: "Gasolina",  monto: 2200,    detalle: "commute Atizapán → Ajusco" },
-    { concepto: "Tag Pase (casetas)",   corto: "Tag Pase",  monto: 2200,    detalle: "$156 por día de oficina, cobrado a débito" },
     { concepto: "Gym FITSI",            corto: "Gym",       monto: 1283.40, detalle: "cargo día 23 a la Amex Gold de servicios" },
     { concepto: "Teléfono",             corto: "Teléfono",  monto: 350,     detalle: "" }
   ],

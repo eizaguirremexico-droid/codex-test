@@ -13,10 +13,31 @@
 </head>
 <body>
 
+<div class="scrim" id="scrim" hidden></div>
+
+<div class="shell">
+<!-- ─────────── menú lateral ─────────── -->
+<aside class="drawer" id="drawer" aria-label="Menú" aria-hidden="true">
+  <div class="drawer-head">
+    <div>
+      <div class="drawer-title">Panel financiero</div>
+      <div class="drawer-sub" id="drawer-sub"></div>
+    </div>
+    <button class="icon-btn drawer-close" id="drawer-close" type="button" aria-label="Cerrar menú">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+    </button>
+  </div>
+  <nav class="drawer-nav" id="nav" aria-label="Secciones"></nav>
+  <div class="drawer-foot" id="drawer-foot"></div>
+</aside>
+
 <div class="app">
 
   <!-- ─────────── barra superior ─────────── -->
   <div class="topbar">
+    <button class="icon-btn menu-btn" id="menu-btn" type="button" aria-label="Abrir menú" aria-expanded="false" aria-controls="drawer">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M3.5 7h17M3.5 12h17M3.5 17h11"/></svg>
+    </button>
     <div class="avatar" id="avatar">JJ</div>
     <div class="who">
       <div class="hi" id="greeting">Hola</div>
@@ -28,34 +49,6 @@
       </svg>
     </button>
   </div>
-
-  <!-- ─────────── navegación ─────────── -->
-  <nav class="nav" id="nav" aria-label="Secciones">
-    <button type="button" data-screen="inicio" aria-current="true">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5.5 9.5V21h13V9.5"/></svg>
-      <span>Inicio</span>
-    </button>
-    <button type="button" data-screen="quincenas">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6" width="19" height="12" rx="2.5"/><circle cx="12" cy="12" r="2.6"/><path d="M6 12h.01M18 12h.01"/></svg>
-      <span>Quincenas</span>
-    </button>
-    <button type="button" data-screen="tarjetas">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="5" width="19" height="14" rx="3"/><path d="M2.5 10h19"/></svg>
-      <span>Tarjetas</span>
-    </button>
-    <button type="button" data-screen="fijos">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10"/><path d="M10 20V4"/><path d="M16 20v-7"/><path d="M2 20h20"/></svg>
-      <span>Fijos</span>
-    </button>
-    <button type="button" data-screen="metas">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r=".6" fill="currentColor"/></svg>
-      <span>Metas</span>
-    </button>
-    <button type="button" data-screen="plan">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="4.5" width="17" height="16" rx="3"/><path d="M3.5 9.5h17M8.5 2.5v4M15.5 2.5v4"/></svg>
-      <span>Plan</span>
-    </button>
-  </nav>
 
   <!-- ═══════════ INICIO ═══════════ -->
   <section class="screen" id="s-inicio" aria-label="Inicio">
@@ -76,6 +69,19 @@
     <div class="hero span" id="quincena-hero"></div>
     <div class="card" id="quincena-resumen"></div>
     <div class="card flush" id="quincena-cal"></div>
+  </section>
+
+  <!-- ═══════════ OFICINA ═══════════ -->
+  <section class="screen" id="s-oficina" aria-label="Días de oficina" hidden>
+    <div class="screen-head span">
+      <h2>Días de oficina</h2>
+      <p>Tu patrón de dos semanas y lo que te cuesta el Tag cada mes.</p>
+    </div>
+    <div class="hero span" id="oficina-hero"></div>
+    <div class="card span" id="oficina-cal"></div>
+    <div class="card" id="oficina-proximos"></div>
+    <div class="card" id="oficina-patron"></div>
+    <div class="card span" id="oficina-costos"></div>
   </section>
 
   <!-- ═══════════ TARJETAS ═══════════ -->
@@ -126,6 +132,7 @@
   </section>
 
   <footer id="footer"></footer>
+</div>
 </div>
 
 <div class="tooltip" id="tooltip" role="status" aria-live="polite"></div>
