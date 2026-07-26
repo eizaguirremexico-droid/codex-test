@@ -384,18 +384,21 @@ caption { caption-side: top; text-align: left; font-size: 12.5px; color: var(--i
   left: 50%; transform: translateX(-50%);
   bottom: calc(12px + env(safe-area-inset-bottom, 0px));
   width: min(calc(100vw - 24px), var(--app-w));
-  display: grid; grid-template-columns: repeat(5, 1fr);
+  /* columnas automáticas: la barra se adapta al número de pestañas */
+  display: grid; grid-auto-flow: column; grid-auto-columns: 1fr;
   background: color-mix(in srgb, var(--card) 88%, transparent);
   -webkit-backdrop-filter: blur(18px); backdrop-filter: blur(18px);
   border: 1px solid var(--hairline); border-radius: 22px; padding: 8px 6px;
   box-shadow: 0 8px 30px rgba(0,0,0,.12);
 }
 .nav button {
-  background: none; border: none; cursor: pointer; padding: 6px 2px;
-  display: grid; justify-items: center; gap: 4px;
-  color: var(--ink-muted); font-size: 10.5px; border-radius: 14px;
+  background: none; border: none; cursor: pointer; padding: 6px 1px;
+  display: grid; justify-items: center; gap: 4px; min-width: 0;
+  color: var(--ink-muted); font-size: 9.5px; letter-spacing: -.01em;
+  border-radius: 14px;
 }
-.nav button svg { width: 21px; height: 21px; }
+.nav button span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.nav button svg { width: 20px; height: 20px; }
 .nav button[aria-current="true"] { color: var(--ink); font-weight: 600; }
 .nav button:hover { color: var(--ink-2); }
 
@@ -408,11 +411,11 @@ caption { caption-side: top; text-align: left; font-size: 12.5px; color: var(--i
   .screen > .span { grid-column: 1 / -1; }
   .nav {
     position: static; transform: none; width: auto; margin: 0 0 20px;
-    grid-template-columns: repeat(5, auto); justify-content: start;
+    grid-auto-columns: auto; justify-content: start;
     gap: 4px; box-shadow: none; padding: 6px; border-radius: 999px;
     background: var(--card);
   }
-  .nav button { grid-auto-flow: column; grid-template-columns: auto auto; align-items: center; gap: 8px; padding: 8px 16px; font-size: 13px; border-radius: 999px; }
+  .nav button { grid-auto-flow: column; grid-template-columns: auto auto; align-items: center; gap: 8px; padding: 8px 15px; font-size: 13px; border-radius: 999px; }
   .nav button svg { width: 17px; height: 17px; }
   .nav button[aria-current="true"] { background: var(--card-2); }
 }

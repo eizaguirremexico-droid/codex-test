@@ -35,6 +35,21 @@ function el(tag, attrs, kids) {
 
 const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
 
+/* Ancho realmente disponible para dibujar.
+   Ojo: clientWidth del padre INCLUYE su padding, así que medir contra él
+   dibuja la gráfica más ancha que la tarjeta y el último valor se sale.
+   Se mide el propio contenedor (ya vaciado) y solo se cae al padre —
+   restándole su padding — cuando aún no tiene layout. */
+function availWidth(host, fallback) {
+  if (host.clientWidth > 0) return host.clientWidth;
+  const p = host.parentElement;
+  if (p && p.clientWidth > 0) {
+    const cs = getComputedStyle(p);
+    return Math.max(140, p.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight));
+  }
+  return fallback || 520;
+}
+
 /* Mide texto de verdad para poder recortar antes de dibujar: una etiqueta
    nunca se recorta ni se desborda de su propia marca. */
 const _measureCtx = document.createElement("canvas").getContext("2d");
@@ -103,11 +118,11 @@ function stackedColumns(host, opts) {
   /* En modo compacto la gráfica cabe entera en pantalla de celular:
      banda más angosta, menos margen y una etiqueta de mes sí y una no. */
   const compact = !!opts.compact;
-  const minBand = compact ? 22 : 50;
-  const minW = Math.max(opts.minWidth || 0, rows.length * minBand + (compact ? 40 : 66));
-  const W = Math.max((host.parentElement || host).clientWidth || 560, minW);
+  const minBand = compact ? 20 : 50;
+  const minW = Math.max(opts.minWidth || 0, rows.length * minBand + (compact ? 34 : 66));
+  const W = Math.max(availWidth(host, 560), minW);
   const H = opts.height || 300;
-  const P = compact ? { t: 20, r: 6, b: 22, l: 32 } : { t: 26, r: 12, b: 34, l: 42 };
+  const P = compact ? { t: 20, r: 4, b: 22, l: 30 } : { t: 26, r: 12, b: 34, l: 42 };
   const plotW = W - P.l - P.r, plotH = H - P.t - P.b;
 
   const maxVal = niceMax(Math.max(...rows.map(r => r.total), opts.refValue || 0) * 1.08);
@@ -201,12 +216,12 @@ function stackedColumns(host, opts) {
 function barsH(host, opts) {
   host.innerHTML = "";
   const rows = opts.rows, fmt = opts.fmt;
-  const W = (host.parentElement || host).clientWidth || 520;
+  const W = availWidth(host, 520);
   const rowH = 34;
   /* El hueco del valor se dimensiona con el texto más largo que se va a
      dibujar, no con una constante, para que nunca se salga del lienzo. */
   const valGutter = Math.ceil(Math.max(...rows.map(r => textWidth(fmt(r.value), 11.5, 500)))) + 14;
-  const P = { t: 6, r: 4, b: 6, l: Math.min(opts.labelW || 130, W * 0.4) };
+  const P = { t: 6, r: 4, b: 6, l: Math.min(opts.labelW || 130, W * 0.45) };
   const H = P.t + P.b + rows.length * rowH;
   const plotW = Math.max(40, W - P.l - P.r - valGutter);
   const maxVal = Math.max(...rows.map(r => r.value));
@@ -249,7 +264,7 @@ function lineChart(host, opts) {
   const rows = opts.rows, fmt = opts.fmt;
   /* 26px por punto: una serie de 11-14 meses cabe entera en un celular */
   const minW = Math.max(opts.minWidth || 0, rows.length * 26 + 62);
-  const W = Math.max((host.parentElement || host).clientWidth || 520, minW);
+  const W = Math.max(availWidth(host, 520), minW);
   const H = opts.height || 250;
   const P = { t: 24, r: 16, b: 30, l: 40 };
   const plotW = W - P.l - P.r, plotH = H - P.t - P.b;

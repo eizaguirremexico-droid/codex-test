@@ -54,7 +54,6 @@ const CATS = [
 
 const VIDA_FIJA = sum(DATA.vidaFija.map(x => x.monto));
 const SUBS_MES  = sum(DATA.suscripciones.map(x => x.monto));
-const SUBS_CANC = sum(DATA.suscripcionesCanceladas.map(x => x.monto));
 const MESES     = mRange(DATA.horizonte.desde, DATA.horizonte.hasta);
 
 const msiEnMes = k => DATA.msi.filter(s => mDiff(s.desde, k) >= 0 && mDiff(k, s.hasta) >= 0);
@@ -104,6 +103,44 @@ function progresoFechas(fechas) {
   const siguiente = fechas.find(f => f >= hoyISO) || null;
   return { hechos, total: fechas.length, siguiente };
 }
+
+/* ─── calendario de quincenas ───
+   El día 30 no existe en febrero, así que se recorre al último día del mes.
+   Cuando la fecha cae en fin de semana se marca: la mayoría de las nóminas
+   se adelantan al viernes, pero eso depende del patrón, así que se señala
+   como aviso en vez de mover el monto en silencio. */
+const DIAS_SEM = ["domingo","lunes","martes","miércoles","jueves","viernes","sábado"];
+
+function ultimoDiaMes(k) { const { y, m } = mParse(k); return new Date(y, m + 1, 0).getDate(); }
+
+function construirQuincenas(desdeISO, hastaMes) {
+  const out = [];
+  mRange(desdeISO.slice(0, 7), hastaMes).forEach(k => {
+    DATA.ingreso.diasPago.forEach(d => {
+      const dia = Math.min(d, ultimoDiaMes(k));
+      const iso = `${k}-${String(dia).padStart(2, "0")}`;
+      if (iso < desdeISO) return;
+      const dow = dParse(iso).getDay();
+      const finDeSemana = dow === 0 || dow === 6;
+      let adelanto = null;
+      if (finDeSemana) {
+        const f = dParse(iso);
+        f.setDate(f.getDate() - (dow === 6 ? 1 : 2));
+        adelanto = f.toISOString().slice(0, 10);
+      }
+      out.push({ iso, mes: k, dia, dow, finDeSemana, adelanto,
+                 recortado: dia !== d, monto: DATA.ingreso.quincena });
+    });
+  });
+  out.sort((a, b) => (a.iso < b.iso ? -1 : 1));
+  let acc = 0;
+  out.forEach(q => { acc += q.monto; q.acumulado = acc; });
+  return out;
+}
+
+const QUINCENAS = construirQuincenas(hoyISO, DATA.horizonteIngresos.hasta);
+const PROX_QUINCENA = QUINCENAS[0];
+const TOTAL_INGRESO = sum(QUINCENAS.map(q => q.monto));
 
 /* pagos del auto: 36 mensualidades desde primerPagoFecha */
 const AUTO_FECHAS = Array.from({ length: DATA.auto.plazo }, (_, i) => {
@@ -278,6 +315,107 @@ function drawLibrePreview() {
 }
 
 /* ══════════════════════════════════════════════════════════════════════
+   RENDER — Quincenas
+   ══════════════════════════════════════════════════════════════════════ */
+
+function renderQuincenaHero() {
+  const q = PROX_QUINCENA;
+  const dias = daysBetween(hoyISO, q.iso);
+  const finMes = DATA.horizonteIngresos.hasta;
+  document.getElementById("quincena-hero").innerHTML = `
+    <div class="h-label">Tu próxima quincena</div>
+    <div class="h-value">${moneyRich(q.monto)}</div>
+    <div class="h-chips">
+      <span class="h-chip"><span class="k">el</span> <b>${dLabelLong(q.iso)}</b></span>
+      <span class="h-chip"><span class="k">${dias === 0 ? "es" : "en"}</span> <b>${
+        dias === 0 ? "hoy" : dias + (dias === 1 ? " día" : " días")}</b></span>
+      <span class="h-chip"><span class="k">${DIAS_SEM[q.dow]}</span></span>
+    </div>
+    <div class="h-foot">
+      De aquí a ${mLabel(finMes, true)} te caen <b>${QUINCENAS.length} quincenas</b>
+      por un total de <b>${money(TOTAL_INGRESO)}</b>.
+    </div>`;
+}
+
+function renderQuincenaCal() {
+  const host = document.getElementById("quincena-cal");
+  const porMes = {};
+  QUINCENAS.forEach(q => { (porMes[q.mes] = porMes[q.mes] || []).push(q); });
+
+  const cuerpo = Object.keys(porMes).map(k => {
+    const qs = porMes[k];
+    const subtotal = sum(qs.map(q => q.monto));
+    const comp = byMonth[k];
+    return `<div class="day-sep" style="display:flex;justify-content:space-between;gap:12px">
+        <span style="text-transform:capitalize">${mLabel(k, true)}</span>
+        <span>${money(subtotal)}${qs.length === 1 ? " · 1 quincena" : ""}</span>
+      </div>
+      ${qs.map(q => `<div class="row">
+        <div class="row-ic">${q.dia}</div>
+        <div class="row-main">
+          <div class="row-t">${dLabelLong(q.iso)}</div>
+          <div class="row-d">${DIAS_SEM[q.dow]}${
+            q.recortado ? " · el mes no llega al 30" : ""}${
+            q.finDeSemana ? ` · suele adelantarse al ${dLabel(q.adelanto)}` : ""}</div>
+        </div>
+        <div class="row-amt">${money2(q.monto)}
+          <span class="sub">acum. ${money(q.acumulado)}</span></div>
+      </div>`).join("")}
+      ${comp ? `<div class="row" style="border-top:none;padding-top:0">
+        <div class="row-ic" style="background:transparent"></div>
+        <div class="row-main"><div class="row-d">
+          Comprometido este mes: ${money(comp.total)} · te queda
+          <b style="color:${comp.libre < 3000 ? css("--crit-ink") : css("--good-ink")}">${money(comp.libre)}</b>
+        </div></div>
+        <div class="row-amt soft"></div>
+      </div>` : ""}`;
+  }).join("");
+
+  host.innerHTML = `
+    <div class="card-head" style="padding-top:12px">
+      <div><div class="card-title">Calendario de quincenas</div>
+        <div class="card-sub">Día 15 y día 30 · ${money(DATA.ingreso.quincena)} cada una</div></div>
+    </div>
+    ${cuerpo}
+    <div style="height:8px"></div>`;
+}
+
+function renderQuincenaResumen() {
+  const host = document.getElementById("quincena-resumen");
+  const porAnio = {};
+  QUINCENAS.forEach(q => {
+    const a = q.iso.slice(0, 4);
+    porAnio[a] = porAnio[a] || { n: 0, monto: 0 };
+    porAnio[a].n++; porAnio[a].monto += q.monto;
+  });
+  const finesDeSemana = QUINCENAS.filter(q => q.finDeSemana).length;
+  const recortadas = QUINCENAS.filter(q => q.recortado);
+
+  host.innerHTML = `
+    <div class="card-head">
+      <div><div class="card-title">Lo que vas a recibir</div>
+        <div class="card-sub">De hoy a ${mLabel(DATA.horizonteIngresos.hasta, true)}</div></div>
+    </div>
+    <div class="readout" style="margin-top:0;padding-top:0;border-top:none">
+      ${Object.entries(porAnio).map(([a, v]) =>
+        `<div><span class="k">${a} · ${v.n} quincena${v.n === 1 ? "" : "s"}</span>
+         <span class="v">${money(v.monto)}</span></div>`).join("")}
+      <div style="border-top:1px solid var(--hairline);padding-top:9px">
+        <span class="k">Total</span><span class="v">${money(TOTAL_INGRESO)}</span></div>
+    </div>
+    <div class="tip" style="margin-top:16px;padding-top:16px;border-top:1px solid var(--hairline)">
+      <div class="ic">📅</div>
+      <div class="tx">
+        <b>${finesDeSemana} de estas ${QUINCENAS.length} caen en fin de semana.</b>
+        La mayoría de las nóminas se adelantan al viernes anterior, pero eso lo
+        define tu patrón — aquí se marcan sin mover el monto.
+        ${recortadas.length ? `Además, ${recortadas.length === 1 ? "una cae" : recortadas.length + " caen"}
+          en meses que no llegan al 30 (${recortadas.map(q => dLabel(q.iso)).join(", ")}).` : ""}
+      </div>
+    </div>`;
+}
+
+/* ══════════════════════════════════════════════════════════════════════
    RENDER — Tarjetas
    ══════════════════════════════════════════════════════════════════════ */
 
@@ -447,7 +585,7 @@ function fijosDesglose() {
   const k = PRIMER_MES_LIBRE;
   const items = [
     { label:"Auto BYD", value: DATA.auto.mensualidad, detalle: DATA.auto.modelo },
-    ...DATA.vidaFija.map(v => ({ label: v.concepto, value: v.monto, detalle: v.detalle })),
+    ...DATA.vidaFija.map(v => ({ label: v.corto || v.concepto, value: v.monto, detalle: v.detalle })),
     /* varios planes se llaman "Amazon": el nombre de la tarjeta los distingue */
     ...msiEnMes(k).map(s => ({
       label: `${s.label} · ${s.tarjeta.replace("Amex Gold ", "").replace(" Banamex", "")}`,
@@ -494,7 +632,7 @@ function drawFijos() {
   if (!host) return;
   barsH(host, {
     rows: fijosDesglose(), fmt: money2, color: "--s1",
-    labelW: Math.min(160, Math.max(110, (host.clientWidth || 400) * 0.34)),
+    labelW: Math.min(150, Math.max(110, (host.clientWidth || 400) * 0.45)),
     valueLabel: "Al mes",
     aria: "Desglose del piso fijo mensual por concepto."
   });
@@ -512,13 +650,7 @@ function renderSubs() {
       <div class="row-main"><div class="row-t">${s.servicio}</div>
         <div class="row-d">${[s.nota, s.tarjeta].filter(Boolean).join(" · ")}</div></div>
       <div class="row-amt">${money2(s.monto)}</div>
-    </div>`).join("")}
-    <div class="tip" style="margin-top:16px;padding-top:16px;border-top:1px solid var(--hairline)">
-      <div class="ic">✂️</div>
-      <div class="tx"><b>Ya cancelaste ${money2(SUBS_CANC)} al mes</b> —
-        ${money(SUBS_CANC * 12)} al año que dejaron de salir:
-        ${DATA.suscripcionesCanceladas.map(s => s.servicio).join(", ")}.</div>
-    </div>`;
+    </div>`).join("")}`;
 }
 
 function renderFijosTimeline() {
@@ -881,7 +1013,7 @@ function renderNotas() {
    NAVEGACIÓN Y CICLO DE VIDA
    ══════════════════════════════════════════════════════════════════════ */
 
-const SCREENS = ["inicio", "tarjetas", "fijos", "metas", "plan"];
+const SCREENS = ["inicio", "quincenas", "tarjetas", "fijos", "metas", "plan"];
 let activa = "inicio";
 
 function wireToggle(btnId, tblId) {
@@ -941,6 +1073,10 @@ function renderAll() {
   renderTip();
   renderProximos("proximos", 6);
   renderLibrePreview();
+
+  renderQuincenaHero();
+  renderQuincenaResumen();
+  renderQuincenaCal();
 
   renderCardFaces();
   renderPagosTarjetas();
