@@ -56,8 +56,16 @@ const DATA = {
       { nombre: "A", dias: [1, 2, 5] },   // lunes, martes, viernes
       { nombre: "B", dias: [2, 3, 4] }    // martes, miércoles, jueves
     ],
-    costoRecarga: 200,
-    costoCasetaReal: 156,
+    /* El viaje cuesta 156 pero la recarga mínima es 200 + 10 de comisión.
+       El saldo NO se pierde: se acumula. Por eso el costo real depende de
+       cada cuánto recargas, no de cuántos días vas. */
+    costoCaseta: 156,
+    montoRecarga: 200,
+    comision: 10,
+    saldoInicial: 0,
+    /* "cada-dia"  = recargas por reflejo cada día de oficina
+       "cuando-falta" = recargas solo cuando el saldo no alcanza el viaje */
+    estrategia: "cuando-falta",
     nota: "cobrado a débito, sale el mismo día"
   },
 
