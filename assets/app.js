@@ -34,6 +34,7 @@ const dParse = s => new Date(s + "T12:00:00");
 const dLabel = s => { const d = dParse(s); return d.getDate() + " " + MES[d.getMonth()]; };
 const dLabelLong = s => { const d = dParse(s); return `${d.getDate()} de ${MESL[d.getMonth()]}`; };
 const daysBetween = (a, b) => Math.round((dParse(b) - dParse(a)) / 86400000);
+const dAdd = (s, n) => { const d = dParse(s); d.setDate(d.getDate() + n); return d.toISOString().slice(0, 10); };
 
 const sum = a => a.reduce((x, y) => x + y, 0);
 
@@ -44,12 +45,18 @@ const sum = a => a.reduce((x, y) => x + y, 0);
 /* Categorías del flujo mensual. El orden de slots es el mecanismo de
    seguridad para daltonismo — no reordenar sin volver a validar. */
 const CATS = [
-  { id:"auto",  label:"Auto BYD",         v:"--s1" },
-  { id:"mama",  label:"Crédito mamá",     v:"--s2" },
-  { id:"msi",   label:"Tarjetas a meses", v:"--s3" },
-  { id:"vida",  label:"Vida fija",        v:"--s4" },
-  { id:"subs",  label:"Suscripciones",    v:"--s5" },
-  { id:"anual", label:"Anualidad Amex",   v:"--s6" }
+  { id:"auto",  label:"Auto BYD",         v:"--s1",
+    items: () => [{ label: DATA.auto.modelo, monto: DATA.auto.mensualidad }] },
+  { id:"mama",  label:"Crédito mamá",     v:"--s2",
+    items: () => [{ label: "Pago mensual", monto: DATA.prestamoMama.pago }] },
+  { id:"msi",   label:"Tarjetas a meses", v:"--s3",
+    items: k => msiEnMes(k).map(s => ({ label: `${s.label} · ${s.tarjeta}`, monto: s.monto })) },
+  { id:"vida",  label:"Vida fija",        v:"--s4",
+    items: () => DATA.vidaFija.map(v => ({ label: v.concepto, monto: v.monto, nota: v.detalle })) },
+  { id:"subs",  label:"Suscripciones",    v:"--s5",
+    items: () => DATA.suscripciones.map(s => ({ label: s.servicio, monto: s.monto, nota: s.tarjeta })) },
+  { id:"anual", label:"Anualidad Amex",   v:"--s6",
+    items: () => [{ label: "Anualidad diferida a 3 meses", monto: DATA.anualidadAmex.mensualidad }] }
 ];
 
 const VIDA_FIJA = sum(DATA.vidaFija.map(x => x.monto));
@@ -69,7 +76,14 @@ const MODEL = MESES.map(k => {
     anual: DATA.anualidadAmex.meses.includes(k) ? DATA.anualidadAmex.mensualidad : 0
   };
   const total = sum(CATS.map(x => c[x.id]));
-  return { k, c, total, libre: DATA.ingreso.mensual - total, streams };
+  /* Lo que ya se apartó en un mes anterior no vuelve a consumir el ingreso
+     de este mes — sin esto, agosto aparecía en ceros por contar dos veces
+     la reserva de la Amex que se hizo el 30 de julio. */
+  const pre = DATA.prefondeo.filter(p => p.mes === k);
+  const prefondeado = Math.min(sum(pre.map(p => p.monto)), total);
+  const deEsteIngreso = total - prefondeado;
+  return { k, c, total, prefondeado, pre, deEsteIngreso,
+           libre: DATA.ingreso.mensual - deEsteIngreso, streams };
 });
 const byMonth = Object.fromEntries(MODEL.map(r => [r.k, r]));
 
@@ -86,23 +100,6 @@ const REQ_REAL     = DATA.metaMuebles.estimadoRealista[1] / AHORRO_MESES.length;
 /* ─── hoy ─── */
 const HOY = new Date();
 const hoyISO = new Date(HOY.getTime() - HOY.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
-
-function periodoActual() {
-  const p = DATA.periodosLibres.find(p => hoyISO >= p.desde && hoyISO < p.hasta)
-         || DATA.periodosLibres.find(p => hoyISO < p.desde)
-         || DATA.periodosLibres[DATA.periodosLibres.length - 1];
-  const inicio = hoyISO > p.desde ? hoyISO : p.desde;
-  const restantes = Math.max(1, daysBetween(inicio, p.hasta));
-  return { ...p, restantes, porDia: p.libre / restantes };
-}
-const PERIODO = periodoActual();
-
-/* progreso de un plan de pagos por fechas */
-function progresoFechas(fechas) {
-  const hechos = fechas.filter(f => f < hoyISO).length;
-  const siguiente = fechas.find(f => f >= hoyISO) || null;
-  return { hechos, total: fechas.length, siguiente };
-}
 
 /* ─── calendario de quincenas ───
    El día 30 no existe en febrero, así que se recorre al último día del mes.
@@ -142,6 +139,55 @@ const QUINCENAS = construirQuincenas(hoyISO, DATA.horizonteIngresos.hasta);
 const PROX_QUINCENA = QUINCENAS[0];
 const TOTAL_INGRESO = sum(QUINCENAS.map(q => q.monto));
 
+/* ─── ventana de gasto libre ───
+   Arranca en tu efectivo de hoy, le suma las quincenas que entran y le
+   resta lo que ya está comprometido. Si la próxima quincena ya está
+   totalmente gastada (como la del 30 de julio, que se va en el plan), la
+   ventana se extiende a la siguiente: ese dinero nunca fue tuyo. */
+/* Salidas ya comprometidas en [desde, hasta]. `hasta` es inclusivo.
+   Lo marcado como cubierto o reservado no cuenta: ya está fondeado. */
+function salidasEntre(desde, hasta) {
+  const detalle = [];
+  const dentro = f => f >= desde && f <= hasta;
+  if (dentro(DATA.planJulio.fecha)) {
+    detalle.push({ fecha: DATA.planJulio.fecha, concepto: "Movimiento del 30 de julio",
+                   monto: DATA.planJulio.total });
+  }
+  DATA.fechasClave.forEach(f => {
+    if (f.tipo === "salida" && dentro(f.fecha)) {
+      detalle.push({ fecha: f.fecha, concepto: f.concepto, monto: f.monto });
+    }
+  });
+  return { total: sum(detalle.map(d => d.monto)), detalle };
+}
+
+function ventanaLibre() {
+  let fin = QUINCENAS[0];
+  /* Si la próxima quincena ya se va completa en compromisos, la ventana
+     se corre a la siguiente: ese dinero nunca llega a estar disponible. */
+  if (QUINCENAS[1] && salidasEntre(hoyISO, fin.iso).total >= fin.monto) fin = QUINCENAS[1];
+
+  /* La ventana cierra el día ANTES de la siguiente quincena: lo que entra
+     y lo que sale ese día pertenecen ya al periodo siguiente. */
+  const ultimoDia = dAdd(fin.iso, -1);
+  const ingresos = QUINCENAS.filter(q => q.iso >= hoyISO && q.iso <= ultimoDia);
+  const entra = sum(ingresos.map(q => q.monto));
+  const { total: sale, detalle } = salidasEntre(hoyISO, ultimoDia);
+  const libre = DATA.efectivo.ahorro + entra - sale;
+  const dias = Math.max(1, daysBetween(hoyISO, fin.iso));
+  return { hasta: fin.iso, dias, libre, porDia: libre / dias,
+           entra, sale, detalle, ingresos, proximaQuincena: fin };
+}
+const PERIODO = ventanaLibre();
+
+
+/* progreso de un plan de pagos por fechas */
+function progresoFechas(fechas) {
+  const hechos = fechas.filter(f => f < hoyISO).length;
+  const siguiente = fechas.find(f => f >= hoyISO) || null;
+  return { hechos, total: fechas.length, siguiente };
+}
+
 /* pagos del auto: 36 mensualidades desde primerPagoFecha */
 const AUTO_FECHAS = Array.from({ length: DATA.auto.plazo }, (_, i) => {
   const k = mAdd(DATA.auto.primerPago, i);
@@ -166,18 +212,60 @@ function renderTopbar() {
 
 function renderHero() {
   const h = document.getElementById("hero");
-  const finPeriodo = dLabelLong(PERIODO.hasta);
   h.innerHTML = `
     <div class="h-label">Gasto libre disponible</div>
     <div class="h-value">${moneyRich(PERIODO.libre)}</div>
     <div class="h-chips">
       <span class="h-chip"><span class="k">por día</span> <b>${money(PERIODO.porDia)}</b></span>
-      <span class="h-chip"><span class="k">quedan</span> <b>${PERIODO.restantes} días</b></span>
+      <span class="h-chip"><span class="k">quedan</span> <b>${PERIODO.dias} días</b></span>
     </div>
     <div class="h-foot">
-      Hasta el ${finPeriodo}, cuando entra tu quincena de ${money(DATA.ingreso.quincena)}.
-      Ya está descontado todo lo comprometido.
+      Tu efectivo de ${money(DATA.efectivo.ahorro)} más ${money(PERIODO.entra)} de quincena,
+      menos ${money(PERIODO.sale)} ya comprometidos.
+      Alcanza hasta el ${dLabelLong(PERIODO.hasta)}.
     </div>`;
+}
+
+/* Tarjeta de efectivo: qué queda libre y qué está apartado */
+function renderEfectivo() {
+  const host = document.getElementById("efectivo-card");
+  const trasPlan = DATA.efectivo.ahorro + PERIODO.entra - PERIODO.sale;
+  const apartadas = DATA.prefondeo;
+  host.innerHTML = `
+    <div class="card-head">
+      <div><div class="card-title">Tu efectivo</div>
+        <div class="card-sub">Al ${dLabelLong(DATA.efectivo.asOf)}</div></div>
+    </div>
+    <div class="row">
+      <div class="row-ic">💵</div>
+      <div class="row-main"><div class="row-t">Hoy en la cuenta</div>
+        <div class="row-d">antes del movimiento del 30 de julio</div></div>
+      <div class="row-amt">${money2(DATA.efectivo.ahorro)}</div>
+    </div>
+    <div class="row">
+      <div class="row-ic">📤</div>
+      <div class="row-main"><div class="row-t">Sale el 30 de julio</div>
+        <div class="row-d">mamá + 3 adelantos + la reserva de la Amex</div></div>
+      <div class="row-amt">−${money2(PERIODO.sale)}</div>
+    </div>
+    <div class="row">
+      <div class="row-ic">📥</div>
+      <div class="row-main"><div class="row-t">Entra el 30 de julio</div>
+        <div class="row-d">tu quincena</div></div>
+      <div class="row-amt">+${money2(PERIODO.entra)}</div>
+    </div>
+    <div class="row">
+      <div class="row-ic" style="background:var(--tint-1-bg);color:var(--tint-1-ink)">=</div>
+      <div class="row-main"><div class="row-t">Te queda libre</div>
+        <div class="row-d">para ${PERIODO.dias} días, hasta el ${dLabel(PERIODO.hasta)}</div></div>
+      <div class="row-amt">${money2(trasPlan)}</div>
+    </div>
+    ${apartadas.map(p => `<div class="tip" style="margin-top:16px;padding-top:16px;border-top:1px solid var(--hairline)">
+      <div class="ic">🔒</div>
+      <div class="tx"><b>${money2(p.monto)} apartados para ${mLabel(p.mes, true)}</b> —
+        ${p.concepto}, ${p.nota}. Ese dinero ya no cuenta como gasto de
+        ${mLabel(p.mes, true)}: se pagó con el ingreso de julio.</div>
+    </div>`).join("")}`;
 }
 
 function renderCompromisosClave() {
@@ -853,9 +941,12 @@ function drawFlow() {
     refValue: DATA.ingreso.mensual, refLabel: "Ingreso " + money(DATA.ingreso.mensual),
     aria: "Compromisos mensuales por categoría contra el ingreso, de agosto 2026 a septiembre 2027.",
     tipExtra: row => {
-      const libre = DATA.ingreso.mensual - row.total;
-      return `<div class="tt-row"><span class="lhs">Te queda</span><span class="val" style="color:${
-        libre < 3000 ? css("--crit-ink") : css("--good-ink")}">${money(libre)}</span></div>`;
+      const r = byMonth[row.key];
+      return (r.prefondeado > 0
+        ? `<div class="tt-row"><span class="lhs">Ya apartado antes</span><span class="val">−${money(r.prefondeado)}</span></div>`
+        : "") +
+        `<div class="tt-row"><span class="lhs">Te queda</span><span class="val" style="color:${
+          r.libre < 3000 ? css("--crit-ink") : css("--good-ink")}">${money(r.libre)}</span></div>`;
     }
   });
   legend(document.getElementById("flow-legend"),
@@ -873,6 +964,9 @@ function renderFlowTable() {
       ${CATS.map(c => `<tr><td>${c.label}</td>${
         MODEL.map(r => `<td>${r.c[c.id] ? money2(r.c[c.id]) : "—"}</td>`).join("")}</tr>`).join("")}
       <tr class="tot"><td>Total comprometido</td>${MODEL.map(r => `<td>${money2(r.total)}</td>`).join("")}</tr>
+      <tr><td>Ya apartado en un mes anterior</td>${
+        MODEL.map(r => `<td>${r.prefondeado ? "−" + money2(r.prefondeado) : "—"}</td>`).join("")}</tr>
+      <tr><td>Sale del ingreso del mes</td>${MODEL.map(r => `<td>${money2(r.deEsteIngreso)}</td>`).join("")}</tr>
       <tr class="tot"><td>Gasto libre</td>${MODEL.map(r => `<td>${money2(r.libre)}</td>`).join("")}</tr>
     </tbody></table>`;
 }
@@ -905,10 +999,22 @@ function renderMonthList() {
         </button>
         <div class="m-detail" hidden>
           <div class="m-bar">${segs}</div>
-          ${CATS.filter(c => r.c[c.id] > 0).map(c =>
-            `<div class="dl"><span class="k"><span class="dot" style="background:${css(c.v)}"></span>${c.label}</span>
-             <span class="v">${money2(r.c[c.id])}</span></div>`).join("")}
+          ${CATS.filter(c => r.c[c.id] > 0).map(c => {
+            const items = c.items ? c.items(r.k) : [];
+            const desglosable = items.length > 1;
+            return `<div class="dl"><span class="k"><span class="dot" style="background:${css(c.v)}"></span>${c.label}</span>
+              <span class="v">${money2(r.c[c.id])}</span></div>
+              ${desglosable ? `<div class="sub-items">${items.map(it =>
+                `<div class="dl si"><span class="k">${it.label}${
+                  it.nota ? `<span class="si-nota">${it.nota}</span>` : ""}</span>
+                 <span class="v">${money2(it.monto)}</span></div>`).join("")}</div>` : ""}`;
+          }).join("")}
           <div class="dl tot"><span class="k">Total comprometido</span><span class="v">${money2(r.total)}</span></div>
+          ${r.prefondeado > 0 ? r.pre.map(p =>
+            `<div class="dl pref"><span class="k">− ${p.concepto}<span class="si-nota">${p.nota}</span></span>
+             <span class="v">−${money2(p.monto)}</span></div>`).join("") +
+            `<div class="dl pref"><span class="k">Sale de tu ingreso de este mes</span>
+             <span class="v">${money2(r.deEsteIngreso)}</span></div>` : ""}
           <div class="dl"><span class="k">Ingreso</span><span class="v">${money2(DATA.ingreso.mensual)}</span></div>
           <div class="dl tot"><span class="k">Gasto libre</span>
             <span class="v" style="${apretado ? `color:${css("--crit-ink")}` : ""}">${money2(r.libre)}</span></div>
@@ -1000,6 +1106,11 @@ function renderNotas() {
     `La anualidad de Amex está estimada en ${money(DATA.anualidadAmex.total)}; el rango real con IVA va de ${money(DATA.anualidadAmex.rangoConIva[0])} a ${money(DATA.anualidadAmex.rangoConIva[1])}.`,
     `El Tag Pase se estima en ${money(2200)} al mes ($156 por día de oficina). Desde julio 2026 se cobra a débito, así que sale el mismo mes en que lo usas — ya no hay float.`,
     `El gasto libre NO descuenta comida, salidas ni imprevistos: es lo que queda después de compromisos, y de ahí sale todo lo demás.`,
+    ...DATA.prefondeo.map(p =>
+      `${mLabel(p.mes, true).replace(/^./, c => c.toUpperCase())} tiene ${money2(p.monto)} ya apartados desde julio (${p.concepto}). ` +
+      `Ese dinero se descuenta de los compromisos del mes al calcular el gasto libre, porque se pagó con el ingreso de julio, no con el de ${mLabel(p.mes, true)}. ` +
+      `Sin este ajuste el mes aparecía en ceros.`),
+    `Los compromisos se cuentan en el mes en que se devengan, no en el que sale el dinero de la cuenta. Para las tarjetas hay hasta 7 semanas de diferencia, pero en régimen los dos criterios coinciden: septiembre y octubre cuadran al peso por ambos caminos.`,
     `La proyección asume ingreso constante de ${money(DATA.ingreso.mensual)} al mes y ningún gasto nuevo a meses.`
   ];
   document.getElementById("notas").innerHTML =
@@ -1071,6 +1182,7 @@ function renderAll() {
   renderHero();
   renderCompromisosClave();
   renderTip();
+  renderEfectivo();
   renderProximos("proximos", 6);
   renderLibrePreview();
 

@@ -15,7 +15,16 @@ const DATA = {
   ingreso: { quincena: 17500, mensual: 35000, diasPago: [15, 30] },
 
   /* ── Efectivo disponible ── */
-  efectivo: { ahorro: 17727, asOf: "2026-07-24" },
+  efectivo: { ahorro: 17580, asOf: "2026-07-26" },
+
+  /* ── Dinero de un mes que ya quedó apartado en un mes anterior ──
+     No vuelve a consumir el ingreso del mes en que se paga: por eso se
+     resta de los compromisos de ese mes al calcular el gasto libre. */
+  prefondeo: [
+    { mes: "2026-08", monto: 10369.02,
+      concepto: "Reserva Amex Gold Elite",
+      nota: "apartada el 30 de julio, la tarjeta la cobra el 23 de agosto" }
+  ],
 
   /* ── Crédito a mamá ── */
   prestamoMama: {
@@ -119,14 +128,6 @@ const DATA = {
     ]
   },
 
-  /* ── Gasto libre por periodo de quincena ── */
-  periodosLibres: [
-    { desde:"2026-07-24", hasta:"2026-08-15", dias:22, libre:7399.10 },
-    { desde:"2026-08-15", hasta:"2026-08-30", dias:15, libre:7541.00 },
-    { desde:"2026-08-30", hasta:"2026-09-15", dias:16, libre:3380.47 },
-    { desde:"2026-09-15", hasta:"2026-09-30", dias:15, libre:2694.42 }
-  ],
-
   /* ── Movimiento planeado del 30 de julio ── */
   planJulio: {
     fecha: "2026-07-30", total: 26827.90,
@@ -144,7 +145,7 @@ const DATA = {
   fechasClave: [
     { fecha:"2026-08-03", concepto:"Vence Santander LikeU",     monto:600.00,   tipo:"cubierto", nota:"cubierto por el adelanto del 30 jul" },
     { fecha:"2026-08-03", concepto:"Vence Costco Banamex",      monto:2317.03,  tipo:"cubierto", nota:"cubierto por el adelanto del 30 jul" },
-    { fecha:"2026-08-11", concepto:"Vence Amex Gold Servicios", monto:1788.35,  tipo:"salida",   nota:"gym + Amazon MSI del ciclo" },
+    { fecha:"2026-08-11", concepto:"Vence Amex Gold Servicios", monto:1788.35,  tipo:"cubierto", nota:"cubierto por el adelanto de $2,882.85 del 30 jul" },
     { fecha:"2026-08-15", concepto:"1ª mensualidad auto BYD",   monto:6209.00,  tipo:"salida",   nota:"36 pagos, día 15 de cada mes" },
     { fecha:"2026-08-23", concepto:"Vence Amex Gold Elite",     monto:10369.02, tipo:"reservado",nota:"MSI junio 3/3 + MSI julio 2/3 + Alo Yoga 1/3 + consumo" },
     { fecha:"2026-08-30", concepto:"Pago 2 de 4 a mamá",        monto:10659.00, tipo:"salida",   nota:"" },
