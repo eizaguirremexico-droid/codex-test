@@ -95,7 +95,9 @@ function simularTag(estrategia, montoRecarga) {
   const porMes = {};
   let saldo = OFI.saldoInicial;
 
-  mRange(DATA.horizonte.desde, DATA.horizonteIngresos.hasta).forEach(k => {
+  /* arranca en el mes del ancla, no en el horizonte: si no, agosto empezaría
+     con saldo cero e ignoraría las idas de julio que ya dejaron saldo */
+  mRange(OFI.ancla.slice(0, 7), DATA.horizonteIngresos.hasta).forEach(k => {
     const dias = diasOficinaMes(k);
     let recargas = 0;
     dias.forEach(() => {
@@ -117,6 +119,32 @@ function simularTag(estrategia, montoRecarga) {
 
 let TAG = simularTag();
 const tagMes = k => (TAG[k] ? TAG[k].salida : 0);
+
+/* Promedio de idas al mes, para repartir la gasolina por ida en vez de por
+   día natural: el tanque se gasta yendo a la oficina, no en el calendario. */
+const IDAS_MES = (() => {
+  const ms = mRange(DATA.horizonte.desde, DATA.horizonte.hasta);
+  return sum(ms.map(k => diasOficinaMes(k).length)) / ms.length;
+})();
+const GASOLINA_MES = (DATA.vidaFija.find(v => /gasolina/i.test(v.concepto)) || { monto: 0 }).monto;
+const GAS_POR_IDA = GASOLINA_MES / IDAS_MES;
+
+/* Costo del trayecto dentro de una ventana de fechas cualquiera.
+   El tag necesita arrastrar el saldo desde el ancla, porque si no
+   no se sabe cuántas recargas caen realmente dentro de la ventana. */
+function trayectoEntre(desde, hasta) {
+  let saldo = OFI.saldoInicial, recargas = 0, idas = 0;
+  for (let f = OFI.ancla; f <= hasta; f = dAdd(f, 1)) {
+    if (!esDiaOficina(f)) continue;
+    const dentro = f >= desde;
+    if (saldo < OFI.costoCaseta) { saldo += OFI.montoRecarga; if (dentro) recargas++; }
+    saldo -= OFI.costoCaseta;
+    if (dentro) idas++;
+  }
+  return { idas, recargas,
+           tag: recargas * (OFI.montoRecarga + OFI.comision),
+           gasolina: idas * GAS_POR_IDA };
+}
 
 const VIDA_BASE = sum(DATA.vidaFija.map(x => x.monto));
 const vidaMes = k => VIDA_BASE + tagMes(k);
@@ -294,10 +322,14 @@ function ventanaLibre() {
   const ingresos = QUINCENAS.filter(q => q.iso >= hoyISO && q.iso <= ultimoDia);
   const entra = sum(ingresos.map(q => q.monto));
   const { total: sale, detalle } = salidasEntre(hoyISO, ultimoDia);
-  const libre = DATA.efectivo.ahorro + entra - sale;
+  /* El trayecto también sale de este dinero: sin restarlo el número de la
+     portada quedaba inflado y no cuadraba con el resto de la app. */
+  const tr = trayectoEntre(hoyISO, ultimoDia);
+  const trayecto = tr.tag + tr.gasolina;
+  const libre = DATA.efectivo.ahorro + entra - sale - trayecto;
   const dias = Math.max(1, daysBetween(hoyISO, fin.iso));
   return { hasta: fin.iso, dias, libre, porDia: libre / dias,
-           entra, sale, detalle, ingresos, proximaQuincena: fin };
+           entra, sale, trayecto, tr, detalle, ingresos, proximaQuincena: fin };
 }
 const PERIODO = ventanaLibre();
 
@@ -343,15 +375,15 @@ function renderHero() {
     </div>
     <div class="h-foot">
       Tu efectivo de ${money(DATA.efectivo.ahorro)} más ${money(PERIODO.entra)} de quincena,
-      menos ${money(PERIODO.sale)} ya comprometidos.
-      Alcanza hasta el ${dLabelLong(PERIODO.hasta)}.
+      menos ${money(PERIODO.sale)} comprometidos y ${money(PERIODO.trayecto)} de
+      tag y gasolina (${PERIODO.tr.idas} idas a la oficina).
+      Esto es para comida y todo lo demás, hasta el ${dLabelLong(PERIODO.hasta)}.
     </div>`;
 }
 
 /* Tarjeta de efectivo: qué queda libre y qué está apartado */
 function renderEfectivo() {
   const host = document.getElementById("efectivo-card");
-  const trasPlan = DATA.efectivo.ahorro + PERIODO.entra - PERIODO.sale;
   const apartadas = DATA.prefondeo;
   host.innerHTML = `
     <div class="card-head">
@@ -377,10 +409,16 @@ function renderEfectivo() {
       <div class="row-amt">+${money2(PERIODO.entra)}</div>
     </div>
     <div class="row">
+      <div class="row-ic">🚗</div>
+      <div class="row-main"><div class="row-t">Tag y gasolina</div>
+        <div class="row-d">${PERIODO.tr.idas} idas a la oficina · ${PERIODO.tr.recargas} recargas de tag</div></div>
+      <div class="row-amt">−${money2(PERIODO.trayecto)}</div>
+    </div>
+    <div class="row">
       <div class="row-ic" style="background:var(--tint-1-bg);color:var(--tint-1-ink)">=</div>
-      <div class="row-main"><div class="row-t">Te queda libre</div>
+      <div class="row-main"><div class="row-t">Te queda para comida y lo demás</div>
         <div class="row-d">para ${PERIODO.dias} días, hasta el ${dLabel(PERIODO.hasta)}</div></div>
-      <div class="row-amt">${money2(trasPlan)}</div>
+      <div class="row-amt">${money2(PERIODO.libre)}</div>
     </div>
     ${apartadas.map(p => `<div class="tip" style="margin-top:16px;padding-top:16px;border-top:1px solid var(--hairline)">
       <div class="ic">🔒</div>
