@@ -54,7 +54,7 @@ const CATS = [
   { id:"vida",  label:"Vida fija",        v:"--s4",
     items: k => DATA.vidaFija.map(v => ({ label: v.concepto, monto: v.monto, nota: v.detalle }))
       .concat([{ label: "Tag Pase (casetas)", monto: tagMes(k),
-                 nota: `${diasOficinaMes(k).length} días de oficina × ${money(OFI.costoRecarga)}` }]) },
+                 nota: TAG[k] ? `${TAG[k].dias} días × ${money(OFI.costoCaseta)} de casetas + ${money(TAG[k].comision)} de comisión` : "" }]) },
   { id:"subs",  label:"Suscripciones",    v:"--s5",
     items: () => DATA.suscripciones.map(s => ({ label: s.servicio, monto: s.monto, nota: s.tarjeta })) },
   { id:"anual", label:"Anualidad Amex",   v:"--s6",
@@ -699,7 +699,7 @@ function renderOficinaCal() {
       iso === hoyISO ? "hoy" : ""
     ].filter(Boolean).join(" ");
     const titulo = esDiaOficina(iso)
-      ? `${DOW_LARGO[(dow + 6) % 7]} ${d} · oficina · ${money(OFI.costoRecarga)}`
+      ? `${DOW_LARGO[(dow + 6) % 7]} ${d} · oficina · ${money(OFI.costoCaseta)} de casetas`
       : `${DOW_LARGO[(dow + 6) % 7]} ${d}`;
     celdas += `<div class="${clases}" title="${titulo}">${d}</div>`;
   }
@@ -709,7 +709,7 @@ function renderOficinaCal() {
     <div class="cal-nav">
       <div>
         <div class="mes">${mLabel(mesCal, true)}</div>
-        <div class="sub">${delMes.length} días de oficina · ${money(delMes.length * OFI.costoRecarga)} de Tag</div>
+        <div class="sub">${delMes.length} días de oficina · ${money(TAG[mesCal] ? TAG[mesCal].salida : delMes.length * OFI.costoCaseta)} de Tag</div>
       </div>
       <div class="btns">
         <button class="cal-arrow" id="cal-prev" type="button" aria-label="Mes anterior" ${hayAnterior ? "" : "disabled"}>
@@ -744,7 +744,7 @@ function renderOficinaProximos() {
   document.getElementById("oficina-proximos").innerHTML = `
     <div class="card-head">
       <div><div class="card-title">Tus próximos días</div>
-        <div class="card-sub">${money(prox.length * OFI.costoRecarga)} en las siguientes ${prox.length} idas</div></div>
+        <div class="card-sub">${money(prox.length * OFI.costoCaseta)} de casetas en las siguientes ${prox.length} idas</div></div>
     </div>
     ${prox.map(f => {
       const dias = daysBetween(hoyISO, f);
@@ -757,7 +757,7 @@ function renderOficinaProximos() {
           <div class="row-d">${DOW_LARGO[dow]} · semana ${pat.nombre}${
             dias === 0 ? " · hoy" : dias === 1 ? " · mañana" : ` · en ${dias} días`}</div>
         </div>
-        <div class="row-amt">${money(OFI.costoRecarga)}</div>
+        <div class="row-amt">${money(OFI.costoCaseta)}</div>
       </div>`;
     }).join("")}`;
 }
@@ -806,7 +806,7 @@ function renderOficinaCostos() {
       <button class="btn" type="button" id="ofi-tbl-btn" aria-pressed="false" aria-controls="ofi-tbl">Ver tabla</button>
     </div>
     <div class="table-wrap" id="ofi-tbl" hidden>
-      <table><caption>Días de oficina y costo del Tag por mes, a ${money(OFI.costoRecarga)} por recarga.</caption>
+      <table><caption>Casetas a ${money(OFI.costoCaseta)} por viaje; recargas de ${money(OFI.montoRecarga)} + ${money(OFI.comision)} de comisión, solo cuando el saldo no alcanza.</caption>
       <thead><tr><th>Mes</th><th>Días</th><th>Casetas</th><th>Recargas</th><th>Comisión</th><th>Sale de tu cuenta</th></tr></thead>
       <tbody>${filas.map(f => `<tr><td>${mLabel(f.key, true)}</td><td>${f.dias}</td>
         <td>${money2(f.casetas)}</td><td>${f.recargas}</td><td>${money2(f.comision)}</td>
@@ -1007,7 +1007,7 @@ function fijosDesglose() {
     { label:"Auto BYD", value: DATA.auto.mensualidad, detalle: DATA.auto.modelo },
     ...DATA.vidaFija.map(v => ({ label: v.corto || v.concepto, value: v.monto, detalle: v.detalle })),
     { label: "Tag Pase", value: tagMes(k),
-      detalle: `${diasOficinaMes(k).length} días de oficina × ${money(OFI.costoRecarga)}` },
+      detalle: TAG[k] ? `${TAG[k].dias} días × ${money(OFI.costoCaseta)} de casetas + ${money(TAG[k].comision)} de comisión` : "" },
     /* varios planes se llaman "Amazon": el nombre de la tarjeta los distingue */
     ...msiEnMes(k).map(s => ({
       label: `${s.label} · ${s.tarjeta.replace("Amex Gold ", "").replace(" Banamex", "")}`,
