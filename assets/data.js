@@ -26,11 +26,21 @@ const DATA = {
       nota: "apartada el 30 de julio, la tarjeta la cobra el 23 de agosto" }
   ],
 
-  /* ── Crédito a mamá ── */
+  /* ── Crédito a mamá ──
+     Renegociado: julio y agosto se pagan completos, y lo que quedaba para
+     septiembre y octubre ($21,318) se reparte en tres pagos de $7,106.
+     Eso libera $3,553 en sep y oct, que es lo que faltaba para sostener
+     el piso de gasto libre. El total no cambia: $42,636. */
   prestamoMama: {
-    pago: 10659,
-    fechas: ["2026-07-30", "2026-08-30", "2026-09-30", "2026-10-30"],
-    meses: ["2026-07", "2026-08", "2026-09", "2026-10"]
+    total: 42636,
+    pagos: [
+      { fecha: "2026-07-30", monto: 10659 },
+      { fecha: "2026-08-30", monto: 10659 },
+      { fecha: "2026-09-30", monto: 7106 },
+      { fecha: "2026-10-30", monto: 7106 },
+      { fecha: "2026-11-30", monto: 7106 }
+    ],
+    nota: "renegociado: los últimos dos pagos repartidos en tres"
   },
 
   /* ── Auto ── */
@@ -137,6 +147,10 @@ const DATA = {
     metaDeclarada: 90000,
     inicioAhorro: "2026-11",
     fechaLimite: "2027-09",
+    /* Nunca ahorrar por debajo de esto: es la regla que manda.
+       El ahorro mensual sale de lo que sobre encima de este piso, así que
+       no es parejo — noviembre da poco y de marzo en adelante da más. */
+    pisoGastoLibre: 10000,
     estimadoRealista: [108300, 113300],
     incluye: ["estufa"],
     noIncluye: ["refrigerador", "lavadora / secadora", "terraza para tender"],
