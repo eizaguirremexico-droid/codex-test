@@ -48,7 +48,7 @@ const CATS = [
   { id:"auto",  label:"Auto BYD",         v:"--s1",
     items: () => [{ label: DATA.auto.modelo, monto: DATA.auto.mensualidad }] },
   { id:"mama",  label:"Crédito mamá",     v:"--s2",
-    items: () => [{ label: "Pago mensual", monto: DATA.prestamoMama.pago }] },
+    items: k => [{ label: "Pago del mes", monto: mamaMes(k), nota: DATA.prestamoMama.nota }] },
   { id:"msi",   label:"Tarjetas a meses", v:"--s3",
     items: k => msiEnMes(k).map(s => ({ label: `${s.label} · ${s.tarjeta}`, monto: s.monto })) },
   { id:"vida",  label:"Vida fija",        v:"--s4",
@@ -125,11 +125,17 @@ const MESES     = mRange(DATA.horizonte.desde, DATA.horizonte.hasta);
 
 const msiEnMes = k => DATA.msi.filter(s => mDiff(s.desde, k) >= 0 && mDiff(k, s.hasta) >= 0);
 
+/* Los pagos a mamá ya no son un monto fijo: el plan renegociado tiene
+   dos pagos grandes y tres chicos, así que se busca por mes. */
+const MAMA_POR_MES = {};
+DATA.prestamoMama.pagos.forEach(p => { MAMA_POR_MES[p.fecha.slice(0, 7)] = p.monto; });
+const mamaMes = k => MAMA_POR_MES[k] || 0;
+
 function construirModelo() { return MESES.map(k => {
   const streams = msiEnMes(k);
   const c = {
     auto:  mDiff(DATA.auto.primerPago, k) >= 0 ? DATA.auto.mensualidad : 0,
-    mama:  DATA.prestamoMama.meses.includes(k) ? DATA.prestamoMama.pago : 0,
+    mama:  mamaMes(k),
     msi:   sum(streams.map(s => s.monto)),
     vida:  vidaMes(k),
     subs:  SUBS_MES,
@@ -154,7 +160,40 @@ const AHORRO_MESES = mRange(DATA.metaMuebles.inicioAhorro, DATA.metaMuebles.fech
 const REQUERIDO    = DATA.metaMuebles.metaDeclarada / AHORRO_MESES.length;
 const REQ_REAL     = DATA.metaMuebles.estimadoRealista[1] / AHORRO_MESES.length;
 
-let PRIMER_MES_LIBRE, PISO_FIJO, CAP_MIN;
+let PRIMER_MES_LIBRE, PISO_FIJO, CAP_MIN, PLAN_AHORRO, AHORRO_TOTAL;
+
+/* ─── reparto del ahorro ───
+   La regla dura es el piso de gasto libre: nunca ahorrar por debajo de él.
+   Cada mes puede aportar como mucho lo que le sobre encima del piso, así
+   que un ahorro parejo no sirve — noviembre carga el tercer pago a mamá y
+   solo da $3,333, mientras que de marzo en adelante sobran $11,594.
+
+   Se reparte por nivelación: se busca un monto igual para todos los meses;
+   el que no lo alcanza aporta su tope y su faltante se redistribuye entre
+   los demás. Se repite hasta que nadie más queda por debajo. */
+function repartirAhorro(meses, meta, piso) {
+  const cap = {};
+  meses.forEach(k => { cap[k] = Math.max(0, byMonth[k].libre - piso); });
+  const plan = {};
+  let libres = meses.slice(), restante = meta;
+
+  for (let vuelta = 0; vuelta < meses.length + 1; vuelta++) {
+    if (!libres.length) break;
+    const parejo = restante / libres.length;
+    const topados = libres.filter(k => cap[k] < parejo);
+    if (!topados.length) {                       // ya nadie topa: reparto parejo
+      libres.forEach(k => { plan[k] = parejo; });
+      restante = 0;
+      libres = [];
+      break;
+    }
+    topados.forEach(k => { plan[k] = cap[k]; restante -= cap[k]; });
+    libres = libres.filter(k => !topados.includes(k));
+  }
+  meses.forEach(k => { if (plan[k] == null) plan[k] = 0; });
+  const total = sum(meses.map(k => plan[k]));
+  return { plan, total, capacidad: sum(meses.map(k => cap[k])), cap };
+}
 
 /* Cambiar la estrategia del tag mueve el piso fijo, así que hay que
    rehacer el modelo y todo lo que cuelga de él. */
@@ -165,7 +204,18 @@ function recalcularModelo() {
   PRIMER_MES_LIBRE = MESES.find(k => !byMonth[k].c.mama && !byMonth[k].c.anual);
   PISO_FIJO = byMonth[PRIMER_MES_LIBRE].total;
   CAP_MIN = Math.min(...AHORRO_MESES.map(k => byMonth[k].libre));
+
+  const r = repartirAhorro(AHORRO_MESES, DATA.metaMuebles.metaDeclarada, PISO_ACTUAL);
+  PLAN_AHORRO = r;
+  AHORRO_TOTAL = r.total;
+  /* el ahorro se descuenta del gasto libre: no es dinero disponible */
+  MODEL.forEach(m => {
+    m.ahorro = r.plan[m.k] || 0;
+    m.libreDespues = m.libre - m.ahorro;
+  });
 }
+
+let PISO_ACTUAL = DATA.metaMuebles.pisoGastoLibre;
 recalcularModelo();
 
 /* ─── hoy ─── */
@@ -265,7 +315,8 @@ const AUTO_FECHAS = Array.from({ length: DATA.auto.plazo }, (_, i) => {
   return k + "-" + String(DATA.auto.diaPago).padStart(2, "0");
 });
 const AUTO_PROG = progresoFechas(AUTO_FECHAS);
-const MAMA_PROG = progresoFechas(DATA.prestamoMama.fechas);
+const MAMA_FECHAS = DATA.prestamoMama.pagos.map(p => p.fecha);
+const MAMA_PROG = progresoFechas(MAMA_FECHAS);
 
 /* ══════════════════════════════════════════════════════════════════════
    RENDER — Inicio
@@ -347,8 +398,10 @@ function renderCompromisosClave() {
   const autoFalta = autoRestantes * auto.mensualidad;
   const autoDias = AUTO_PROG.siguiente ? daysBetween(hoyISO, AUTO_PROG.siguiente) : null;
 
-  const mamaRestantes = mama.fechas.length - MAMA_PROG.hechos;
-  const mamaFalta = mamaRestantes * mama.pago;
+  /* los pagos ya no son iguales: hay que sumar los que faltan, no multiplicar */
+  const mamaPendientes = mama.pagos.filter(x => x.fecha >= hoyISO);
+  const mamaFalta = sum(mamaPendientes.map(x => x.monto));
+  const mamaProximo = mamaPendientes[0];
   const mamaDias = MAMA_PROG.siguiente ? daysBetween(hoyISO, MAMA_PROG.siguiente) : null;
 
   host.innerHTML = `
@@ -370,26 +423,29 @@ function renderCompromisosClave() {
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20.5s-7.5-4.4-7.5-9.6A4.2 4.2 0 0 1 12 8.4a4.2 4.2 0 0 1 7.5 2.5c0 5.2-7.5 9.6-7.5 9.6Z"/></svg>
         <span>Crédito a mamá</span>
       </div>
-      <div class="t-value">${moneyRich(mama.pago)}</div>
+      <div class="t-value">${moneyRich(mamaProximo ? mamaProximo.monto : 0)}</div>
       <div class="t-sub">${MAMA_PROG.siguiente
-        ? `Pago ${MAMA_PROG.hechos + 1} de ${mama.fechas.length} el ${dLabel(MAMA_PROG.siguiente)}${mamaDias != null ? ` · en ${mamaDias} días` : ""}`
+        ? `Pago ${MAMA_PROG.hechos + 1} de ${mama.pagos.length} el ${dLabel(MAMA_PROG.siguiente)}${mamaDias != null ? ` · en ${mamaDias} días` : ""}`
         : "Liquidado"}</div>
-      <div class="t-bar"><i style="width:${(MAMA_PROG.hechos / mama.fechas.length) * 100}%"></i></div>
-      <div class="t-foot"><span>${MAMA_PROG.hechos} de ${mama.fechas.length} pagos</span><span>faltan ${money(mamaFalta)}</span></div>
+      <div class="t-bar"><i style="width:${(MAMA_PROG.hechos / mama.pagos.length) * 100}%"></i></div>
+      <div class="t-foot"><span>${MAMA_PROG.hechos} de ${mama.pagos.length} pagos</span><span>faltan ${money(mamaFalta)}</span></div>
     </div>`;
 }
 
 function renderTip() {
   /* El tip se elige solo: el mes más apretado del horizonte */
-  const peor = MODEL.reduce((a, b) => (b.libre < a.libre ? b : a));
-  const alivio = MODEL.find(r => mDiff(peor.k, r.k) > 0 && r.libre > peor.libre * 3);
+  const peor = MODEL.reduce((a, b) => (b.libreDespues < a.libreDespues ? b : a));
+  const alivio = MODEL.find(r => mDiff(peor.k, r.k) > 0 && r.libreDespues > peor.libreDespues * 1.4);
   document.getElementById("tip-card").innerHTML = `
     <div class="tip">
-      <div class="ic">${peor.libre < 2000 ? "🔴" : "💡"}</div>
+      <div class="ic">${peor.libreDespues < PISO_ACTUAL - 1 ? "🔴" : "💡"}</div>
       <div class="tx">
         <b>${mLabel(peor.k, true).replace(/^./, c => c.toUpperCase())} es tu mes más apretado:</b>
-        te quedan ${money(peor.libre)} libres de los ${money(DATA.ingreso.mensual)} que entran.
-        ${alivio ? `Aguanta hasta ${mLabel(alivio.k, true)}: ahí el flujo sube a ${money(alivio.libre)}.` : ""}
+        te quedan ${money(peor.libreDespues)} libres${peor.ahorro > 0
+          ? `, ya apartando ${money(peor.ahorro)} para la meta` : ""}.
+        ${peor.libreDespues >= PISO_ACTUAL - 1
+          ? `Aun así cumples tu piso de ${money(PISO_ACTUAL)} todos los meses.`
+          : alivio ? `Aguanta hasta ${mLabel(alivio.k, true)}: ahí sube a ${money(alivio.libreDespues)}.` : ""}
       </div>
     </div>`;
 }
@@ -462,13 +518,14 @@ function drawLibrePreview() {
     series: [{ id:"libre", label:"Gasto libre", v:"--s1" }],
     rows: MODEL.map(r => ({
       key:r.k, label:mLabel(r.k), tipLabel:mLabel(r.k, true),
-      values:{ libre: Math.max(0, r.libre) }, total: Math.max(0, r.libre)
+      values:{ libre: Math.max(0, r.libreDespues) }, total: Math.max(0, r.libreDespues)
     })),
     height: 190, fmt: money, totalLabel: null, compact: true,
     aria: "Gasto libre mensual después de compromisos, de agosto 2026 a septiembre 2027.",
     tipExtra: row => {
       const r = byMonth[row.key];
-      return `<div class="tt-row tt-total"><span>Comprometido</span><span class="val">${money(r.total)}</span></div>`;
+      return `<div class="tt-row"><span class="lhs">Comprometido</span><span class="val">${money(r.total)}</span></div>` +
+        (r.ahorro > 0 ? `<div class="tt-row"><span class="lhs">Ahorro para la meta</span><span class="val">${money(r.ahorro)}</span></div>` : "");
     }
   });
 }
@@ -1101,113 +1158,150 @@ function renderFijosTimeline() {
    RENDER — Metas
    ══════════════════════════════════════════════════════════════════════ */
 
-const slider = () => document.getElementById("save-slider");
-let ahorroMensual = Math.round(REQUERIDO / 250) * 250;
+const slider = () => document.getElementById("piso-slider");
 
-function goalRows(ahorro) {
+/* Ahorro acumulado según el plan repartido */
+function goalRows() {
   let acc = 0;
   return AHORRO_MESES.map(k => {
-    const aporte = Math.min(ahorro, Math.max(0, byMonth[k].libre));
-    acc += aporte;
+    const r = byMonth[k];
+    acc += r.ahorro;
     return { key:k, label:mLabel(k), tipLabel:mLabel(k, true), value:acc,
-      extra:`<div class="tt-row"><span class="lhs">Aporte del mes</span><span class="val">${money(aporte)}</span></div>` };
+      extra: `<div class="tt-row"><span class="lhs">Ahorras este mes</span><span class="val">${money(r.ahorro)}</span></div>` +
+             `<div class="tt-row"><span class="lhs">Te queda libre</span><span class="val">${money(r.libreDespues)}</span></div>` };
   });
 }
 
 function renderMetaHero() {
   const m = DATA.metaMuebles;
   const [lo, hi] = m.estimadoRealista;
-  const meses = AHORRO_MESES.length;
   const inicioDias = daysBetween(hoyISO, m.inicioAhorro + "-01");
+  const alcanza = AHORRO_TOTAL >= m.metaDeclarada - 1;
   document.getElementById("meta-hero").innerHTML = `
     <div class="t-top">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5.5 9.5V21h13V9.5"/><path d="M10 21v-5h4v5"/></svg>
       <span>${m.objetivo}</span>
     </div>
-    <div class="t-value">${moneyRich(m.metaDeclarada)}</div>
-    <div class="t-sub">Meta declarada para ${mLabel(m.fechaLimite, true)} ·
-      ${meses} meses de ahorro${inicioDias > 0 ? ` · arranca en ${inicioDias} días` : ""}</div>
-    <div class="t-bar"><i style="width:0%"></i></div>
+    <div class="t-value">${moneyRich(AHORRO_TOTAL)}</div>
+    <div class="t-sub">Juntas esto para ${mLabel(m.fechaLimite, true)} en ${AHORRO_MESES.length} meses,
+      sin bajar nunca de ${money(PISO_ACTUAL)} de gasto libre${
+      inicioDias > 0 ? ` · arranca en ${inicioDias} días` : ""}</div>
+    <div class="t-bar"><i style="width:${clamp(AHORRO_TOTAL / m.metaDeclarada * 100, 0, 100).toFixed(1)}%"></i></div>
     <div class="t-foot">
-      <span>Amueblar completo cuesta ${money(lo)}–${money(hi)}</span>
-      <span>faltan ${money(hi - m.metaDeclarada)}</span>
+      <span>Meta declarada ${money(m.metaDeclarada)}</span>
+      <span>${alcanza ? "alcanza" : "faltan " + money(m.metaDeclarada - AHORRO_TOTAL)}</span>
     </div>`;
 }
 
+/* Control del piso: la regla que manda sobre el ahorro */
 function renderMetaSim() {
-  const host = document.getElementById("meta-sim");
-  host.innerHTML = `
+  document.getElementById("meta-sim").innerHTML = `
     <div class="card-head">
-      <div><div class="card-title">Simulador</div>
-        <div class="card-sub">Mueve el ahorro mensual y ve hasta dónde llegas</div></div>
+      <div><div class="card-title">Tu regla</div>
+        <div class="card-sub">Nunca ahorrar por debajo de este piso de gasto libre.
+          El ahorro sale de lo que sobre encima.</div></div>
     </div>
     <div class="slider-head">
-      <span class="k">Ahorro mensual desde ${mLabel(DATA.metaMuebles.inicioAhorro, true)}</span>
-      <span class="v" id="save-value"></span>
+      <span class="k">Piso de gasto libre mensual</span>
+      <span class="v" id="piso-valor"></span>
     </div>
-    <input type="range" id="save-slider" min="0" step="250"
-           aria-label="Ahorro mensual" value="${ahorroMensual}">
+    <input type="range" id="piso-slider" min="6000" max="16000" step="500"
+           aria-label="Piso de gasto libre mensual" value="${PISO_ACTUAL}">
     <div class="meter"><i id="goal-fill" style="width:0%"></i></div>
     <div class="meter-foot"><span id="goal-proj"></span><span id="goal-pct"></span></div>
     <div class="readout" id="goal-readout"></div>`;
 
   const s = slider();
-  s.max = Math.ceil(Math.max(CAP_MIN, REQ_REAL * 1.2) / 250) * 250;
-  s.value = ahorroMensual;
-  s.addEventListener("input", () => { ahorroMensual = +s.value; updateMeta(); });
+  s.addEventListener("input", () => {
+    PISO_ACTUAL = +s.value;
+    recalcularModelo();
+    renderMetaHero(); updateMeta(); renderMetaTabla();
+    renderMonthList(); drawFlow(); renderLibrePreview();
+  });
 }
 
 function renderMetaChart() {
   document.getElementById("meta-chart-card").innerHTML = `
     <div class="card-head">
       <div><div class="card-title">Ahorro acumulado</div>
-        <div class="card-sub">Proyección de ${mLabel(DATA.metaMuebles.inicioAhorro)} a ${mLabel(DATA.metaMuebles.fechaLimite)}</div></div>
+        <div class="card-sub">${mLabel(DATA.metaMuebles.inicioAhorro)} → ${mLabel(DATA.metaMuebles.fechaLimite)}</div></div>
     </div>
     <div class="chart-scroll"><div id="meta-chart"></div></div>
     <div class="legend" id="meta-legend"></div>`;
 }
 
+/* Calendario de aportaciones mes a mes */
+function renderMetaTabla() {
+  const host = document.getElementById("meta-tabla");
+  if (!host) return;
+  let acc = 0;
+  const filas = AHORRO_MESES.map(k => {
+    const r = byMonth[k]; acc += r.ahorro;
+    return { k, r, acc,
+      tope: Math.abs(r.ahorro - (r.libre - PISO_ACTUAL)) < 1 && r.ahorro > 0 };
+  });
+  host.innerHTML = `
+    <div class="card-head">
+      <div><div class="card-title">Cuánto apartar cada mes</div>
+        <div class="card-sub">El día 30, a una cuenta aparte.
+          No es parejo: cada mes da lo que puede sin romper el piso.</div></div>
+      <span class="chip good">${money(AHORRO_TOTAL)} total</span>
+    </div>
+    ${filas.map(({ k, r, acc, tope }) => `<div class="row">
+      <div class="row-ic">${mLabel(k).split(" ")[0]}</div>
+      <div class="row-main">
+        <div class="row-t">${mLabel(k, true).replace(/^./, c => c.toUpperCase())}</div>
+        <div class="row-d">te quedan ${money(r.libreDespues)} libres${
+          tope ? " · este mes da su tope" : ""}</div>
+      </div>
+      <div class="row-amt">${money(r.ahorro)}<span class="sub">acum. ${money(acc)}</span></div>
+    </div>`).join("")}
+    <div class="table-wrap" style="margin-top:4px">
+      <table><caption>Piso de gasto libre: ${money(PISO_ACTUAL)} al mes.</caption>
+      <thead><tr><th>Mes</th><th>Libre antes</th><th>Ahorras</th><th>Libre después</th><th>Acumulado</th></tr></thead>
+      <tbody>${filas.map(({ k, r, acc }) => `<tr><td>${mLabel(k, true)}</td>
+        <td>${money2(r.libre)}</td><td>${money2(r.ahorro)}</td>
+        <td>${money2(r.libreDespues)}</td><td>${money2(acc)}</td></tr>`).join("")}
+        <tr class="tot"><td>Total</td><td></td><td>${money2(AHORRO_TOTAL)}</td><td></td><td></td></tr>
+      </tbody></table>
+    </div>`;
+}
+
 function updateMeta() {
   const m = DATA.metaMuebles;
-  const rows = goalRows(ahorroMensual);
-  const final = rows[rows.length - 1].value;
-  const pct = Math.min(100, (final / m.metaDeclarada) * 100);
   const [, hi] = m.estimadoRealista;
+  const pv = document.getElementById("piso-valor");
+  if (pv) pv.textContent = money(PISO_ACTUAL);
 
-  const sv = document.getElementById("save-value");
-  if (sv) sv.textContent = money(ahorroMensual);
-
+  const pct = clamp(AHORRO_TOTAL / m.metaDeclarada * 100, 0, 100);
   const fill = document.getElementById("goal-fill");
   if (fill) {
     fill.style.width = pct.toFixed(1) + "%";
-    fill.style.background = final >= m.metaDeclarada ? css("--good")
-                          : final >= m.metaDeclarada * 0.75 ? css("--warning") : css("--critical");
+    fill.style.background = AHORRO_TOTAL >= m.metaDeclarada - 1 ? css("--good")
+                          : AHORRO_TOTAL >= m.metaDeclarada * 0.8 ? css("--warning") : css("--critical");
   }
   const proj = document.getElementById("goal-proj");
-  if (proj) proj.textContent = `Proyectado ${money(final)} de ${money(m.metaDeclarada)}`;
+  if (proj) proj.textContent = `Juntas ${money(AHORRO_TOTAL)} de ${money(m.metaDeclarada)}`;
   const pctEl = document.getElementById("goal-pct");
   if (pctEl) pctEl.textContent = Math.round(pct) + "%";
 
-  const heroBar = document.querySelector("#meta-hero .t-bar > i");
-  if (heroBar) heroBar.style.width = pct.toFixed(1) + "%";
-
-  const paraVivir = CAP_MIN - ahorroMensual;
+  const peor = AHORRO_MESES.reduce((a, k) => Math.min(a, byMonth[k].libreDespues), Infinity);
   const ro = document.getElementById("goal-readout");
   if (ro) {
     ro.innerHTML = [
       ["Meses de ahorro", `${AHORRO_MESES.length} · ${mLabel(AHORRO_MESES[0])} → ${mLabel(AHORRO_MESES.at(-1))}`],
-      [`Para la meta de ${money(m.metaDeclarada)}`, `${money(REQUERIDO)} al mes`],
-      [`Para los ${money(hi)} reales`, `${money(REQ_REAL)} al mes`],
-      ["Tu mes más apretado deja libre", money(CAP_MIN)],
-      ["Con este ahorro, para vivir",
-        `<span style="color:${paraVivir < 4000 ? css("--crit-ink") : css("--ink")}">${money(paraVivir)} al mes</span>`]
+      ["Capacidad máxima con este piso", money(PLAN_AHORRO.capacidad)],
+      ["Con este piso juntas", `<span style="color:${AHORRO_TOTAL >= m.metaDeclarada - 1 ? css("--good-ink") : css("--crit-ink")}">${money(AHORRO_TOTAL)}</span>`],
+      ["Mes más apretado te deja", money(peor)],
+      [`Para los ${money(hi)} reales`, PLAN_AHORRO.capacidad >= hi
+        ? "alcanza con este piso" : `faltan ${money(hi - PLAN_AHORRO.capacidad)}`]
     ].map(([k, v]) => `<div><span class="k">${k}</span><span class="v">${v}</span></div>`).join("");
   }
 
   const host = document.getElementById("meta-chart");
   if (host && host.offsetParent !== null) {
     lineChart(host, {
-      rows, height: 240, fmt: money, refValue: m.metaDeclarada,
+      rows: goalRows(), height: 240, fmt: money, refValue: m.metaDeclarada,
       refLabel: "Meta " + money(m.metaDeclarada), valueLabel: "Ahorro acumulado",
       aria: `Ahorro acumulado proyectado contra la meta de ${m.metaDeclarada} pesos.`
     });
@@ -1279,8 +1373,9 @@ function drawFlow() {
       return (r.prefondeado > 0
         ? `<div class="tt-row"><span class="lhs">Ya apartado antes</span><span class="val">−${money(r.prefondeado)}</span></div>`
         : "") +
+        (r.ahorro > 0 ? `<div class="tt-row"><span class="lhs">Ahorro meta</span><span class="val">−${money(r.ahorro)}</span></div>` : "") +
         `<div class="tt-row"><span class="lhs">Te queda</span><span class="val" style="color:${
-          r.libre < 3000 ? css("--crit-ink") : css("--good-ink")}">${money(r.libre)}</span></div>`;
+          r.libreDespues < PISO_ACTUAL - 1 ? css("--crit-ink") : css("--good-ink")}">${money(r.libreDespues)}</span></div>`;
     }
   });
   legend(document.getElementById("flow-legend"),
@@ -1301,7 +1396,9 @@ function renderFlowTable() {
       <tr><td>Ya apartado en un mes anterior</td>${
         MODEL.map(r => `<td>${r.prefondeado ? "−" + money2(r.prefondeado) : "—"}</td>`).join("")}</tr>
       <tr><td>Sale del ingreso del mes</td>${MODEL.map(r => `<td>${money2(r.deEsteIngreso)}</td>`).join("")}</tr>
-      <tr class="tot"><td>Gasto libre</td>${MODEL.map(r => `<td>${money2(r.libre)}</td>`).join("")}</tr>
+      <tr><td>Queda</td>${MODEL.map(r => `<td>${money2(r.libre)}</td>`).join("")}</tr>
+      <tr><td>Ahorro para la meta</td>${MODEL.map(r => `<td>${r.ahorro ? "−" + money2(r.ahorro) : "—"}</td>`).join("")}</tr>
+      <tr class="tot"><td>Gasto libre real</td>${MODEL.map(r => `<td>${money2(r.libreDespues)}</td>`).join("")}</tr>
     </tbody></table>`;
 }
 
@@ -1316,7 +1413,7 @@ function renderMonthList() {
       const nombre = mLabel(r.k, true);
       const segs = CATS.filter(c => r.c[c.id] > 0)
         .map(c => `<i style="background:${css(c.v)};flex:${r.c[c.id]}"></i>`).join("");
-      const apretado = r.libre < 3000;
+      const apretado = r.libreDespues < PISO_ACTUAL - 1;
       return `<div class="month" data-month="${r.k}">
         <button class="month-btn" type="button" aria-expanded="false">
           <span>
@@ -1324,10 +1421,12 @@ function renderMonthList() {
             <span class="m-sub">${money(r.total)} comprometidos</span>
           </span>
           <span class="m-free">
-            <span class="v" style="${apretado ? `color:${css("--crit-ink")}` : ""}">${money(r.libre)}</span>
-            <span class="k">${r.prefondeado > 0
-              ? `libre · incluye ${money(r.prefondeado)} apartados antes`
-              : "libre"}</span>
+            <span class="v" style="${r.libreDespues < PISO_ACTUAL - 1 ? `color:${css("--crit-ink")}` : ""}">${money(r.libreDespues)}</span>
+            <span class="k">${r.ahorro > 0
+              ? `libre · ya apartaste ${money(r.ahorro)} para la meta`
+              : r.prefondeado > 0
+                ? `libre · incluye ${money(r.prefondeado)} apartados antes`
+                : "libre"}</span>
           </span>
           <span class="m-caret">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
@@ -1352,8 +1451,12 @@ function renderMonthList() {
             `<div class="dl pref"><span class="k">Sale de tu ingreso de este mes</span>
              <span class="v">${money2(r.deEsteIngreso)}</span></div>` : ""}
           <div class="dl"><span class="k">Ingreso</span><span class="v">${money2(DATA.ingreso.mensual)}</span></div>
-          <div class="dl tot"><span class="k">Gasto libre</span>
-            <span class="v" style="${apretado ? `color:${css("--crit-ink")}` : ""}">${money2(r.libre)}</span></div>
+          <div class="dl tot"><span class="k">Queda</span><span class="v">${money2(r.libre)}</span></div>
+          ${r.ahorro > 0 ? `<div class="dl pref"><span class="k">− Ahorro para la meta
+            <span class="si-nota">a una cuenta aparte el día 30</span></span>
+            <span class="v">−${money2(r.ahorro)}</span></div>` : ""}
+          <div class="dl tot"><span class="k">Gasto libre real</span>
+            <span class="v" style="${apretado ? `color:${css("--crit-ink")}` : ""}">${money2(r.libreDespues)}</span></div>
         </div>
       </div>`;
     }).join("")}
@@ -1400,9 +1503,13 @@ function renderAcciones() {
       d:`Cada MSI que abras hoy se come el colchón de la meta. Tu carga baja sola: ${money(msiAhora)} en ${mLabel(MESES[0], true)} → ${money(msiLibre)} en ${mLabel(PRIMER_MES_LIBRE, true)}.`,
       chips:[["warn","regla permanente"]] },
 
-    { t:`Automatiza ${money(REQUERIDO)} el día 30 desde ${mLabel(m.inicioAhorro, true)}`,
-      d:`Es lo que exige la meta de ${money(m.metaDeclarada)} en ${AHORRO_MESES.length} meses. Tu mes más apretado de esa ventana deja ${money(CAP_MIN)} libres, así que cabe — siempre que el gasto de vida se quede debajo de ${money(CAP_MIN - REQUERIDO)}.`,
+    { t:`Aparta el ahorro el día 30, pero no el mismo monto cada mes`,
+      d:`Un ahorro parejo rompería tu piso de ${money(PISO_ACTUAL)}: noviembre carga el tercer pago a tu mamá y solo aguanta ${money(byMonth[AHORRO_MESES[0]].ahorro)}. El plan reparte lo que cada mes puede dar y llega a ${money(AHORRO_TOTAL)} sin bajar nunca del piso. Está mes por mes en la pantalla de Metas.`,
       chips:[["good","programable"], [null, `${AHORRO_MESES.length} transferencias`]] },
+
+    { t:`Habla con tu mamá para repartir los últimos dos pagos en tres`,
+      d:`Es la única palanca que sostiene el piso de ${money(PISO_ACTUAL)} en septiembre y octubre. Julio y agosto siguen igual; los ${money(21318)} que quedaban se pagan en tres de ${money(7106)} entre septiembre y noviembre. Sin esto, septiembre cae a ${money(6602)}.`,
+      chips:[["crit","antes del 30 de agosto"], [null, `libera ${money(3553)} en sep y oct`]] },
 
     { t:`Decide ya la meta real: ${money(m.metaDeclarada)} no alcanza`,
       d:`Amueblar completo sale entre ${money(m.estimadoRealista[0])} y ${money(hi)} porque el depto no trae ${m.noIncluye.join(" ni ")}. O subes el ahorro a ${money(REQ_REAL)} al mes, o recortas categorías al comprar. Decidirlo ahora es gratis.`,
@@ -1601,6 +1708,7 @@ function renderAll() {
   renderMetaHero();
   renderMetaSim();
   renderMetaChart();
+  renderMetaTabla();
   renderMetaPresupuesto();
 
   renderFlowCard();
