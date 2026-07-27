@@ -15,7 +15,7 @@ const DATA = {
   ingreso: { quincena: 17500, mensual: 35000, diasPago: [15, 30] },
 
   /* ── Efectivo disponible ── */
-  efectivo: { ahorro: 17580, asOf: "2026-07-26" },
+  efectivo: { ahorro: 14662.97, asOf: "2026-07-27" },
 
   /* ── Dinero de un mes que ya quedó apartado en un mes anterior ──
      No vuelve a consumir el ingreso del mes en que se paga: por eso se
@@ -132,12 +132,12 @@ const DATA = {
       corte:22, vence:11, proximoPago:{ fecha:"2026-08-11", monto:1788.35 },
       tono:"oro" },
     { id:"costco", alias:"Costco Banamex Visa", term:"104", emisor:"Banamex",
-      tipo:"revolvente", linea:50000, disponible:40399.19, saldo:2317.03, tasa:60.58,
-      corte:13, vence:3, proximoPago:{ fecha:"2026-08-03", monto:2317.03 },
+      tipo:"revolvente", linea:50000, disponible:42716.22, saldo:0, tasa:60.58,
+      corte:13, vence:3, proximoPago:{ fecha:"2026-09-03", monto:1155.58 },
       tono:"azul" },
     { id:"santander", alias:"Santander LikeU", term:"6240", emisor:"Santander",
-      tipo:"revolvente", linea:170400, disponible:169800, saldo:600.00, tasa:null,
-      corte:null, vence:3, proximoPago:{ fecha:"2026-08-03", monto:600.00 },
+      tipo:"revolvente", linea:170400, disponible:170400, saldo:0, tasa:null,
+      corte:null, vence:3, proximoPago:null,
       tono:"rojo" }
   ],
 
@@ -168,22 +168,24 @@ const DATA = {
   },
 
   /* ── Movimiento planeado del 30 de julio ── */
+  /* `total` NO se escribe a mano: se calcula sumando lo que sigue pendiente.
+     Lo que ya se pagó se marca con `pagado` para dejar el registro. */
   planJulio: {
-    fecha: "2026-07-30", total: 26827.90,
+    fecha: "2026-07-30",
     acciones: [
-      { concepto:"Pago 1 de 4 a mamá",             monto:10659.00, tipo:"salida" },
+      { concepto:"Pago 1 de 5 a mamá",             monto:10659.00, tipo:"salida" },
       { concepto:"Reserva Amex Gold Elite",        monto:10369.02, tipo:"reserva",
         nota:"se aparta hoy, la tarjeta lo cobra el 23 de agosto" },
-      { concepto:"Adelanto Costco Banamex",        monto:2317.03,  tipo:"salida" },
       { concepto:"Adelanto Amex Gold Servicios",   monto:2882.85,  tipo:"salida" },
-      { concepto:"Adelanto Santander LikeU",       monto:600.00,   tipo:"salida" }
+      { concepto:"Adelanto Costco Banamex",        monto:2317.03,  tipo:"salida", pagado:"2026-07-27" },
+      { concepto:"Adelanto Santander LikeU",       monto:600.00,   tipo:"salida", pagado:"2026-07-27" }
     ]
   },
 
   /* ── Calendario de vencimientos ── */
   fechasClave: [
-    { fecha:"2026-08-03", concepto:"Vence Santander LikeU",     monto:600.00,   tipo:"cubierto", nota:"cubierto por el adelanto del 30 jul" },
-    { fecha:"2026-08-03", concepto:"Vence Costco Banamex",      monto:2317.03,  tipo:"cubierto", nota:"cubierto por el adelanto del 30 jul" },
+    { fecha:"2026-08-03", concepto:"Vence Santander LikeU",     monto:600.00,   tipo:"pagado", nota:"liquidado el 27 de julio" },
+    { fecha:"2026-08-03", concepto:"Vence Costco Banamex",      monto:2317.03,  tipo:"pagado", nota:"liquidado el 27 de julio" },
     { fecha:"2026-08-11", concepto:"Vence Amex Gold Servicios", monto:1788.35,  tipo:"cubierto", nota:"cubierto por el adelanto de $2,882.85 del 30 jul" },
     { fecha:"2026-08-15", concepto:"1ª mensualidad auto BYD",   monto:6209.00,  tipo:"salida",   nota:"36 pagos, día 15 de cada mes" },
     { fecha:"2026-08-23", concepto:"Vence Amex Gold Elite",     monto:10369.02, tipo:"reservado",nota:"MSI junio 3/3 + MSI julio 2/3 + Alo Yoga 1/3 + consumo" },
