@@ -293,14 +293,19 @@ const TOTAL_INGRESO = sum(QUINCENAS.map(q => q.monto));
    resta lo que ya está comprometido. Si la próxima quincena ya está
    totalmente gastada (como la del 30 de julio, que se va en el plan), la
    ventana se extiende a la siguiente: ese dinero nunca fue tuyo. */
+/* Lo que falta por ejecutar del plan del 30: lo ya pagado sale de la suma
+   (el dinero ya salió de la cuenta y el efectivo ya lo refleja). */
+const PLAN_PENDIENTE = sum(DATA.planJulio.acciones.filter(a => !a.pagado).map(a => a.monto));
+const PLAN_PAGADO    = DATA.planJulio.acciones.filter(a => a.pagado);
+
 /* Salidas ya comprometidas en [desde, hasta]. `hasta` es inclusivo.
-   Lo marcado como cubierto o reservado no cuenta: ya está fondeado. */
+   Lo cubierto, reservado o ya pagado no cuenta: ya está fondeado. */
 function salidasEntre(desde, hasta) {
   const detalle = [];
   const dentro = f => f >= desde && f <= hasta;
   if (dentro(DATA.planJulio.fecha)) {
     detalle.push({ fecha: DATA.planJulio.fecha, concepto: "Movimiento del 30 de julio",
-                   monto: DATA.planJulio.total });
+                   monto: PLAN_PENDIENTE });
   }
   DATA.fechasClave.forEach(f => {
     if (f.tipo === "salida" && dentro(f.fecha)) {
@@ -393,13 +398,15 @@ function renderEfectivo() {
     <div class="row">
       <div class="row-ic">💵</div>
       <div class="row-main"><div class="row-t">Hoy en la cuenta</div>
-        <div class="row-d">antes del movimiento del 30 de julio</div></div>
+        <div class="row-d">${PLAN_PAGADO.length
+          ? `ya con ${PLAN_PAGADO.length} adelanto${PLAN_PAGADO.length === 1 ? "" : "s"} pagado${PLAN_PAGADO.length === 1 ? "" : "s"}`
+          : "antes del movimiento del 30 de julio"}</div></div>
       <div class="row-amt">${money2(DATA.efectivo.ahorro)}</div>
     </div>
     <div class="row">
       <div class="row-ic">📤</div>
       <div class="row-main"><div class="row-t">Sale el 30 de julio</div>
-        <div class="row-d">mamá + 3 adelantos + la reserva de la Amex</div></div>
+        <div class="row-d">${DATA.planJulio.acciones.filter(a => !a.pagado).map(a => a.concepto.replace(/^(Pago|Adelanto|Reserva) /, "")).join(" + ")}</div></div>
       <div class="row-amt">−${money2(PERIODO.sale)}</div>
     </div>
     <div class="row">
@@ -492,8 +499,9 @@ function renderTip() {
 function eventosCalendario() {
   const items = [];
   DATA.planJulio.acciones.forEach(a => items.push({
-    fecha: DATA.planJulio.fecha, concepto: a.concepto, monto: a.monto, tipo: a.tipo,
-    nota: a.nota || "movimiento del 30 de julio"
+    fecha: a.pagado || DATA.planJulio.fecha, concepto: a.concepto, monto: a.monto,
+    tipo: a.pagado ? "pagado" : a.tipo,
+    nota: a.pagado ? "ya salió de tu cuenta" : (a.nota || "movimiento del 30 de julio")
   }));
   DATA.fechasClave.forEach(f => items.push({ ...f }));
   return items.sort((a, b) => (a.fecha < b.fecha ? -1 : a.fecha > b.fecha ? 1 : 0));
@@ -502,7 +510,8 @@ function eventosCalendario() {
 const TIPO_PILL = {
   reserva:   { txt:"apartar",      cls:"warn" },
   reservado: { txt:"ya reservado", cls:"good" },
-  cubierto:  { txt:"cubierto",     cls:"good" }
+  cubierto:  { txt:"cubierto",     cls:"good" },
+  pagado:    { txt:"pagado",       cls:"good" }
 };
 
 function renderProximos(hostId, limite) {
@@ -939,7 +948,7 @@ function renderCardFaces() {
   host.innerHTML = DATA.tarjetas.map(t => {
     const usado = (t.linea != null && t.disponible != null) ? t.linea - t.disponible : null;
     const pct = usado != null ? (usado / t.linea) * 100 : null;
-    const dias = daysBetween(hoyISO, t.proximoPago.fecha);
+    const dias = t.proximoPago ? daysBetween(hoyISO, t.proximoPago.fecha) : null;
     return `<div class="card-face ${t.tono}">
       <div class="cf-top">
         <div><div class="cf-name">${t.alias}</div><div class="cf-em">${t.emisor}</div></div>
@@ -958,8 +967,10 @@ function renderCardFaces() {
            </div>`
         : `<div class="cf-foot"><span>Tarjeta de cargo · se liquida completa</span><span>sin línea</span></div>`}
       <div class="cf-foot">
-        <span>Vence ${dLabel(t.proximoPago.fecha)}${dias >= 0 ? ` · en ${dias} d` : ""}</span>
-        <span>${money2(t.proximoPago.monto)}</span>
+        ${t.proximoPago
+          ? `<span>Vence ${dLabel(t.proximoPago.fecha)}${dias >= 0 ? ` · en ${dias} d` : ""}</span>
+             <span>${money2(t.proximoPago.monto)}</span>`
+          : `<span>Sin saldo por pagar</span><span>al corriente</span>`}
       </div>
     </div>`;
   }).join("");
@@ -967,8 +978,9 @@ function renderCardFaces() {
 
 function renderPagosTarjetas() {
   const host = document.getElementById("pagos-tarjetas");
-  const pagos = DATA.tarjetas.map(t => ({ t, p: t.proximoPago }))
+  const pagos = DATA.tarjetas.filter(t => t.proximoPago).map(t => ({ t, p: t.proximoPago }))
     .sort((a, b) => (a.p.fecha < b.p.fecha ? -1 : 1));
+  const alCorriente = DATA.tarjetas.filter(t => !t.proximoPago);
   const total = sum(pagos.map(x => x.p.monto));
 
   host.innerHTML = `
@@ -989,7 +1001,13 @@ function renderPagosTarjetas() {
         <div class="row-amt">${money2(p.monto)}
           <span class="sub">${dLabel(p.fecha)}${dias >= 0 ? ` · ${dias} d` : ""}</span></div>
       </div>`;
-    }).join("")}`;
+    }).join("")}
+    ${alCorriente.map(t => `<div class="row">
+      <div class="row-ic" style="background:var(--tint-3-bg);color:var(--tint-3-ink)">✓</div>
+      <div class="row-main"><div class="row-t">${t.alias} ·••• ${t.term}</div>
+        <div class="row-d">sin saldo por pagar</div></div>
+      <div class="row-amt soft">$0.00</div>
+    </div>`).join("")}`;
 }
 
 function renderMsiList() {
@@ -1525,8 +1543,8 @@ function renderAcciones() {
   const ultimoMes = MESES.at(-1);
 
   const items = [
-    { t:`Ejecuta el movimiento del ${dLabelLong(DATA.planJulio.fecha)}: ${money2(DATA.planJulio.total)}`,
-      d:`Cuatro adelantos y una reserva. Deja tus cuatro tarjetas cubiertas y aparta los ${money2(10369.02)} que la Amex Gold Elite cobra el 23 de agosto.`,
+    { t:`Ejecuta lo que falta del ${dLabelLong(DATA.planJulio.fecha)}: ${money2(PLAN_PENDIENTE)}`,
+      d:`${PLAN_PAGADO.length ? `Ya liquidaste ${PLAN_PAGADO.map(a => a.concepto.replace("Adelanto ", "")).join(" y ")}. Falta` : "Falta"} ${DATA.planJulio.acciones.filter(a => !a.pagado).map(a => a.concepto.toLowerCase()).join(", ")}. La reserva de la Amex se aparta, no se gasta: la tarjeta la cobra el 23 de agosto.`,
       chips:[["crit", dias > 0 ? `en ${dias} días` : "hoy"], [null, "impacto alto"]] },
 
     { t:`${mLabel(peor.k, true).replace(/^./, c => c.toUpperCase())} no tiene colchón: ${money(peor.libre)} libres`,
