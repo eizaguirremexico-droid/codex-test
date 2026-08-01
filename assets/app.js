@@ -377,8 +377,11 @@ function cargosDelCorte(c, k, f) {
   if (subs.length) items.push({ t: "Suscripciones", m: sum(subs.map(s => s.monto)),
                                 n: subs.map(s => s.servicio).join(" + ") });
   /* consumo suelto ya conocido de un ciclo concreto, leído de la app del banco */
+  /* `firme`: este consumo es posterior a haber dejado la tarjeta en cero, así
+     que un pago previo del ciclo no lo cubre. */
   if (c.consumoCiclo && c.consumoCiclo.corte === f)
-    items.push({ t: "Consumo del ciclo", m: c.consumoCiclo.monto, n: c.consumoCiclo.detalle });
+    items.push({ t: "Consumo del ciclo", m: c.consumoCiclo.monto,
+                 n: c.consumoCiclo.detalle, firme: true });
   return items;
 }
 
@@ -393,9 +396,12 @@ function cortesDelDia(f) {
     if (!items.length) return null;
     /* el ciclo va del corte anterior a este, no del mes calendario */
     const corteAnterior = `${mAdd(k, -1)}-${String(c.corte).padStart(2, "0")}`;
-    const limpio = FL.pagos.some(p => p.preCorte && p.tarjeta === c.id &&
-                                      p.fecha > corteAnterior && p.fecha < f);
-    items.forEach(i => { i.cubierto = limpio && !i.msi; });
+    const dentro = x => x > corteAnterior && x < f;
+    /* el consumo del ciclo queda saldado si se dejó la tarjeta en cero dentro
+       del ciclo, ya sea por un pago del flujo o porque ya se hizo de hecho */
+    const limpio = (c.enCeroHasta && dentro(c.enCeroHasta))
+      || FL.pagos.some(p => p.preCorte && p.tarjeta === c.id && dentro(p.fecha));
+    items.forEach(i => { i.cubierto = limpio && !i.msi && !i.firme; });
     const queda = sum(items.filter(i => !i.cubierto).map(i => i.m));
     /* si vence antes que el corte, el pago cae el mes siguiente */
     const mesPago = c.vence > c.corte ? k : mAdd(k, 1);
