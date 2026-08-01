@@ -66,11 +66,13 @@ const DATA = {
       { nombre: "A", dias: [1, 2, 5] },   // lunes, martes, viernes
       { nombre: "B", dias: [2, 3, 4] }    // martes, miércoles, jueves
     ],
-    /* El viaje cuesta 156 pero la recarga mínima es 200 + 10 de comisión.
-       El saldo NO se pierde: se acumula. Por eso el costo real depende de
-       cada cuánto recargas, no de cuántos días vas. */
+    /* El viaje cuesta 156 y la comisión es de 10 pesos por recarga, sin
+       importar el monto. El saldo NO se pierde: se acumula. Por eso el
+       costo real depende de cada cuánto recargas, no de cuántos días vas.
+       Recargando 2,000 la comisión sale en 0.5% en vez del 5% que costaba
+       recargar de 200 en 200. */
     costoCaseta: 156,
-    montoRecarga: 200,
+    montoRecarga: 2000,
     comision: 10,
     saldoInicial: 0,
     /* "cada-dia"  = recargas por reflejo cada día de oficina
@@ -215,16 +217,16 @@ const DATA = {
     colchonMinimo: 2000,
     pagos: [
       { fecha:"2026-08-01", concepto:"Pago 1 de 5 a mamá",            monto:10659.00, cat:"mama" },
-      { fecha:"2026-08-03", concepto:"Liquidar Costco Banamex",        monto:3461.26,  cat:"tarjeta" },
-      { fecha:"2026-08-12", concepto:"Dejar Costco en cero (antes del corte)", monto:2145.00, cat:"tarjeta", estimado:true },
-      { fecha:"2026-08-23", concepto:"Amex Gold Elite",                monto:10793.74, cat:"tarjeta", estimado:true,
+      { fecha:"2026-08-03", concepto:"Liquidar Costco Banamex",        monto:3461.26,  cat:"tarjeta", tarjeta:"costco" },
+      { fecha:"2026-08-12", concepto:"Dejar Costco en cero (antes del corte)", monto:2145.00, cat:"tarjeta", estimado:true, tarjeta:"costco", preCorte:true },
+      { fecha:"2026-08-23", concepto:"Amex Gold Elite",                monto:10793.74, cat:"tarjeta", estimado:true, tarjeta:"elite",
         nota:"MSI junio 3/3 + MSI julio 2/3 + Alo Yoga 1/3 + consumo" },
       { fecha:"2026-08-30", concepto:"Pago 2 de 5 a mamá",             monto:10659.00, cat:"mama" },
-      { fecha:"2026-09-03", concepto:"Costco Banamex (solo MSI)",      monto:1155.58,  cat:"tarjeta" },
-      { fecha:"2026-09-11", concepto:"Amex Gold Servicios",            monto:1788.35,  cat:"tarjeta",
+      { fecha:"2026-09-03", concepto:"Costco Banamex (solo MSI)",      monto:1155.58,  cat:"tarjeta", tarjeta:"costco" },
+      { fecha:"2026-09-11", concepto:"Amex Gold Servicios",            monto:1788.35,  cat:"tarjeta", tarjeta:"servicios",
         nota:"gym del 23 de julio + Amazon MSI" },
       { fecha:"2026-09-15", concepto:"Mensualidad auto BYD",           monto:6209.00,  cat:"auto" },
-      { fecha:"2026-09-23", concepto:"Amex Gold Elite",                monto:3726.39,  cat:"tarjeta", estimado:true,
+      { fecha:"2026-09-23", concepto:"Amex Gold Elite",                monto:3726.39,  cat:"tarjeta", estimado:true, tarjeta:"elite",
         nota:"MSI julio 3/3 + Alo Yoga 2/3 + suscripciones" },
       { fecha:"2026-09-30", concepto:"Pago 3 de 5 a mamá",             monto:7106.00,  cat:"mama",
         nota:"ya con el reparto que hay que negociar" }

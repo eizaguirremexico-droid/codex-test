@@ -354,6 +354,48 @@ function progresoFechas(fechas) {
    ══════════════════════════════════════════════════════════════════════ */
 const FL = DATA.flujo;
 
+/* ─── cargos que se GENERAN (no salen de la cuenta ese día) ───
+   Un gasto fijo o una parcialidad de MSI no mueve tu saldo el día que
+   ocurre: se acumula en la tarjeta y queda fijado el día del corte. Ese
+   corte sí es una fecha, y es la que faltaba en el mapa. Va como evento
+   de monto cero: informa, pero no toca el saldo. */
+const mismaTarjeta = (alias, ref) => alias.startsWith(ref) || ref.startsWith(alias);
+
+function cargosDelCorte(c, k) {
+  const items = [];
+  msiEnMes(k).filter(s => mismaTarjeta(c.alias, s.tarjeta)).forEach(s =>
+    items.push({ t: `MSI · ${s.label}`, m: s.monto, msi: true }));
+  DATA.vidaFija.filter(v => v.via === c.id).forEach(v =>
+    items.push({ t: v.concepto, m: v.monto, n: v.detalle }));
+  const subs = DATA.suscripciones.filter(s => mismaTarjeta(c.alias, s.tarjeta));
+  if (subs.length) items.push({ t: "Suscripciones", m: sum(subs.map(s => s.monto)),
+                                n: subs.map(s => s.servicio).join(" + ") });
+  return items;
+}
+
+/* Si antes del corte hay un pago marcado `preCorte` a esa tarjeta, el
+   consumo del ciclo ya quedó en cero y solo los MSI llegan al estado de
+   cuenta. Eso es justo por lo que el pago del 3 de septiembre es de
+   $1,155.58 y no de $3,355.58. */
+function cortesDelDia(f) {
+  const dia = dParse(f).getDate(), k = f.slice(0, 7);
+  return DATA.tarjetas.filter(c => c.corte === dia).map(c => {
+    const items = cargosDelCorte(c, k);
+    if (!items.length) return null;
+    /* el ciclo va del corte anterior a este, no del mes calendario */
+    const corteAnterior = `${mAdd(k, -1)}-${String(c.corte).padStart(2, "0")}`;
+    const limpio = FL.pagos.some(p => p.preCorte && p.tarjeta === c.id &&
+                                      p.fecha > corteAnterior && p.fecha < f);
+    items.forEach(i => { i.cubierto = limpio && !i.msi; });
+    const queda = sum(items.filter(i => !i.cubierto).map(i => i.m));
+    /* si vence antes que el corte, el pago cae el mes siguiente */
+    const mesPago = c.vence > c.corte ? k : mAdd(k, 1);
+    return { concepto: `Corte ${c.alias}`, monto: 0, cat: "corte",
+             cargo: queda, items,
+             nota: `no sale dinero hoy · esto lo pagas el ${c.vence} de ${mLabel(mesPago, true)}` };
+  }).filter(Boolean);
+}
+
 function construirFlujo() {
   /* recargas de tag con el saldo arrastrado desde el ancla */
   const recargas = {};
@@ -377,6 +419,7 @@ function construirFlujo() {
       eventos.push({ concepto: p.concepto, monto: -p.monto, cat: p.cat,
                      estimado: p.estimado, nota: p.nota }));
     if (recargas[f]) eventos.push({ concepto: "Recarga de tag", monto: -recargas[f], cat: "tag" });
+    cortesDelDia(f).forEach(e => eventos.push(e));
 
     const entra = sum(eventos.filter(e => e.monto > 0).map(e => e.monto));
     const sale  = -sum(eventos.filter(e => e.monto < 0).map(e => e.monto));
@@ -784,8 +827,8 @@ const ESTRATEGIAS = [
     desc:"Por reflejo, aunque me sobre saldo" },
   { id:"cuando-falta", monto:200,  titulo:"Recargo solo cuando no alcanza",
     desc:"Dejo que el saldo se acumule" },
-  { id:"cuando-falta", monto:1000, titulo:"Recargo $1,000 cuando no alcanza",
-    desc:"Si la app te deja pasar del mínimo" }
+  { id:"cuando-falta", monto:2000, titulo:"Recargo $2,000 cuando no alcanza",
+    desc:"Una sola recarga cubre casi 13 viajes" }
 ];
 
 /* ══════════════════════════════════════════════════════════════════════
@@ -907,7 +950,7 @@ function drawFlujo() {
     })),
     height: 190, fmt: money, colorEntra: "--s1", colorSale: "--s2", porBarra: 4,
     aria: "Entradas y salidas por día.",
-    tip: r => r.eventos.map(e =>
+    tip: r => r.eventos.filter(e => e.monto !== 0).map(e =>
         `<div class="tt-row"><span class="lhs">${CAT_ICONO[e.cat] || "·"} ${e.concepto}</span>` +
         `<span class="val">${money(Math.abs(e.monto))}</span></div>`).join("") +
       `<div class="tt-row tt-total"><span>Saldo</span><span class="val">${money(r.saldo)}</span></div>`
@@ -985,7 +1028,7 @@ function renderFlujoCalendario() {
   const host = document.getElementById("flujo-cal");
   let html = `<div class="card-head" style="padding-top:12px">
       <div><div class="card-title">Día por día</div>
-        <div class="card-sub">Solo movimientos reales. Tu gasto no va aquí: es bolsa del mes.</div></div>
+        <div class="card-sub">Lo que se mueve y lo que se genera. Tu gasto no va aquí: es bolsa del mes.</div></div>
     </div>`;
   let mes = "";
   FLUJO.filter(d => d.eventos.length).forEach(d => {
@@ -996,7 +1039,15 @@ function renderFlujoCalendario() {
     html += `<div class="fl-dia${d.hoy ? " hoy" : ""}">
       <div class="fl-fecha"><b>${dParse(d.fecha).getDate()}</b><span>${DOW_CHIP[(dParse(d.fecha).getDay() + 6) % 7]}</span></div>
       <div class="fl-eventos">
-        ${d.eventos.map(e => `<div class="fl-ev">
+        ${d.eventos.map(e => e.cat === "corte" ? `<div class="fl-corte">
+          <div class="fl-ev">
+            <span class="fl-ic">📄</span>
+            <span class="fl-co">${e.concepto}<span class="si-nota">${e.nota}</span></span>
+            <span class="fl-mo cargo">${money2(e.cargo)}<span class="fl-mo-sub">se genera</span></span>
+          </div>
+          <div class="fl-items">${e.items.map(i => `<div class="fl-it${i.cubierto ? " tachado" : ""}">
+            <span>${i.t}${i.n ? `<i>${i.n}</i>` : ""}</span><b>${money2(i.m)}</b></div>`).join("")}</div>
+        </div>` : `<div class="fl-ev">
           <span class="fl-ic">${CAT_ICONO[e.cat] || "·"}</span>
           <span class="fl-co">${e.concepto}${e.estimado ? ` <span class="chip warn" style="padding:1px 7px">estimado</span>` : ""}
             ${e.nota ? `<span class="si-nota">${e.nota}</span>` : ""}</span>
