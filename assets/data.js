@@ -23,7 +23,14 @@ const DATA = {
   prefondeo: [
     { mes: "2026-08", monto: 6209,
       concepto: "Mensualidad del auto",
-      nota: "pagada por adelantado el 30 de julio con dinero de julio" }
+      nota: "pagada por adelantado el 30 de julio con dinero de julio" },
+    /* Los pagos a mamá van el 30 de cada mes. El del 1 de agosto no es de
+       agosto: es el de julio, que se recorrió unos días. Sale del efectivo
+       que ya traías del 31 de julio, no del sueldo de agosto — por eso no
+       cuenta como compromiso de agosto, igual que el auto. */
+    { mes: "2026-08", monto: 10659,
+      concepto: "Pago a mamá de julio",
+      nota: "se recorrió al 1 de agosto, pero sale del dinero de julio" }
   ],
 
   /* ── Crédito a mamá ──
