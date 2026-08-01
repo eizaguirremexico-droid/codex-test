@@ -15,7 +15,7 @@ const DATA = {
   ingreso: { quincena: 17500, mensual: 35000, diasPago: [15, 30] },
 
   /* ── Efectivo disponible ── */
-  efectivo: { ahorro: 22349, asOf: "2026-07-31" },
+  efectivo: { ahorro: 8228.74, asOf: "2026-08-01" },
 
   /* ── Dinero de un mes que ya quedó apartado en un mes anterior ──
      No vuelve a consumir el ingreso del mes en que se paga: por eso se
@@ -152,10 +152,15 @@ const DATA = {
       puntos:4281,
       tono:"oro" },
     { id:"costco", alias:"Costco Banamex Visa", term:"104", emisor:"Banamex",
-      tipo:"revolvente", linea:50000, disponible:41196.22, saldo:3461.26, tasa:60.58,
-      /* El 3 de agosto no vence nada (mínimo $0). El saldo de $3,461.26 es
-         consumo posterior al corte del 13 de julio: cierra el 13 de agosto. */
+      tipo:"revolvente", linea:50000, disponible:44657.48, saldo:0, tasa:60.58,
+      /* Liquidada el 1 de agosto: saldo en cero y crédito disponible de $44,657.48
+         (lo que falta para los $50,000 es el capital vivo de los MSI).
+         `enCeroHasta` = hasta esa fecha el consumo del ciclo ya está pagado, así
+         que al corte del 13 solo llega la gasolina posterior. */
       corte:13, vence:3, proximoPago:{ fecha:"2026-09-03", monto:1997.11, estimado:true },
+      enCeroHasta:"2026-08-01",
+      consumoCiclo:{ corte:"2026-08-13", monto:841.53,
+        detalle:"gasolina del 1 al 12 de agosto · 5 idas a $168.31" },
       tono:"azul" },
     { id:"santander", alias:"Santander LikeU", term:"6240", emisor:"Santander",
       tipo:"revolvente", linea:170400, disponible:169520, saldo:880.00, tasa:null,
@@ -239,14 +244,9 @@ const DATA = {
        plan: sale del efectivo que ya traías, y por eso hay que restarlo del
        colchón para saber cuánto de ese colchón es de verdad tuyo. */
     pagos: [
-      { fecha:"2026-08-01", concepto:"Pago 1 de 5 a mamá",            monto:10659.00, cat:"mama", previo:10659.00 },
-      /* El 3 de agosto no vencía nada (mínimo $0): los $3,461.26 eran consumo
-         posterior al corte del 13 de julio. Se pagan el 1 de agosto por
-         decisión propia — adelantado, para no arriesgarse a olvidarlo antes
-         del corte del 13. Queda pendiente la gasolina del 1 al 12 ($841.53,
-         5 idas a $168.31), que sí alcanza ese corte y se paga el 3 de sep. */
-      { fecha:"2026-08-01", concepto:"Liquidar Costco Banamex",        monto:3461.26,  cat:"tarjeta", tarjeta:"costco", preCorte:true, previo:3461.26,
-        nota:"adelantado: no vencía hasta el 3 de septiembre" },
+      /* El 1 de agosto se pagaron el crédito de julio a mamá ($10,659) y el saldo
+         de la Costco ($3,461.26). Ya no aparecen aquí: el efectivo de arriba es
+         posterior a los dos. La Costco quedó en CERO ese día. */
       { fecha:"2026-08-23", concepto:"Amex Gold Elite",                monto:10793.74, cat:"tarjeta", estimado:true, tarjeta:"elite", previo:1120.07,
         nota:"MSI junio 3/3 + MSI julio 2/3 + Alo Yoga 1/3 + consumo" },
       { fecha:"2026-08-30", concepto:"Pago 2 de 5 a mamá",             monto:10659.00, cat:"mama" },
