@@ -175,6 +175,15 @@ button { font: inherit; }
   display: inline-flex; align-items: center; gap: 6px;
 }
 .h-chip .k { color: var(--hero-ink-2); }
+/* selector de mes dentro del hero */
+.hero .h-tabs { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+.h-tab {
+  background: none; border: 1px solid var(--hero-inset); color: var(--hero-ink-2);
+  border-radius: 999px; padding: 6px 13px; font: inherit; font-size: 12.5px;
+  cursor: pointer; text-transform: capitalize; transition: background .15s ease, color .15s ease;
+}
+.h-tab:hover { color: var(--hero-ink); }
+.h-tab.on { background: var(--hero-ink); border-color: var(--hero-ink); color: #1a1a20; font-weight: 600; }
 .hero .h-foot {
   margin-top: 16px; padding-top: 14px; font-size: 12.5px; color: var(--hero-ink-2);
   border-top: 1px solid var(--hero-inset);
