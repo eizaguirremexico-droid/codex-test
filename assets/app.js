@@ -346,6 +346,56 @@ function progresoFechas(fechas) {
   return { hechos, total: fechas.length, siguiente };
 }
 
+/* ══════════════════════════════════════════════════════════════════════
+   FLUJO DIARIO DE CAJA
+   Día por día: qué entra, qué sale y con cuánto te quedas. Es la única
+   vista que ve el problema de TIEMPOS — los pagos se amontonan antes de
+   cada quincena del 15, así que el promedio mensual miente.
+   ══════════════════════════════════════════════════════════════════════ */
+const FL = DATA.flujo;
+
+const presupuestoDia = f => {
+  const t = FL.presupuesto.find(p => f >= p.desde && f <= p.hasta);
+  return t ? t.porDia : 0;
+};
+
+function construirFlujo() {
+  /* recargas de tag con el saldo arrastrado desde el ancla */
+  const recargas = {};
+  let saldoTag = OFI.saldoInicial;
+  for (let f = OFI.ancla; f <= FL.hasta; f = dAdd(f, 1)) {
+    if (!esDiaOficina(f)) continue;
+    if (saldoTag < OFI.costoCaseta) {
+      saldoTag += OFI.montoRecarga;
+      recargas[f] = (recargas[f] || 0) + OFI.montoRecarga + OFI.comision;
+    }
+    saldoTag -= OFI.costoCaseta;
+  }
+
+  const dias = [];
+  let saldo = DATA.efectivo.ahorro;
+  for (let f = FL.desde; f <= FL.hasta; f = dAdd(f, 1)) {
+    const eventos = [];
+    QUINCENAS.filter(q => q.iso === f).forEach(q =>
+      eventos.push({ concepto: "Quincena", monto: q.monto, cat: "ingreso" }));
+    FL.pagos.filter(p => p.fecha === f).forEach(p =>
+      eventos.push({ concepto: p.concepto, monto: -p.monto, cat: p.cat,
+                     estimado: p.estimado, nota: p.nota }));
+    if (recargas[f]) eventos.push({ concepto: "Recarga de tag", monto: -recargas[f], cat: "tag" });
+
+    const gasto = presupuestoDia(f);
+    const entra = sum(eventos.filter(e => e.monto > 0).map(e => e.monto));
+    const sale  = -sum(eventos.filter(e => e.monto < 0).map(e => e.monto));
+    saldo += entra - sale - gasto;
+    dias.push({ fecha: f, eventos, entra, sale, gasto, saldo,
+                oficina: esDiaOficina(f), hoy: f === hoyISO });
+  }
+  return dias;
+}
+
+let FLUJO = construirFlujo();
+const flujoMin = () => FLUJO.reduce((a, b) => (b.saldo < a.saldo ? b : a));
+
 /* pagos del auto: 36 mensualidades desde primerPagoFecha */
 const AUTO_FECHAS = Array.from({ length: DATA.auto.plazo }, (_, i) => {
   const k = mAdd(DATA.auto.primerPago, i);
@@ -676,6 +726,135 @@ function renderQuincenaResumen() {
           en meses que no llegan al 30 (${recortadas.map(q => dLabel(q.iso)).join(", ")}).` : ""}
       </div>
     </div>`;
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   RENDER — Flujo diario
+   ══════════════════════════════════════════════════════════════════════ */
+
+const CAT_ICONO = { ingreso:"💵", mama:"❤️", tarjeta:"💳", auto:"🚗", tag:"🛣️" };
+
+function renderFlujoHero() {
+  const bajo = flujoMin(), fin = FLUJO.at(-1);
+  const hoy = FLUJO.find(d => d.fecha >= hoyISO) || FLUJO[0];
+  const riesgo = bajo.saldo < FL.colchonMinimo;
+  document.getElementById("flujo-hero").innerHTML = `
+    <div class="h-label">Tu saldo hoy</div>
+    <div class="h-value">${moneyRich(DATA.efectivo.ahorro)}</div>
+    <div class="h-chips">
+      <span class="h-chip"><span class="k">punto más bajo</span> <b>${money(bajo.saldo)}</b></span>
+      <span class="h-chip"><span class="k">el</span> <b>${dLabel(bajo.fecha)}</b></span>
+      <span class="h-chip"><span class="k">al 30 sep</span> <b>${money(fin.saldo)}</b></span>
+    </div>
+    <div class="h-foot">
+      ${riesgo
+        ? `Ojo: el ${dLabelLong(bajo.fecha)} bajas a ${money(bajo.saldo)}, por debajo de tu colchón de ${money(FL.colchonMinimo)}.`
+        : `Siguiendo el presupuesto por tramos nunca bajas de ${money(FL.colchonMinimo)}. El día crítico es el ${dLabelLong(bajo.fecha)}.`}
+    </div>`;
+}
+
+function renderFlujoCharts() {
+  document.getElementById("flujo-saldo").innerHTML = `
+    <div class="card-head">
+      <div><div class="card-title">Tu saldo, día por día</div>
+        <div class="card-sub">Ya con el gasto diario del presupuesto descontado</div></div>
+    </div>
+    <div class="chart-scroll"><div id="flujo-saldo-chart"></div></div>`;
+  document.getElementById("flujo-mov").innerHTML = `
+    <div class="card-head">
+      <div><div class="card-title">Lo que entra y lo que sale</div>
+        <div class="card-sub">Arriba del cero entra, abajo sale</div></div>
+    </div>
+    <div class="chart-scroll"><div id="flujo-mov-chart"></div></div>
+    <div class="legend" id="flujo-mov-legend"></div>`;
+  drawFlujo();
+}
+
+function drawFlujo() {
+  const hs = document.getElementById("flujo-saldo-chart");
+  const hm = document.getElementById("flujo-mov-chart");
+  if (!hs || !hm) return;
+
+  const rows = FLUJO.map(d => ({
+    key: d.fecha, label: dLabel(d.fecha), tipLabel: dLabelLong(d.fecha),
+    value: Math.max(0, d.saldo),
+    extra: `<div class="tt-row"><span class="lhs">Entra</span><span class="val">${money(d.entra)}</span></div>` +
+           `<div class="tt-row"><span class="lhs">Sale</span><span class="val">${money(d.sale)}</span></div>` +
+           `<div class="tt-row"><span class="lhs">Gasto del día</span><span class="val">${money(d.gasto)}</span></div>`
+  }));
+  lineChart(hs, { rows, height: 220, fmt: money, porPunto: 4,
+    refValue: FL.colchonMinimo, refLabel: "Colchón " + money(FL.colchonMinimo),
+    valueLabel: "Saldo", aria: "Saldo diario proyectado del 1 de agosto al 30 de septiembre." });
+
+  divergingBars(hm, {
+    rows: FLUJO.map(d => ({
+      entra: d.entra, sale: d.sale + d.gasto, hoy: d.hoy,
+      tipLabel: dLabelLong(d.fecha),
+      etiqueta: d.fecha.endsWith("-01") || d.fecha.endsWith("-15") ? dLabel(d.fecha) : null,
+      eventos: d.eventos, gasto: d.gasto, saldo: d.saldo
+    })),
+    height: 190, fmt: money, colorEntra: "--s1", colorSale: "--s2", porBarra: 4,
+    aria: "Entradas y salidas por día.",
+    tip: r => r.eventos.map(e =>
+        `<div class="tt-row"><span class="lhs">${CAT_ICONO[e.cat] || "·"} ${e.concepto}</span>` +
+        `<span class="val">${money(Math.abs(e.monto))}</span></div>`).join("") +
+      `<div class="tt-row"><span class="lhs">Gasto del día</span><span class="val">${money(r.gasto)}</span></div>` +
+      `<div class="tt-row tt-total"><span>Saldo al cierre</span><span class="val">${money(r.saldo)}</span></div>`
+  });
+  legend(document.getElementById("flujo-mov-legend"), [
+    { label:"Entra", color:css("--s1") }, { label:"Sale", color:css("--s2") }]);
+}
+
+function renderFlujoPresupuesto() {
+  document.getElementById("flujo-presupuesto").innerHTML = `
+    <div class="card-head">
+      <div><div class="card-title">Cuánto gastar en cada tramo</div>
+        <div class="card-sub">No es parejo: los pagos se amontonan antes de cada quincena del 15</div></div>
+    </div>
+    ${FL.presupuesto.map(t => {
+      const dias = daysBetween(t.desde, t.hasta) + 1;
+      return `<div class="row">
+        <div class="row-ic">${dias}d</div>
+        <div class="row-main">
+          <div class="row-t">${dLabel(t.desde)} → ${dLabel(t.hasta)}</div>
+          <div class="row-d">${t.nota}</div>
+        </div>
+        <div class="row-amt">${money(t.porDia)}<span class="sub">${money(t.porDia * dias)} en total</span></div>
+      </div>`;
+    }).join("")}`;
+}
+
+function renderFlujoCalendario() {
+  const host = document.getElementById("flujo-cal");
+  let html = `<div class="card-head" style="padding-top:12px">
+      <div><div class="card-title">Día por día</div>
+        <div class="card-sub">Solo se listan los días con movimiento</div></div>
+    </div>`;
+  let mes = "";
+  FLUJO.filter(d => d.eventos.length).forEach(d => {
+    if (d.fecha.slice(0, 7) !== mes) {
+      mes = d.fecha.slice(0, 7);
+      html += `<div class="day-sep">${mLabel(mes, true)}</div>`;
+    }
+    const bajo = d.saldo < FL.colchonMinimo;
+    html += `<div class="fl-dia${d.hoy ? " hoy" : ""}">
+      <div class="fl-fecha"><b>${dParse(d.fecha).getDate()}</b><span>${DOW_CHIP[(dParse(d.fecha).getDay() + 6) % 7]}</span></div>
+      <div class="fl-eventos">
+        ${d.eventos.map(e => `<div class="fl-ev">
+          <span class="fl-ic">${CAT_ICONO[e.cat] || "·"}</span>
+          <span class="fl-co">${e.concepto}${e.estimado ? ` <span class="chip warn" style="padding:1px 7px">estimado</span>` : ""}
+            ${e.nota ? `<span class="si-nota">${e.nota}</span>` : ""}</span>
+          <span class="fl-mo ${e.monto > 0 ? "in" : "out"}">${e.monto > 0 ? "+" : "−"}${money2(Math.abs(e.monto))}</span>
+        </div>`).join("")}
+        <div class="fl-ev fl-cierre">
+          <span class="fl-ic"></span>
+          <span class="fl-co">Saldo al cierre${d.gasto ? ` · tras ${money(d.gasto)} de gasto` : ""}</span>
+          <span class="fl-mo${bajo ? " bajo" : ""}">${money2(d.saldo)}</span>
+        </div>
+      </div>
+    </div>`;
+  });
+  host.innerHTML = html + `<div style="height:8px"></div>`;
 }
 
 /* ══════════════════════════════════════════════════════════════════════
@@ -1626,6 +1805,7 @@ function renderNotas() {
 
 const IC = {
   inicio:    `<path d="M3 10.5 12 3l9 7.5"/><path d="M5.5 9.5V21h13V9.5"/>`,
+  flujo:     `<path d="M3 17.5 8.5 11l4 3.5L21 5"/><path d="M21 10V5h-5"/><path d="M3 21h18"/>`,
   quincenas: `<rect x="2.5" y="6" width="19" height="12" rx="2.5"/><circle cx="12" cy="12" r="2.6"/><path d="M6 12h.01M18 12h.01"/>`,
   oficina:   `<rect x="3.5" y="8" width="17" height="12.5" rx="2"/><path d="M9 8V5.5h6V8M8 20.5v-5h8v5M3.5 12.5h17"/>`,
   tarjetas:  `<rect x="2.5" y="5" width="19" height="14" rx="3"/><path d="M2.5 10h19"/>`,
@@ -1636,6 +1816,7 @@ const IC = {
 
 const SECCIONES = [
   { id:"inicio",    titulo:"Inicio",          desc:"Gasto libre, auto y crédito" },
+  { id:"flujo",     titulo:"Flujo diario",    desc:"Qué entra y sale cada día" },
   { id:"quincenas", titulo:"Quincenas",       desc:"Cuándo te pagan y cuánto" },
   { id:"oficina",   titulo:"Días de oficina", desc:"Tu patrón y el gasto del Tag" },
   { id:"tarjetas",  titulo:"Tarjetas",        desc:"Saldos, pagos y meses sin intereses" },
@@ -1690,6 +1871,7 @@ function wireToggle(btnId, tblId) {
    así que se dibujan al activar la pestaña y al cambiar de tamaño. */
 function drawVisible() {
   if (activa === "inicio")   drawLibrePreview();
+  if (activa === "flujo")    drawFlujo();
   if (activa === "oficina")  drawOficinaChart();
   if (activa === "tarjetas") drawMsiRunoff();
   if (activa === "fijos")    drawFijos();
@@ -1740,6 +1922,11 @@ function renderAll() {
   renderEfectivo();
   renderProximos("proximos", 6);
   renderLibrePreview();
+
+  renderFlujoHero();
+  renderFlujoCharts();
+  renderFlujoPresupuesto();
+  renderFlujoCalendario();
 
   renderQuincenaHero();
   renderQuincenaResumen();

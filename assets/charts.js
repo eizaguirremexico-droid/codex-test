@@ -262,8 +262,9 @@ function barsH(host, opts) {
 function lineChart(host, opts) {
   host.innerHTML = "";
   const rows = opts.rows, fmt = opts.fmt;
-  /* 26px por punto: una serie de 11-14 meses cabe entera en un celular */
-  const minW = Math.max(opts.minWidth || 0, rows.length * 26 + 62);
+  /* 26px por punto para series de meses; con `porPunto` se aprieta para que
+     una serie diaria de dos meses quepa entera sin scroll */
+  const minW = Math.max(opts.minWidth || 0, rows.length * (opts.porPunto || 26) + 62);
   const W = Math.max(availWidth(host, 520), minW);
   const H = opts.height || 250;
   const P = { t: 24, r: 16, b: 30, l: 40 };
@@ -308,8 +309,11 @@ function lineChart(host, opts) {
   /* una etiqueta cada N puntos, según el espacio real que hay entre ellos */
   const spacing = plotW / Math.max(1, rows.length - 1);
   const step = Math.max(1, Math.ceil(46 / spacing));
+  /* la última etiqueta solo entra si no se encima con la anterior */
+  const ultimaCabe = (rows.length - 1) % step === 0 ||
+                     (rows.length - 1 - Math.floor((rows.length - 1) / step) * step) * spacing >= 44;
   rows.forEach((r, i) => {
-    if (i % step === 0 || i === rows.length - 1) {
+    if (i % step === 0 || (i === rows.length - 1 && ultimaCabe)) {
       svg.appendChild(el("text", { x:x(i), y:H - 10, "text-anchor":"middle", "font-size":10.5,
         fill:css("--ink-muted"), text: r.label }));
     }
@@ -344,4 +348,70 @@ function legend(host, items) {
     el("span", { class: i.line ? "ln" : "sw", style: "background:" + i.color }),
     el("span", { text: i.label })
   ])));
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   Barras divergentes: lo que entra arriba del cero, lo que sale abajo.
+   Dos polos frío/cálido con el cero como neutro — es la forma correcta
+   para algo que tiene signo, no una escala de magnitud.
+   ══════════════════════════════════════════════════════════════════════ */
+function divergingBars(host, opts) {
+  host.innerHTML = "";
+  const rows = opts.rows, fmt = opts.fmt;
+  const minW = Math.max(opts.minWidth || 0, rows.length * (opts.porBarra || 9) + 54);
+  const W = Math.max(availWidth(host, 560), minW);
+  const H = opts.height || 190;
+  const P = { t: 14, r: 6, b: 26, l: 46 };
+  const plotW = W - P.l - P.r, plotH = H - P.t - P.b;
+
+  const tope = niceMax(Math.max(...rows.map(r => Math.max(r.entra, r.sale))));
+  const band = plotW / rows.length;
+  const bw = Math.min(BAR_MAX, Math.max(2, band * 0.62));
+  const y0 = P.t + plotH / 2;                       // el cero va a la mitad
+  const esc = v => (v / tope) * (plotH / 2);
+
+  const svg = el("svg", { class:"chart", width:W, height:H, viewBox:`0 0 ${W} ${H}`,
+                          role:"img", "aria-label": opts.aria || "" });
+
+  [tope, 0, -tope].forEach(v => {
+    const yy = y0 - esc(v);
+    svg.appendChild(el("line", { x1:P.l, x2:W - P.r, y1:yy, y2:yy,
+      stroke: v === 0 ? css("--axis") : css("--grid"), "stroke-width":1 }));
+    svg.appendChild(el("text", { x:P.l - 7, y:yy + 4, "text-anchor":"end", "font-size":10,
+      fill:css("--ink-muted"), "font-variant-numeric":"tabular-nums",
+      text: v === 0 ? "0" : Math.abs(v) >= 1000 ? Math.round(Math.abs(v) / 1000) + "k" : Math.abs(v) }));
+  });
+
+  rows.forEach((r, i) => {
+    const cx = P.l + band * i + band / 2, x0 = cx - bw / 2;
+    if (r.entra > 0) {
+      const h = esc(r.entra);
+      svg.appendChild(el("path", { d: topRoundedRect(x0, y0 - h, bw, h - GAP / 2, 3),
+        fill: css(opts.colorEntra || "--s1") }));
+    }
+    if (r.sale > 0) {
+      const h = esc(r.sale);
+      /* la salida crece hacia abajo: se voltea el rect redondeado */
+      svg.appendChild(el("path", { d: topRoundedRect(x0, y0 + GAP / 2, bw, h, 3),
+        fill: css(opts.colorSale || "--s2"), transform:`rotate(180 ${cx} ${y0 + GAP / 2 + h / 2})` }));
+    }
+    if (r.hoy) {
+      svg.appendChild(el("line", { x1:cx, x2:cx, y1:P.t, y2:P.t + plotH,
+        stroke:css("--ink"), "stroke-width":1.5, opacity:.5 }));
+    }
+    if (r.etiqueta) {
+      const media = textWidth(r.etiqueta, 9.5) / 2;
+      svg.appendChild(el("text", {
+        x: clamp(cx, P.l + media, W - P.r - media),
+        y:H - 8, "text-anchor":"middle", "font-size":9.5,
+        fill:css("--ink-muted"), text:r.etiqueta }));
+    }
+    svg.appendChild(el("rect", { x:P.l + band * i, y:P.t, width:Math.max(band, 8), height:plotH,
+      fill:"transparent",
+      onmousemove: ev => ttShow(`<div class="tt-title">${r.tipLabel}</div>` +
+        (opts.tip ? opts.tip(r) : ""), ev),
+      onmouseleave: ttHide }));
+  });
+
+  host.appendChild(svg);
 }
