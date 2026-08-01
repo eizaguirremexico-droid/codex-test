@@ -361,7 +361,7 @@ const FL = DATA.flujo;
    de monto cero: informa, pero no toca el saldo. */
 const mismaTarjeta = (alias, ref) => alias.startsWith(ref) || ref.startsWith(alias);
 
-function cargosDelCorte(c, k) {
+function cargosDelCorte(c, k, f) {
   const items = [];
   msiEnMes(k).filter(s => mismaTarjeta(c.alias, s.tarjeta)).forEach(s =>
     items.push({ t: `MSI · ${s.label}`, m: s.monto, msi: true }));
@@ -370,6 +370,9 @@ function cargosDelCorte(c, k) {
   const subs = DATA.suscripciones.filter(s => mismaTarjeta(c.alias, s.tarjeta));
   if (subs.length) items.push({ t: "Suscripciones", m: sum(subs.map(s => s.monto)),
                                 n: subs.map(s => s.servicio).join(" + ") });
+  /* consumo suelto ya conocido de un ciclo concreto, leído de la app del banco */
+  if (c.consumoCiclo && c.consumoCiclo.corte === f)
+    items.push({ t: "Consumo del ciclo", m: c.consumoCiclo.monto, n: c.consumoCiclo.detalle });
   return items;
 }
 
@@ -380,7 +383,7 @@ function cargosDelCorte(c, k) {
 function cortesDelDia(f) {
   const dia = dParse(f).getDate(), k = f.slice(0, 7);
   return DATA.tarjetas.filter(c => c.corte === dia).map(c => {
-    const items = cargosDelCorte(c, k);
+    const items = cargosDelCorte(c, k, f);
     if (!items.length) return null;
     /* el ciclo va del corte anterior a este, no del mes calendario */
     const corteAnterior = `${mAdd(k, -1)}-${String(c.corte).padStart(2, "0")}`;
