@@ -841,20 +841,32 @@ const ESTRATEGIAS = [
 const CAT_ICONO = { ingreso:"💵", mama:"❤️", tarjeta:"💳", auto:"🚗", tag:"🛣️" };
 
 function renderFlujoHero() {
-  const bajo = flujoMin(), fin = FLUJO.at(-1);
   const meses = resumenMensual();
   const ago = meses[0];
+  const piso = DATA.metaMuebles.pisoGastoLibre;
+  /* Lo que el mes genera por sí solo, ya descontados TODOS sus compromisos
+     (vista de devengado). Lo demás de la bolsa es colchón heredado del mes
+     anterior: se puede gastar, pero es de una sola vez. */
+  const propio  = byMonth[ago.k] ? byMonth[ago.k].libre : ago.genera;
+  const heredado = ago.disponible - propio;
+  const falta = piso - propio;
+
   document.getElementById("flujo-hero").innerHTML = `
     <div class="h-label">Para gastar en ${mLabel(ago.k, true)}</div>
     <div class="h-value">${moneyRich(ago.disponible)}</div>
     <div class="h-chips">
-      <span class="h-chip"><span class="k">bolsa del mes</span> <b>gástalo como quieras</b></span>
+      <span class="h-chip"><span class="k">lo genera ${mLabel(ago.k, true)}</span> <b>${money(propio)}</b></span>
+      <span class="h-chip"><span class="k">colchón de antes</span> <b>${money(heredado)}</b></span>
     </div>
     <div class="h-foot">
-      Tu colchón de ${money(ago.colchon)} más lo que ${mLabel(ago.k, true)} genera
-      (${money(ago.entra)} de quincenas menos ${money(ago.sale)} de pagos =
-      ${money(ago.genera)}). Repártelo como quieras: un día ${money(1000)} y otro nada
-      da igual. Lo único que importa es el tope de cada quincena.
+      ${falta > 0
+        ? `Ojo con la mezcla: ${mLabel(ago.k, true)} por sí solo genera <b>${money(propio)}</b>,
+           por debajo de tu piso de ${money(piso)}. Los otros ${money(heredado)} son colchón que
+           traes de antes. Para llegar al piso tomas ${money(falta)} del colchón — para eso está —
+           pero cada peso de más que gastes sale del colchón, no de tu sueldo, y ese no se repone.`
+        : `${mLabel(ago.k, true)} genera <b>${money(propio)}</b> por sí solo, arriba de tu piso de
+           ${money(piso)}. Los otros ${money(heredado)} son colchón que traes de antes: gastarlos
+           no rompe el mes, pero no se repone.`}
     </div>`;
 }
 
