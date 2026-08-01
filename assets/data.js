@@ -203,8 +203,9 @@ const DATA = {
   /* ── Flujo diario de caja ──
      Pagos con fecha y monto reales. Los que dicen `estimado` todavía no
      cortan, así que el monto es cálculo, no dato del banco.
-     El presupuesto NO es parejo: los pagos se amontonan antes de cada
-     quincena del 15, así que cada tramo aguanta distinto. */
+     Aquí NO va gasto diario: el gasto no es parejo (hay días de $1,000 y
+     días de $0). El mapa muestra solo movimientos reales con fecha, y el
+     gasto libre se maneja como bolsa mensual. */
   flujo: {
     desde: "2026-08-01",
     hasta: "2026-09-30",
@@ -224,12 +225,6 @@ const DATA = {
         nota:"MSI julio 3/3 + Alo Yoga 2/3 + suscripciones" },
       { fecha:"2026-09-30", concepto:"Pago 3 de 5 a mamá",             monto:7106.00,  cat:"mama",
         nota:"ya con el reparto que hay que negociar" }
-    ],
-    presupuesto: [
-      { desde:"2026-08-01", hasta:"2026-08-14", porDia:150, nota:"le pagas a mamá y liquidas Costco sin quincena de por medio" },
-      { desde:"2026-08-15", hasta:"2026-08-29", porDia:400, nota:"el tramo más holgado" },
-      { desde:"2026-08-30", hasta:"2026-09-14", porDia:200, nota:"una sola quincena contra tres pagos" },
-      { desde:"2026-09-15", hasta:"2026-09-30", porDia:380, nota:"dos quincenas, cierras con colchón" }
     ]
   },
 
