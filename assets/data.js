@@ -155,7 +155,7 @@ const DATA = {
       tipo:"revolvente", linea:50000, disponible:41196.22, saldo:3461.26, tasa:60.58,
       /* El 3 de agosto no vence nada (mínimo $0). El saldo de $3,461.26 es
          consumo posterior al corte del 13 de julio: cierra el 13 de agosto. */
-      corte:13, vence:3, proximoPago:{ fecha:"2026-09-03", monto:1155.58, estimado:true },
+      corte:13, vence:3, proximoPago:{ fecha:"2026-09-03", monto:1997.11, estimado:true },
       tono:"azul" },
     { id:"santander", alias:"Santander LikeU", term:"6240", emisor:"Santander",
       tipo:"revolvente", linea:170400, disponible:169520, saldo:880.00, tasa:null,
@@ -236,19 +236,18 @@ const DATA = {
     colchonMinimo: 2000,
     pagos: [
       { fecha:"2026-08-01", concepto:"Pago 1 de 5 a mamá",            monto:10659.00, cat:"mama" },
-      /* El 3 de agosto NO se debe nada de la Costco: la app marcaba mínimo $0
-         y pago para no generar intereses $0, porque los $3,461.26 son consumo
-         posterior al corte del 13 de julio. Ese saldo cierra en el corte del
-         13 de agosto y vencería el 3 de septiembre. Se paga el 12 —un día
-         antes del corte— para que el estado de cuenta quede en puro MSI:
-         $3,461.26 de saldo actual + la gasolina de las 5 idas a oficina que
-         caen entre el 1 y el 12 ($168.31 por ida). */
-      { fecha:"2026-08-12", concepto:"Dejar Costco en cero (antes del corte)", monto:4302.79, cat:"tarjeta", estimado:true, tarjeta:"costco", preCorte:true,
-        nota:"saldo de hoy $3,461.26 + gasolina del 1 al 12" },
+      /* El 3 de agosto no vencía nada (mínimo $0): los $3,461.26 eran consumo
+         posterior al corte del 13 de julio. Se pagan el 1 de agosto por
+         decisión propia — adelantado, para no arriesgarse a olvidarlo antes
+         del corte del 13. Queda pendiente la gasolina del 1 al 12 ($841.53,
+         5 idas a $168.31), que sí alcanza ese corte y se paga el 3 de sep. */
+      { fecha:"2026-08-01", concepto:"Liquidar Costco Banamex",        monto:3461.26,  cat:"tarjeta", tarjeta:"costco", preCorte:true,
+        nota:"adelantado: no vencía hasta el 3 de septiembre" },
       { fecha:"2026-08-23", concepto:"Amex Gold Elite",                monto:10793.74, cat:"tarjeta", estimado:true, tarjeta:"elite",
         nota:"MSI junio 3/3 + MSI julio 2/3 + Alo Yoga 1/3 + consumo" },
       { fecha:"2026-08-30", concepto:"Pago 2 de 5 a mamá",             monto:10659.00, cat:"mama" },
-      { fecha:"2026-09-03", concepto:"Costco Banamex (solo MSI)",      monto:1155.58,  cat:"tarjeta", tarjeta:"costco" },
+      { fecha:"2026-09-03", concepto:"Costco Banamex",                 monto:1997.11,  cat:"tarjeta", estimado:true, tarjeta:"costco",
+        nota:"MSI $1,155.58 + gasolina del 1 al 12 de agosto, que entró al corte después del pago" },
       { fecha:"2026-09-03", concepto:"Santander LikeU",                monto:880.00,   cat:"tarjeta", estimado:true, tarjeta:"santander",
         nota:"consumo posterior al corte de julio — el 3 de agosto no debías nada" },
       { fecha:"2026-09-11", concepto:"Amex Gold Servicios",            monto:1788.35,  cat:"tarjeta", tarjeta:"servicios",
