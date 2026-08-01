@@ -936,7 +936,8 @@ function renderFlujoMensual() {
   document.getElementById("flujo-topes").innerHTML = `
     <div class="card-head">
       <div><div class="card-title">Tope por quincena</div>
-        <div class="card-sub">Máximo a gastar en cada tramo sin bajar de ${money(FL.colchonMinimo)}</div></div>
+        <div class="card-sub">Solo aplica a lo que pagues en efectivo o débito. Lo que cargas a
+          tarjeta no toca estos tramos: sale hasta el mes siguiente.</div></div>
     </div>
     ${topes.map(t => {
       const apretado = t.tope < 3000;
@@ -947,7 +948,7 @@ function renderFlujoMensual() {
           <div class="row-d">entran ${money(t.entra)} · salen ${money(t.sale)} en pagos</div>
         </div>
         <div class="row-amt" style="${apretado ? `color:${css("--crit-ink")}` : ""}">${money(t.tope)}
-          <span class="sub">${apretado ? "tramo apretado" : "puedes gastar"}</span></div>
+          <span class="sub">${apretado ? "tramo apretado" : "en efectivo"}</span></div>
       </div>`;
     }).join("")}`;
 }
