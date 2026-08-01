@@ -883,9 +883,13 @@ function renderFlujoHero() {
                 el mes, pero no se repone.`
              : `Los otros ${money(heredado)} no son tuyos todavía: son cargos que ${mLabel(ago.k, true)}
                 genera y que paga el mes siguiente. Guíate por los ${money(propio)}.`}`
-        : `Todo esto lo genera ${mLabel(ago.k, true)} con su propio sueldo, sin tocar colchón.
+        : propio >= piso
+        ? `Todo esto lo genera ${mLabel(ago.k, true)} con su propio sueldo, sin tocar colchón.
            Van ${money(propio - piso)} arriba de tu piso de ${money(piso)}: eso es lo que puede
-           irse al ahorro de los muebles sin que el mes se apriete.`}
+           irse al ahorro de los muebles sin que el mes se apriete.`
+        : `${mLabel(ago.k, true)} genera <b>${money(propio)}</b> y no trae nada extra de dónde
+           tomar, así que se queda ${money(piso - propio)} por debajo de tu piso de ${money(piso)}.
+           Hay que mover un pago de mes o bajar el gasto.`}
     </div>`;
 
   document.querySelectorAll("#flujo-hero .h-tab").forEach(b =>
