@@ -1313,6 +1313,78 @@ function drawOficinaChart(filas) {
    RENDER — Tarjetas
    ══════════════════════════════════════════════════════════════════════ */
 
+/* ─── ¿con cuál pago hoy? ───
+   Casi todo el gasto va a crédito, así que la pregunta de cada día no es
+   "¿me alcanza?" sino "¿cuál tarjeta me da más días antes de pagar?".
+   Una compra cae en el corte que todavía no pasa; de ahí al vencimiento
+   es el tiempo que el dinero se queda contigo. */
+function flotante(c, f) {
+  if (c.corte == null) return null;
+  const d = dParse(f);
+  const corte = new Date(d.getFullYear(), d.getMonth() + (d.getDate() > c.corte ? 1 : 0), c.corte, 12);
+  const vence = new Date(corte.getFullYear(), corte.getMonth() + (c.vence <= c.corte ? 1 : 0), c.vence, 12);
+  const iso = x => new Date(x.getTime() - x.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+  return { corte: iso(corte), vence: iso(vence), dias: Math.round((vence - d) / 86400000) };
+}
+
+function renderQueTarjeta() {
+  const hoy = hoyISO;
+  const filas = DATA.tarjetas.map(c => ({ c, fl: flotante(c, hoy) }));
+  const conDato = filas.filter(r => r.fl).sort((a, b) => b.fl.dias - a.fl.dias);
+  const mejor = conDato[0];
+
+  /* Si el corte de la mejor tarjeta cae en los próximos días, mañana la
+     respuesta cambia — vale la pena decirlo antes de que pase. */
+  const proximo = conDato.slice().sort((a, b) => a.fl.corte.localeCompare(b.fl.corte))[0];
+  const cambia = proximo && daysBetween(hoy, proximo.fl.corte) <= 3
+    ? (() => {
+        const tras = DATA.tarjetas.map(c => ({ c, fl: flotante(c, dAdd(proximo.fl.corte, 1)) }))
+          .filter(r => r.fl).sort((a, b) => b.fl.dias - a.fl.dias)[0];
+        return tras && tras.c.id !== mejor.c.id ? { cuando: proximo.fl.corte, quien: tras } : null;
+      })()
+    : null;
+
+  const nota = c => {
+    if (c.id === "costco") return "la dejas en cero antes de cada corte — si cargas aquí, tienes que volver a limpiarla";
+    if (c.tipo === "cargo") return "tarjeta de cargo: se liquida completa, no hay mínimo";
+    if (c.corte == null) return "falta la fecha de corte para poder calcularla";
+    return `corte día ${c.corte} · vence día ${c.vence}`;
+  };
+
+  document.getElementById("que-tarjeta").innerHTML = `
+    <div class="card-head">
+      <div><div class="card-title">¿Con cuál pago hoy?</div>
+        <div class="card-sub">Casi todo lo cargas a crédito. Gana la que tarde más en cobrarte:
+          esos días el dinero sigue siendo tuyo.</div></div>
+    </div>
+    ${conDato.map((r, i) => `<div class="row">
+      <div class="row-ic">${i === 0 ? "🥇" : "💳"}</div>
+      <div class="row-main">
+        <div class="row-t">${r.c.alias}${i === 0 ? ` <span class="chip good" style="padding:1px 8px">usa esta</span>` : ""}</div>
+        <div class="row-d">Corta el ${dLabel(r.fl.corte)} · pagas el ${dLabel(r.fl.vence)}<br>${nota(r.c)}</div>
+      </div>
+      <div class="row-amt${i === 0 ? "" : " soft"}">${r.fl.dias}<span class="sub">días</span></div>
+    </div>`).join("")}
+    ${filas.filter(r => !r.fl).map(r => `<div class="row">
+      <div class="row-ic">❔</div>
+      <div class="row-main"><div class="row-t">${r.c.alias}</div>
+        <div class="row-d">${nota(r.c)}</div></div>
+      <div class="row-amt soft">—<span class="sub">sin dato</span></div>
+    </div>`).join("")}
+    ${cambia ? `<div class="tip" style="margin-top:16px;padding-top:16px;border-top:1px solid var(--hairline)">
+      <div class="ic">⏭️</div>
+      <div class="tx"><b>Esto cambia el ${dLabel(dAdd(cambia.cuando, 1))}.</b>
+        En cuanto pase el corte del ${dLabel(cambia.cuando)}, la que más te conviene pasa a ser
+        la ${cambia.quien.c.alias}, con ${cambia.quien.fl.dias} días.</div>
+    </div>` : ""}
+    <div class="tip" style="margin-top:${cambia ? 12 : 16}px;${cambia ? "" : "padding-top:16px;border-top:1px solid var(--hairline)"}">
+      <div class="ic">⚠️</div>
+      <div class="tx"><b>Ganar días no es gastar de más.</b>
+        Lo que cargues este mes sale de la bolsa del mes que viene, no de la de hoy.
+        Tu saldo de hoy se ve sano justo porque el cobro todavía no llega.</div>
+    </div>`;
+}
+
 function renderCardFaces() {
   const host = document.getElementById("card-faces");
   host.innerHTML = DATA.tarjetas.map(t => {
@@ -2131,6 +2203,7 @@ function renderAll() {
   renderOficinaEstrategia();
   renderOficinaCostos();
 
+  renderQueTarjeta();
   renderCardFaces();
   renderPagosTarjetas();
   renderMsiList();
