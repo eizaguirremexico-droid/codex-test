@@ -234,21 +234,25 @@ const DATA = {
     desde: "2026-08-01",
     hasta: "2026-10-31",
     colchonMinimo: 2000,
+    /* `previo` = cuánto de ese pago es deuda de ANTES de la ventana (consumo
+       de julio, el pago a mamá que se recorrió). No lo genera ningún mes del
+       plan: sale del efectivo que ya traías, y por eso hay que restarlo del
+       colchón para saber cuánto de ese colchón es de verdad tuyo. */
     pagos: [
-      { fecha:"2026-08-01", concepto:"Pago 1 de 5 a mamá",            monto:10659.00, cat:"mama" },
+      { fecha:"2026-08-01", concepto:"Pago 1 de 5 a mamá",            monto:10659.00, cat:"mama", previo:10659.00 },
       /* El 3 de agosto no vencía nada (mínimo $0): los $3,461.26 eran consumo
          posterior al corte del 13 de julio. Se pagan el 1 de agosto por
          decisión propia — adelantado, para no arriesgarse a olvidarlo antes
          del corte del 13. Queda pendiente la gasolina del 1 al 12 ($841.53,
          5 idas a $168.31), que sí alcanza ese corte y se paga el 3 de sep. */
-      { fecha:"2026-08-01", concepto:"Liquidar Costco Banamex",        monto:3461.26,  cat:"tarjeta", tarjeta:"costco", preCorte:true,
+      { fecha:"2026-08-01", concepto:"Liquidar Costco Banamex",        monto:3461.26,  cat:"tarjeta", tarjeta:"costco", preCorte:true, previo:3461.26,
         nota:"adelantado: no vencía hasta el 3 de septiembre" },
-      { fecha:"2026-08-23", concepto:"Amex Gold Elite",                monto:10793.74, cat:"tarjeta", estimado:true, tarjeta:"elite",
+      { fecha:"2026-08-23", concepto:"Amex Gold Elite",                monto:10793.74, cat:"tarjeta", estimado:true, tarjeta:"elite", previo:1120.07,
         nota:"MSI junio 3/3 + MSI julio 2/3 + Alo Yoga 1/3 + consumo" },
       { fecha:"2026-08-30", concepto:"Pago 2 de 5 a mamá",             monto:10659.00, cat:"mama" },
       { fecha:"2026-09-03", concepto:"Costco Banamex",                 monto:1997.11,  cat:"tarjeta", estimado:true, tarjeta:"costco",
         nota:"MSI $1,155.58 + gasolina del 1 al 12 de agosto, que entró al corte después del pago" },
-      { fecha:"2026-09-03", concepto:"Santander LikeU",                monto:880.00,   cat:"tarjeta", estimado:true, tarjeta:"santander",
+      { fecha:"2026-09-03", concepto:"Santander LikeU",                monto:880.00,   cat:"tarjeta", estimado:true, tarjeta:"santander", previo:880.00,
         nota:"consumo posterior al corte de julio — el 3 de agosto no debías nada" },
       { fecha:"2026-09-11", concepto:"Amex Gold Servicios",            monto:1788.35,  cat:"tarjeta", tarjeta:"servicios",
         nota:"gym del 23 de julio + Amazon MSI" },

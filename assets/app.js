@@ -848,25 +848,43 @@ const CAT_ICONO = { ingreso:"💵", mama:"❤️", tarjeta:"💳", auto:"🚗", 
 
 let mesFlujo = null;   // null = el primero de la ventana
 
+/* ─── colchón limpio ───
+   El saldo del banco miente en las dos direcciones: trae dinero que ya
+   debes (deuda de julio sin pagar) y le falta el gasto de este mes que
+   todavía no te cobran. Lo que de verdad traes de antes es el efectivo
+   menos todo lo que se debía desde antes de la ventana. */
+const DEUDA_PREVIA  = sum(FL.pagos.map(p => p.previo || 0));
+const COLCHON_LIMPIO = DATA.efectivo.ahorro - DEUDA_PREVIA;
+
+/* Dinero real disponible en el mes i: el colchón limpio más lo que han
+   generado los meses hasta ese, menos lo que se supone gastado en los
+   anteriores (el piso). Nada de saldos de banco. */
+function realDelMes(i) {
+  const piso = DATA.metaMuebles.pisoGastoLibre;
+  const hasta = MESES.slice(0, i + 1).filter(k => byMonth[k]);
+  return COLCHON_LIMPIO + sum(hasta.map(k => byMonth[k].libre)) - piso * i;
+}
+
 function renderFlujoHero() {
   const meses = resumenMensual();
-  const ago = meses.find(m => m.k === mesFlujo) || meses[0];
+  const i = Math.max(0, meses.findIndex(m => m.k === mesFlujo));
+  const ago = meses[i];
   const piso = DATA.metaMuebles.pisoGastoLibre;
+  const real = realDelMes(i);
   /* Lo que el mes genera por sí solo, ya descontados TODOS sus compromisos
      (vista de devengado). Lo demás de la bolsa es colchón heredado del mes
      anterior: se puede gastar, pero es de una sola vez. */
   const propio  = byMonth[ago.k] ? byMonth[ago.k].libre : ago.genera;
-  const heredado = ago.disponible - propio;
+  const heredado = real - propio;
   const falta = piso - propio;
   const primero = ago.k === meses[0].k;
-  /* En el primer mes el resto es colchón real que traes de julio. En los
-     siguientes es desfase: cargos que este mes genera pero paga el que sigue,
-     así que la caja se ve más grande de lo que el mes realmente produce. */
-  const rotulo = primero ? "colchón de antes" : "desfase de tarjetas";
+  /* El resto es lo que llegas trayendo: el colchón limpio de julio más lo
+     que sobró de los meses anteriores por encima del piso. */
+  const rotulo = "traes de antes";
 
   document.getElementById("flujo-hero").innerHTML = `
     <div class="h-label">Para gastar en ${mLabel(ago.k, true)}</div>
-    <div class="h-value">${moneyRich(ago.disponible)}</div>
+    <div class="h-value">${moneyRich(real)}</div>
     <div class="h-chips">
       <span class="h-chip"><span class="k">${propio < 0 ? `le falta a ${mLabel(ago.k, true)}` : `lo genera ${mLabel(ago.k, true)}`}</span> <b>${money(Math.abs(propio))}</b></span>
       ${heredado >= 1 ? `<span class="h-chip"><span class="k">${rotulo}</span> <b>${money(heredado)}</b></span>` : ""}
@@ -892,8 +910,8 @@ function renderFlujoHero() {
              : `por debajo de tu piso de ${money(piso)}`}. ${primero
              ? `Los otros ${money(heredado)} son colchón que traes de antes: gastarlos no rompe
                 el mes, pero no se repone.`
-             : `Los otros ${money(heredado)} no son tuyos todavía: son cargos que ${mLabel(ago.k, true)}
-                genera y que paga el mes siguiente. Guíate por los ${money(propio)}.`}`
+             : `Los otros ${money(heredado)} son lo que llegas trayendo: colchón de julio más
+                lo que sobró de los meses anteriores. Gastarlos no rompe el mes, pero no se repone.`}`
         : propio >= piso
         ? `Todo esto lo genera ${mLabel(ago.k, true)} con su propio sueldo, sin tocar colchón.
            Van ${money(propio - piso)} arriba de tu piso de ${money(piso)}. El ahorro de los
@@ -902,6 +920,12 @@ function renderFlujoHero() {
         : `${mLabel(ago.k, true)} genera <b>${money(propio)}</b> y no trae nada extra de dónde
            tomar, así que se queda ${money(piso - propio)} por debajo de tu piso de ${money(piso)}.
            Hay que mover un pago de mes o bajar el gasto.`}
+      <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--hero-inset)">
+        Tu banco va a decir <b>${money(ago.cierre)}</b> el ${dLabelLong(FLUJO.filter(d =>
+          d.fecha.startsWith(ago.k)).at(-1).fecha)}, ${money(ago.cierre - real)} de más.
+        Esa diferencia ya tiene dueño: cuentas que todavía no te cobran${i > 0
+          ? ` y lo que hayas gastado con tarjeta y aún no sale`: ""}. No la gastes.
+      </div>
     </div>`;
 
   document.querySelectorAll("#flujo-hero .h-tab").forEach(b =>
