@@ -143,8 +143,12 @@ const DATA = {
       corte:13, vence:3, proximoPago:{ fecha:"2026-09-03", monto:1155.58 },
       tono:"azul" },
     { id:"santander", alias:"Santander LikeU", term:"6240", emisor:"Santander",
-      tipo:"revolvente", linea:170400, disponible:170400, saldo:0, tasa:null,
-      corte:null, vence:3, proximoPago:null,
+      tipo:"revolvente", linea:170400, disponible:169520, saldo:880.00, tasa:null,
+      /* corte desconocido. El 31 de julio la app marcaba pago mínimo $0 y pago
+         para no generar intereses $0 con límite el 3 de agosto: o sea que los
+         $880 son consumo POSTERIOR al último corte y no se deben todavía —
+         entran al siguiente estado de cuenta y se pagan el 3 de septiembre. */
+      corte:null, vence:3, proximoPago:{ fecha:"2026-09-03", monto:880.00, estimado:true },
       tono:"rojo" }
   ],
 
@@ -223,6 +227,8 @@ const DATA = {
         nota:"MSI junio 3/3 + MSI julio 2/3 + Alo Yoga 1/3 + consumo" },
       { fecha:"2026-08-30", concepto:"Pago 2 de 5 a mamá",             monto:10659.00, cat:"mama" },
       { fecha:"2026-09-03", concepto:"Costco Banamex (solo MSI)",      monto:1155.58,  cat:"tarjeta", tarjeta:"costco" },
+      { fecha:"2026-09-03", concepto:"Santander LikeU",                monto:880.00,   cat:"tarjeta", estimado:true, tarjeta:"santander",
+        nota:"consumo posterior al corte de julio — el 3 de agosto no debías nada" },
       { fecha:"2026-09-11", concepto:"Amex Gold Servicios",            monto:1788.35,  cat:"tarjeta", tarjeta:"servicios",
         nota:"gym del 23 de julio + Amazon MSI" },
       { fecha:"2026-09-15", concepto:"Mensualidad auto BYD",           monto:6209.00,  cat:"auto" },
