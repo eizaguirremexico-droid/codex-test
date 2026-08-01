@@ -156,7 +156,13 @@ const msiEnMes = k => DATA.msi.filter(s => mDiff(s.desde, k) >= 0 && mDiff(k, s.
 /* Los pagos a mamá ya no son un monto fijo: el plan renegociado tiene
    dos pagos grandes y tres chicos, así que se busca por mes. */
 const MAMA_POR_MES = {};
-DATA.prestamoMama.pagos.forEach(p => { MAMA_POR_MES[p.fecha.slice(0, 7)] = p.monto; });
+/* Se ACUMULA, no se sobrescribe: agosto lleva dos pagos (el 1 y el 30) y
+   asignarlos por mes con "=" dejaba solo el último, subestimando el mes
+   en $10,659. */
+DATA.prestamoMama.pagos.forEach(p => {
+  const k = p.fecha.slice(0, 7);
+  MAMA_POR_MES[k] = (MAMA_POR_MES[k] || 0) + p.monto;
+});
 const mamaMes = k => MAMA_POR_MES[k] || 0;
 
 function construirModelo() { return MESES.map(k => {
@@ -862,7 +868,7 @@ function renderFlujoHero() {
     <div class="h-label">Para gastar en ${mLabel(ago.k, true)}</div>
     <div class="h-value">${moneyRich(ago.disponible)}</div>
     <div class="h-chips">
-      <span class="h-chip"><span class="k">lo genera ${mLabel(ago.k, true)}</span> <b>${money(propio)}</b></span>
+      <span class="h-chip"><span class="k">${propio < 0 ? `le falta a ${mLabel(ago.k, true)}` : `lo genera ${mLabel(ago.k, true)}`}</span> <b>${money(Math.abs(propio))}</b></span>
       ${heredado >= 1 ? `<span class="h-chip"><span class="k">${rotulo}</span> <b>${money(heredado)}</b></span>` : ""}
     </div>
     <div class="h-tabs">
@@ -871,10 +877,15 @@ function renderFlujoHero() {
     </div>
     <div class="h-foot">
       ${falta > 0 && heredado >= 1
-        ? `Ojo con la mezcla: ${mLabel(ago.k, true)} por sí solo genera <b>${money(propio)}</b>,
-           por debajo de tu piso de ${money(piso)}. Los otros ${money(heredado)} son colchón que
-           traes de antes. Para llegar al piso tomas ${money(falta)} del colchón — para eso está —
-           pero cada peso de más que gastes sale del colchón, no de tu sueldo, y ese no se repone.`
+        ? `${propio < 0
+             ? `${mLabel(ago.k, true)} no genera nada para gastar: sus compromisos se pasan
+                <b>${money(-propio)}</b> de tu sueldo del mes. Todo lo que gastes sale del
+                colchón de ${money(heredado)} que traes de antes.`
+             : `Ojo con la mezcla: ${mLabel(ago.k, true)} por sí solo genera <b>${money(propio)}</b>,
+                por debajo de tu piso de ${money(piso)}. Los otros ${money(heredado)} son colchón
+                que traes de antes.`}
+           Para llegar al piso tomas ${money(falta)} del colchón — para eso está — pero cada peso
+           de más que gastes sale del colchón, no de tu sueldo, y ese no se repone.`
         : heredado >= 1
         ? `${mLabel(ago.k, true)} genera <b>${money(propio)}</b> por sí solo, ${propio >= piso
              ? `${money(propio - piso)} arriba de tu piso de ${money(piso)}`
@@ -919,13 +930,13 @@ function techoMes(k) {
   const saldoCon = (f, S) => {
     let s = FLUJO.find(d => d.fecha === f).saldo;
     if (f >= cobro(k)) s -= S;
-    otros.forEach(m => { if (f >= cobro(m.k)) s -= byMonth[m.k].libre; });
+    otros.forEach(m => { if (f >= cobro(m.k)) s -= Math.max(0, byMonth[m.k].libre); });
     return s;
   };
   /* al cerrar la ventana hay que poder apartar lo de los meses cuyo cobro
      todavía no cae dentro */
   const pendiente = sum(otros.filter(m => cobro(m.k) > FL.hasta)
-                             .map(m => byMonth[m.k].libre));
+                             .map(m => Math.max(0, byMonth[m.k].libre)));
   const ok = S => FLUJO.every(d => saldoCon(d.fecha, S) >= FL.colchonMinimo)
                && saldoCon(FL.hasta, S) - pendiente >= FL.colchonMinimo;
   if (!ok(0)) return null;
@@ -962,11 +973,13 @@ function renderApartado() {
     </div>`).join("")}
     <div class="day-sep">Hasta dónde puedes estirarte sin quitarle a los meses que siguen</div>
     ${filas.map(f => `<div class="row">
-      <div class="row-ic">${f.techo == null ? "·" : f.genera >= piso ? "🟢" : "🟡"}</div>
+      <div class="row-ic">${f.techo == null ? "·" : f.genera >= piso ? "🟢" : f.genera < 0 ? "🔴" : "🟡"}</div>
       <div class="row-main">
         <div class="row-t" style="text-transform:capitalize">${mLabel(f.k, true)}</div>
         <div class="row-d">${f.techo == null
           ? "necesita el mes siguiente para calcularse"
+          : f.genera < 0
+          ? `No genera nada: le faltan ${money(-f.genera)} · todo sale del colchón`
           : `Genera ${money(f.genera)} por sí solo · de ahí para arriba sale del colchón`}</div>
       </div>
       <div class="row-amt${f.techo == null ? " soft" : ""}">${f.techo == null ? "—" : money(f.techo)}
