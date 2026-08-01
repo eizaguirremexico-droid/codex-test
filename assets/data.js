@@ -83,9 +83,12 @@ const DATA = {
      `corto` es el nombre que usan las gráficas, donde el espacio manda.
      El Tag Pase no está aquí: se calcula mes a mes desde `oficina`. */
   vidaFija: [
-    { concepto: "Gasolina y pastillas", corto: "Gasolina",  monto: 2200,    detalle: "commute Atizapán → Ajusco" },
-    { concepto: "Gym FITSI",            corto: "Gym",       monto: 1283.40, detalle: "cargo día 23 a la Amex Gold de servicios" },
-    { concepto: "Teléfono",             corto: "Teléfono",  monto: 350,     detalle: "" }
+    { concepto: "Gasolina y pastillas", corto: "Gasolina", monto: 2200,
+      detalle: "commute Atizapán → Ajusco", via: "costco" },
+    { concepto: "Gym FITSI",            corto: "Gym",      monto: 1283.40,
+      detalle: "se carga el día 23", via: "servicios" },
+    { concepto: "Teléfono",             corto: "Teléfono", monto: 350,
+      detalle: "recargas Telcel sueltas", via: "tarjetas" }
   ],
 
   /* ── Suscripciones ── */
