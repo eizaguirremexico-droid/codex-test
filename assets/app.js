@@ -354,11 +354,6 @@ function progresoFechas(fechas) {
    ══════════════════════════════════════════════════════════════════════ */
 const FL = DATA.flujo;
 
-const presupuestoDia = f => {
-  const t = FL.presupuesto.find(p => f >= p.desde && f <= p.hasta);
-  return t ? t.porDia : 0;
-};
-
 function construirFlujo() {
   /* recargas de tag con el saldo arrastrado desde el ancla */
   const recargas = {};
@@ -383,11 +378,10 @@ function construirFlujo() {
                      estimado: p.estimado, nota: p.nota }));
     if (recargas[f]) eventos.push({ concepto: "Recarga de tag", monto: -recargas[f], cat: "tag" });
 
-    const gasto = presupuestoDia(f);
     const entra = sum(eventos.filter(e => e.monto > 0).map(e => e.monto));
     const sale  = -sum(eventos.filter(e => e.monto < 0).map(e => e.monto));
-    saldo += entra - sale - gasto;
-    dias.push({ fecha: f, eventos, entra, sale, gasto, saldo,
+    saldo += entra - sale;
+    dias.push({ fecha: f, eventos, entra, sale, saldo,
                 oficina: esDiaOficina(f), hoy: f === hoyISO });
   }
   return dias;
@@ -395,6 +389,55 @@ function construirFlujo() {
 
 let FLUJO = construirFlujo();
 const flujoMin = () => FLUJO.reduce((a, b) => (b.saldo < a.saldo ? b : a));
+
+/* Resumen por mes: lo que entra, lo que sale y lo que queda libre.
+   El gasto libre es bolsa mensual — tú decides cómo repartirlo. */
+function resumenMensual() {
+  const meses = {};
+  FLUJO.forEach(d => {
+    const k = d.fecha.slice(0, 7);
+    meses[k] = meses[k] || { k, entra: 0, sale: 0, cierre: 0 };
+    meses[k].entra += d.entra;
+    meses[k].sale += d.sale;
+    meses[k].cierre = d.saldo;
+  });
+  const arr = Object.values(meses);
+  arr.forEach((m, i) => {
+    m.genera = m.entra - m.sale;             // lo que el mes se paga solo
+    /* El colchón solo se cuenta en el PRIMER mes: si se sumara en todos,
+       el mismo dinero aparecería disponible dos veces. */
+    m.colchon = i === 0 ? DATA.efectivo.ahorro : 0;
+    m.disponible = m.colchon + m.genera;
+  });
+  return arr;
+}
+
+/* Tope por quincena: cuánto puedes gastar entre un pago de nómina y el
+   siguiente sin romper el colchón. Es la única restricción de tiempos que
+   importa — no hace falta presupuesto diario. */
+function topesQuincena() {
+  /* Las ventanas van de quincena a quincena. La última quincena del
+     horizonte no abre ventana: no hay a dónde llegar todavía. */
+  const pagos = QUINCENAS.map(q => q.iso).filter(f => f > FL.desde && f < FL.hasta);
+  const cortes = [FL.desde, ...pagos, dAdd(FL.hasta, 1)];
+  const out = [];
+  /* Los topes NO son independientes: lo que gastas en una ventana ya no
+     está en la siguiente, así que hay que arrastrar el acumulado. */
+  let gastado = 0;
+  for (let i = 0; i < cortes.length - 1; i++) {
+    const a = cortes[i], b = dAdd(cortes[i + 1], -1);
+    const dentro = FLUJO.filter(d => d.fecha >= a && d.fecha <= b);
+    if (!dentro.length) continue;
+    const minSaldo = Math.min(...dentro.map(d => d.saldo)) - gastado;
+    const tope = Math.max(0, minSaldo - FL.colchonMinimo);
+    gastado += tope;
+    out.push({ desde: a, hasta: b, dias: dentro.length,
+               entra: sum(dentro.map(d => d.entra)),
+               sale: sum(dentro.map(d => d.sale)),
+               cierre: dentro.at(-1).saldo - gastado, tope });
+  }
+  return out;
+}
 
 /* pagos del auto: 36 mensualidades desde primerPagoFecha */
 const AUTO_FECHAS = Array.from({ length: DATA.auto.plazo }, (_, i) => {
@@ -728,6 +771,23 @@ function renderQuincenaResumen() {
     </div>`;
 }
 
+const DOW_CORTO = ["L", "M", "M", "J", "V", "S", "D"];       // encabezado del calendario
+/* martes y miércoles comparten inicial: fuera del encabezado hay que distinguirlos */
+const DOW_CHIP  = ["L", "Ma", "Mi", "J", "V", "S", "D"];
+const DOW_LARGO = ["lunes", "martes", "miércoles", "jueves", "viernes", "sábado", "domingo"];
+let mesCal = hoyISO.slice(0, 7);
+
+
+
+const ESTRATEGIAS = [
+  { id:"cada-dia",     monto:200,  titulo:"Recargo cada día que voy",
+    desc:"Por reflejo, aunque me sobre saldo" },
+  { id:"cuando-falta", monto:200,  titulo:"Recargo solo cuando no alcanza",
+    desc:"Dejo que el saldo se acumule" },
+  { id:"cuando-falta", monto:1000, titulo:"Recargo $1,000 cuando no alcanza",
+    desc:"Si la app te deja pasar del mínimo" }
+];
+
 /* ══════════════════════════════════════════════════════════════════════
    RENDER — Flujo diario
    ══════════════════════════════════════════════════════════════════════ */
@@ -736,28 +796,80 @@ const CAT_ICONO = { ingreso:"💵", mama:"❤️", tarjeta:"💳", auto:"🚗", 
 
 function renderFlujoHero() {
   const bajo = flujoMin(), fin = FLUJO.at(-1);
-  const hoy = FLUJO.find(d => d.fecha >= hoyISO) || FLUJO[0];
-  const riesgo = bajo.saldo < FL.colchonMinimo;
+  const meses = resumenMensual();
+  const ago = meses[0];
   document.getElementById("flujo-hero").innerHTML = `
-    <div class="h-label">Tu saldo hoy</div>
-    <div class="h-value">${moneyRich(DATA.efectivo.ahorro)}</div>
+    <div class="h-label">Para gastar en ${mLabel(ago.k, true)}</div>
+    <div class="h-value">${moneyRich(ago.disponible)}</div>
     <div class="h-chips">
-      <span class="h-chip"><span class="k">punto más bajo</span> <b>${money(bajo.saldo)}</b></span>
-      <span class="h-chip"><span class="k">el</span> <b>${dLabel(bajo.fecha)}</b></span>
-      <span class="h-chip"><span class="k">al 30 sep</span> <b>${money(fin.saldo)}</b></span>
+      <span class="h-chip"><span class="k">bolsa del mes</span> <b>gástalo como quieras</b></span>
     </div>
     <div class="h-foot">
-      ${riesgo
-        ? `Ojo: el ${dLabelLong(bajo.fecha)} bajas a ${money(bajo.saldo)}, por debajo de tu colchón de ${money(FL.colchonMinimo)}.`
-        : `Siguiendo el presupuesto por tramos nunca bajas de ${money(FL.colchonMinimo)}. El día crítico es el ${dLabelLong(bajo.fecha)}.`}
+      Tu colchón de ${money(ago.colchon)} más lo que ${mLabel(ago.k, true)} genera
+      (${money(ago.entra)} de quincenas menos ${money(ago.sale)} de pagos =
+      ${money(ago.genera)}). Repártelo como quieras: un día ${money(1000)} y otro nada
+      da igual. Lo único que importa es el tope de cada quincena.
     </div>`;
+}
+
+/* Bolsa por mes y tope por quincena. Nada de gasto diario. */
+function renderFlujoMensual() {
+  const meses = resumenMensual();
+  const topes = topesQuincena();
+  document.getElementById("flujo-mensual").innerHTML = `
+    <div class="card-head">
+      <div><div class="card-title">Tu bolsa de cada mes</div>
+        <div class="card-sub">Lo que entra, lo que se va en pagos, y lo que queda para ti</div></div>
+    </div>
+    ${meses.map(m => `<div class="mes-bolsa">
+      <div class="mb-top">
+        <span class="mb-mes">${mLabel(m.k, true)}</span>
+        <span class="mb-libre" style="${m.genera < 0 ? `color:${css("--crit-ink")}` : ""}">${money(m.genera)}</span>
+      </div>
+      <div class="mb-barras">
+        <span class="mb-in" style="flex:${m.entra}"></span>
+        <span class="mb-out" style="flex:${m.sale}"></span>
+      </div>
+      <div class="mb-pie">
+        <span>entran ${money(m.entra)} · pagos ${money(m.sale)}</span>
+        <span>${m.genera < 0 ? "se come colchón" : "genera"}</span>
+      </div>
+      ${m.colchon ? `<div class="mb-pie" style="margin-top:6px;color:var(--ink-2)">
+        <span>+ colchón que traes</span><span>${money(m.colchon)}</span></div>
+        <div class="mb-pie" style="font-weight:600;color:var(--ink)">
+        <span>= para gastar</span><span>${money(m.disponible)}</span></div>` : ""}
+    </div>`).join("")}
+    <div class="tip" style="margin-top:16px;padding-top:16px;border-top:1px solid var(--hairline)">
+      <div class="ic">⚠️</div>
+      <div class="tx"><b>Un solo límite que sí importa:</b> cuánto puedes gastar
+        entre una quincena y la siguiente. Los pagos grandes caen antes del 15,
+        así que esa mitad del mes aguanta menos.</div>
+    </div>`;
+
+  document.getElementById("flujo-topes").innerHTML = `
+    <div class="card-head">
+      <div><div class="card-title">Tope por quincena</div>
+        <div class="card-sub">Máximo a gastar en cada tramo sin bajar de ${money(FL.colchonMinimo)}</div></div>
+    </div>
+    ${topes.map(t => {
+      const apretado = t.tope < 3000;
+      return `<div class="row">
+        <div class="row-ic">${t.dias}d</div>
+        <div class="row-main">
+          <div class="row-t">${dLabel(t.desde)} → ${dLabel(t.hasta)}</div>
+          <div class="row-d">entran ${money(t.entra)} · salen ${money(t.sale)} en pagos</div>
+        </div>
+        <div class="row-amt" style="${apretado ? `color:${css("--crit-ink")}` : ""}">${money(t.tope)}
+          <span class="sub">${apretado ? "tramo apretado" : "puedes gastar"}</span></div>
+      </div>`;
+    }).join("")}`;
 }
 
 function renderFlujoCharts() {
   document.getElementById("flujo-saldo").innerHTML = `
     <div class="card-head">
       <div><div class="card-title">Tu saldo, día por día</div>
-        <div class="card-sub">Ya con el gasto diario del presupuesto descontado</div></div>
+        <div class="card-sub">Solo pagos comprometidos. Lo que gastes tú va encima de esto.</div></div>
     </div>
     <div class="chart-scroll"><div id="flujo-saldo-chart"></div></div>`;
   document.getElementById("flujo-mov").innerHTML = `
@@ -780,7 +892,7 @@ function drawFlujo() {
     value: Math.max(0, d.saldo),
     extra: `<div class="tt-row"><span class="lhs">Entra</span><span class="val">${money(d.entra)}</span></div>` +
            `<div class="tt-row"><span class="lhs">Sale</span><span class="val">${money(d.sale)}</span></div>` +
-           `<div class="tt-row"><span class="lhs">Gasto del día</span><span class="val">${money(d.gasto)}</span></div>`
+           `<div class="tt-row tt-total"><span>Saldo</span><span class="val">${money(d.saldo)}</span></div>`
   }));
   lineChart(hs, { rows, height: 220, fmt: money, porPunto: 4,
     refValue: FL.colchonMinimo, refLabel: "Colchón " + money(FL.colchonMinimo),
@@ -788,47 +900,27 @@ function drawFlujo() {
 
   divergingBars(hm, {
     rows: FLUJO.map(d => ({
-      entra: d.entra, sale: d.sale + d.gasto, hoy: d.hoy,
+      entra: d.entra, sale: d.sale, hoy: d.hoy,
       tipLabel: dLabelLong(d.fecha),
       etiqueta: d.fecha.endsWith("-01") || d.fecha.endsWith("-15") ? dLabel(d.fecha) : null,
-      eventos: d.eventos, gasto: d.gasto, saldo: d.saldo
+      eventos: d.eventos, saldo: d.saldo
     })),
     height: 190, fmt: money, colorEntra: "--s1", colorSale: "--s2", porBarra: 4,
     aria: "Entradas y salidas por día.",
     tip: r => r.eventos.map(e =>
         `<div class="tt-row"><span class="lhs">${CAT_ICONO[e.cat] || "·"} ${e.concepto}</span>` +
         `<span class="val">${money(Math.abs(e.monto))}</span></div>`).join("") +
-      `<div class="tt-row"><span class="lhs">Gasto del día</span><span class="val">${money(r.gasto)}</span></div>` +
-      `<div class="tt-row tt-total"><span>Saldo al cierre</span><span class="val">${money(r.saldo)}</span></div>`
+      `<div class="tt-row tt-total"><span>Saldo</span><span class="val">${money(r.saldo)}</span></div>`
   });
   legend(document.getElementById("flujo-mov-legend"), [
     { label:"Entra", color:css("--s1") }, { label:"Sale", color:css("--s2") }]);
-}
-
-function renderFlujoPresupuesto() {
-  document.getElementById("flujo-presupuesto").innerHTML = `
-    <div class="card-head">
-      <div><div class="card-title">Cuánto gastar en cada tramo</div>
-        <div class="card-sub">No es parejo: los pagos se amontonan antes de cada quincena del 15</div></div>
-    </div>
-    ${FL.presupuesto.map(t => {
-      const dias = daysBetween(t.desde, t.hasta) + 1;
-      return `<div class="row">
-        <div class="row-ic">${dias}d</div>
-        <div class="row-main">
-          <div class="row-t">${dLabel(t.desde)} → ${dLabel(t.hasta)}</div>
-          <div class="row-d">${t.nota}</div>
-        </div>
-        <div class="row-amt">${money(t.porDia)}<span class="sub">${money(t.porDia * dias)} en total</span></div>
-      </div>`;
-    }).join("")}`;
 }
 
 function renderFlujoCalendario() {
   const host = document.getElementById("flujo-cal");
   let html = `<div class="card-head" style="padding-top:12px">
       <div><div class="card-title">Día por día</div>
-        <div class="card-sub">Solo se listan los días con movimiento</div></div>
+        <div class="card-sub">Solo movimientos reales. Tu gasto no va aquí: es bolsa del mes.</div></div>
     </div>`;
   let mes = "";
   FLUJO.filter(d => d.eventos.length).forEach(d => {
@@ -836,7 +928,6 @@ function renderFlujoCalendario() {
       mes = d.fecha.slice(0, 7);
       html += `<div class="day-sep">${mLabel(mes, true)}</div>`;
     }
-    const bajo = d.saldo < FL.colchonMinimo;
     html += `<div class="fl-dia${d.hoy ? " hoy" : ""}">
       <div class="fl-fecha"><b>${dParse(d.fecha).getDate()}</b><span>${DOW_CHIP[(dParse(d.fecha).getDay() + 6) % 7]}</span></div>
       <div class="fl-eventos">
@@ -848,8 +939,8 @@ function renderFlujoCalendario() {
         </div>`).join("")}
         <div class="fl-ev fl-cierre">
           <span class="fl-ic"></span>
-          <span class="fl-co">Saldo al cierre${d.gasto ? ` · tras ${money(d.gasto)} de gasto` : ""}</span>
-          <span class="fl-mo${bajo ? " bajo" : ""}">${money2(d.saldo)}</span>
+          <span class="fl-co">Saldo si no gastas nada</span>
+          <span class="fl-mo">${money2(d.saldo)}</span>
         </div>
       </div>
     </div>`;
@@ -861,13 +952,6 @@ function renderFlujoCalendario() {
    RENDER — Días de oficina
    ══════════════════════════════════════════════════════════════════════ */
 
-const DOW_CORTO = ["L", "M", "M", "J", "V", "S", "D"];       // encabezado del calendario
-/* martes y miércoles comparten inicial: fuera del encabezado hay que distinguirlos */
-const DOW_CHIP  = ["L", "Ma", "Mi", "J", "V", "S", "D"];
-const DOW_LARGO = ["lunes", "martes", "miércoles", "jueves", "viernes", "sábado", "domingo"];
-let mesCal = hoyISO.slice(0, 7);
-
-/* próximos N días de oficina a partir de hoy */
 function proximosOficina(n) {
   const out = [];
   let k = hoyISO.slice(0, 7);
@@ -899,17 +983,6 @@ function renderOficinaHero() {
       ${money(OFI.montoRecarga)} + ${money(OFI.comision)} de comisión.
     </div>`;
 }
-
-/* Comparativa de estrategias de recarga: el saldo se acumula, así que
-   recargar por reflejo cada día estaciona dinero en el tag. */
-const ESTRATEGIAS = [
-  { id:"cada-dia",     monto:200,  titulo:"Recargo cada día que voy",
-    desc:"Por reflejo, aunque me sobre saldo" },
-  { id:"cuando-falta", monto:200,  titulo:"Recargo solo cuando no alcanza",
-    desc:"Dejo que el saldo se acumule" },
-  { id:"cuando-falta", monto:1000, titulo:"Recargo $1,000 cuando no alcanza",
-    desc:"Si la app te deja pasar del mínimo" }
-];
 
 function renderOficinaEstrategia() {
   const host = document.getElementById("oficina-estrategia");
@@ -962,7 +1035,6 @@ function renderOficinaEstrategia() {
     </div>`;
 
 }
-
 function renderOficinaCal() {
   const host = document.getElementById("oficina-cal");
   const { y, m } = mParse(mesCal);
@@ -1925,7 +1997,7 @@ function renderAll() {
 
   renderFlujoHero();
   renderFlujoCharts();
-  renderFlujoPresupuesto();
+  renderFlujoMensual();
   renderFlujoCalendario();
 
   renderQuincenaHero();
