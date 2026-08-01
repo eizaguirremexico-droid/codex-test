@@ -916,6 +916,71 @@ function drawFlujo() {
     { label:"Entra", color:css("--s1") }, { label:"Sale", color:css("--s2") }]);
 }
 
+/* ─── dónde vive cada gasto fijo ───
+   En el mapa solo se ven como salida directa el tag y el auto. El resto
+   va a una tarjeta y aparece semanas después metido dentro del pago de
+   esa tarjeta, así que hay que decir explícitamente dónde está cada uno. */
+function renderFlujoFijos() {
+  const t = id => DATA.tarjetas.find(x => x.id === id);
+  const desfase = id => {
+    const c = t(id);
+    if (!c) return "sale en el corte de la que uses";
+    return `corte día ${c.corte} · lo pagas el día ${c.vence}`;
+  };
+  const filas = [
+    { concepto: "Auto BYD", monto: DATA.auto.mensualidad, via: "debito",
+      donde: "Débito, día 15", cuando: "sale ese mismo día" },
+    { concepto: "Tag Pase", monto: tagMes(MESES[0]), via: "debito",
+      donde: "Débito, en cada recarga", cuando: "sale ese mismo día" },
+    ...DATA.vidaFija.map(v => ({
+      concepto: v.concepto, monto: v.monto, via: v.via,
+      donde: v.via === "tarjetas" ? "Repartido entre tarjetas" : t(v.via).alias,
+      cuando: desfase(v.via) })),
+    { concepto: "Suscripciones", monto: SUBS_MES, via: "elite",
+      donde: t("elite").alias, cuando: desfase("elite") }
+  ];
+  const directo = filas.filter(f => f.via === "debito");
+  const enTarjeta = filas.filter(f => f.via !== "debito");
+
+  // Un cargo hecho justo en el corte espera (vence − corte) días; uno hecho justo
+  // después del corte anterior espera eso más un ciclo completo.
+  const rezagos = DATA.tarjetas
+    .filter(c => c.corte != null && c.vence != null)
+    .map(c => ((c.vence - c.corte) + 30) % 30);
+  const semMin = Math.round(Math.min(...rezagos) / 7);
+  const semMax = Math.round((Math.max(...rezagos) + 30) / 7);
+
+  document.getElementById("flujo-fijos").innerHTML = `
+    <div class="card-head">
+      <div><div class="card-title">Dónde están tus gastos fijos</div>
+        <div class="card-sub">En el mapa de arriba solo dos salen directo.
+          El resto va a una tarjeta y aparece dentro de ese pago, semanas después.</div></div>
+    </div>
+    <div class="day-sep" style="padding-top:4px">Salen directo de tu cuenta</div>
+    ${directo.map(f => `<div class="row">
+      <div class="row-ic">${f.concepto.includes("Auto") ? "🚗" : "🛣️"}</div>
+      <div class="row-main"><div class="row-t">${f.concepto}</div>
+        <div class="row-d">${f.donde} · ${f.cuando}</div></div>
+      <div class="row-amt">${money(f.monto)}<span class="sub">al mes</span></div>
+    </div>`).join("")}
+    <div class="day-sep">Van a una tarjeta · los ves dentro de ese pago</div>
+    ${enTarjeta.map(f => `<div class="row">
+      <div class="row-ic">💳</div>
+      <div class="row-main"><div class="row-t">${f.concepto}</div>
+        <div class="row-d">${f.donde} · ${f.cuando}</div></div>
+      <div class="row-amt soft">${money(f.monto)}<span class="sub">al mes</span></div>
+    </div>`).join("")}
+    <div class="tip" style="margin-top:16px;padding-top:16px;border-top:1px solid var(--hairline)">
+      <div class="ic">💳</div>
+      <div class="tx">
+        <b>${money(sum(enTarjeta.map(f => f.monto)))} al mes de tus gastos fijos no salen cuando los gastas.</b>
+        Se acumulan en la tarjeta y no dejan tu cuenta hasta ${semMin} a ${semMax} semanas después,
+        revueltos con lo demás del corte. Por eso un mes se ve holgado y el siguiente no:
+        no es que gastes menos, es que la cuenta llega tarde.
+      </div>
+    </div>`;
+}
+
 function renderFlujoCalendario() {
   const host = document.getElementById("flujo-cal");
   let html = `<div class="card-head" style="padding-top:12px">
@@ -1998,6 +2063,7 @@ function renderAll() {
   renderFlujoHero();
   renderFlujoCharts();
   renderFlujoMensual();
+  renderFlujoFijos();
   renderFlujoCalendario();
 
   renderQuincenaHero();
