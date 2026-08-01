@@ -840,9 +840,11 @@ const ESTRATEGIAS = [
 
 const CAT_ICONO = { ingreso:"💵", mama:"❤️", tarjeta:"💳", auto:"🚗", tag:"🛣️" };
 
+let mesFlujo = null;   // null = el primero de la ventana
+
 function renderFlujoHero() {
   const meses = resumenMensual();
-  const ago = meses[0];
+  const ago = meses.find(m => m.k === mesFlujo) || meses[0];
   const piso = DATA.metaMuebles.pisoGastoLibre;
   /* Lo que el mes genera por sí solo, ya descontados TODOS sus compromisos
      (vista de devengado). Lo demás de la bolsa es colchón heredado del mes
@@ -850,24 +852,48 @@ function renderFlujoHero() {
   const propio  = byMonth[ago.k] ? byMonth[ago.k].libre : ago.genera;
   const heredado = ago.disponible - propio;
   const falta = piso - propio;
+  const primero = ago.k === meses[0].k;
+  /* En el primer mes el resto es colchón real que traes de julio. En los
+     siguientes es desfase: cargos que este mes genera pero paga el que sigue,
+     así que la caja se ve más grande de lo que el mes realmente produce. */
+  const rotulo = primero ? "colchón de antes" : "desfase de tarjetas";
 
   document.getElementById("flujo-hero").innerHTML = `
     <div class="h-label">Para gastar en ${mLabel(ago.k, true)}</div>
     <div class="h-value">${moneyRich(ago.disponible)}</div>
     <div class="h-chips">
       <span class="h-chip"><span class="k">lo genera ${mLabel(ago.k, true)}</span> <b>${money(propio)}</b></span>
-      <span class="h-chip"><span class="k">colchón de antes</span> <b>${money(heredado)}</b></span>
+      ${heredado >= 1 ? `<span class="h-chip"><span class="k">${rotulo}</span> <b>${money(heredado)}</b></span>` : ""}
+    </div>
+    <div class="h-tabs">
+      ${meses.map(m => `<button type="button" class="h-tab${m.k === ago.k ? " on" : ""}"
+        data-mes="${m.k}">${mLabel(m.k, true)}</button>`).join("")}
     </div>
     <div class="h-foot">
-      ${falta > 0
+      ${falta > 0 && heredado >= 1
         ? `Ojo con la mezcla: ${mLabel(ago.k, true)} por sí solo genera <b>${money(propio)}</b>,
            por debajo de tu piso de ${money(piso)}. Los otros ${money(heredado)} son colchón que
            traes de antes. Para llegar al piso tomas ${money(falta)} del colchón — para eso está —
            pero cada peso de más que gastes sale del colchón, no de tu sueldo, y ese no se repone.`
-        : `${mLabel(ago.k, true)} genera <b>${money(propio)}</b> por sí solo, arriba de tu piso de
-           ${money(piso)}. Los otros ${money(heredado)} son colchón que traes de antes: gastarlos
-           no rompe el mes, pero no se repone.`}
+        : heredado >= 1
+        ? `${mLabel(ago.k, true)} genera <b>${money(propio)}</b> por sí solo, ${propio >= piso
+             ? `${money(propio - piso)} arriba de tu piso de ${money(piso)}`
+             : `por debajo de tu piso de ${money(piso)}`}. ${primero
+             ? `Los otros ${money(heredado)} son colchón que traes de antes: gastarlos no rompe
+                el mes, pero no se repone.`
+             : `Los otros ${money(heredado)} no son tuyos todavía: son cargos que ${mLabel(ago.k, true)}
+                genera y que paga el mes siguiente. Guíate por los ${money(propio)}.`}`
+        : propio >= piso
+        ? `Todo esto lo genera ${mLabel(ago.k, true)} con su propio sueldo, sin tocar colchón.
+           Van ${money(propio - piso)} arriba de tu piso de ${money(piso)}: eso es lo que puede
+           irse al ahorro de los muebles sin que el mes se apriete.`
+        : `${mLabel(ago.k, true)} genera <b>${money(propio)}</b> y no trae nada extra de dónde
+           tomar, así que se queda ${money(piso - propio)} por debajo de tu piso de ${money(piso)}.
+           Hay que mover un pago de mes o bajar el gasto.`}
     </div>`;
+
+  document.querySelectorAll("#flujo-hero .h-tab").forEach(b =>
+    b.addEventListener("click", () => { mesFlujo = b.dataset.mes; renderFlujoHero(); }));
 }
 
 /* Bolsa por mes y tope por quincena. Nada de gasto diario. */

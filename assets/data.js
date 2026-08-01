@@ -223,7 +223,7 @@ const DATA = {
      gasto libre se maneja como bolsa mensual. */
   flujo: {
     desde: "2026-08-01",
-    hasta: "2026-09-30",
+    hasta: "2026-10-31",
     colchonMinimo: 2000,
     pagos: [
       { fecha:"2026-08-01", concepto:"Pago 1 de 5 a mamá",            monto:10659.00, cat:"mama" },
@@ -241,7 +241,17 @@ const DATA = {
       { fecha:"2026-09-23", concepto:"Amex Gold Elite",                monto:3726.39,  cat:"tarjeta", estimado:true, tarjeta:"elite",
         nota:"MSI julio 3/3 + Alo Yoga 2/3 + suscripciones" },
       { fecha:"2026-09-30", concepto:"Pago 3 de 5 a mamá",             monto:7106.00,  cat:"mama",
-        nota:"ya con el reparto que hay que negociar" }
+        nota:"ya con el reparto que hay que negociar" },
+      /* Octubre sale del mismo modelo de cortes: cada pago es lo que cerró en
+         el corte anterior de esa tarjeta, con los MSI que siguen vivos. */
+      { fecha:"2026-10-03", concepto:"Costco Banamex",                 monto:3355.58,  cat:"tarjeta", estimado:true, tarjeta:"costco",
+        nota:"MSI + gasolina del ciclo — baja a $1,156 si la dejas en cero antes del corte" },
+      { fecha:"2026-10-11", concepto:"Amex Gold Servicios",            monto:1788.35,  cat:"tarjeta", estimado:true, tarjeta:"servicios",
+        nota:"gym + Amazon MSI" },
+      { fecha:"2026-10-15", concepto:"Mensualidad auto BYD",           monto:6209.00,  cat:"auto" },
+      { fecha:"2026-10-23", concepto:"Amex Gold Elite",                monto:1755.39,  cat:"tarjeta", estimado:true, tarjeta:"elite",
+        nota:"Alo Yoga 3/3 + suscripciones — ya sin los MSI de junio y julio" },
+      { fecha:"2026-10-30", concepto:"Pago 4 de 5 a mamá",             monto:7106.00,  cat:"mama" }
     ]
   },
 
