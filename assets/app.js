@@ -902,13 +902,47 @@ function renderFlujoHero() {
    de la cuenta hasta el siguiente. La caja de fin de mes se ve grande justo
    por eso. Apartar ese monto es lo que evita gastarlo dos veces: una al
    cargarlo y otra al verlo todavía en la cuenta. */
+/* ─── techo de un mes ───
+   Lo máximo que puedes cargar en el mes `k` sin quitarle nada a los que
+   siguen: cada mes posterior conserva completo lo que él mismo genera, y
+   el saldo nunca baja del colchón. Lo que se carga en un mes se paga el 23
+   del siguiente, así que solo se puede calcular cuando esa fecha todavía
+   cae dentro de la ventana del flujo. */
+function techoMes(k) {
+  const meses = resumenMensual();
+  const cobro = j => `${mAdd(j, 1)}-23`;
+  if (cobro(k) > FL.hasta) return null;
+  /* Los demás meses NO se suponen en cero: cada uno carga lo que él mismo
+     genera. Si no, el techo de septiembre saldría enorme por dar por hecho
+     que agosto no gastó nada. */
+  const otros = meses.filter(m => m.k !== k && byMonth[m.k]);
+  const saldoCon = (f, S) => {
+    let s = FLUJO.find(d => d.fecha === f).saldo;
+    if (f >= cobro(k)) s -= S;
+    otros.forEach(m => { if (f >= cobro(m.k)) s -= byMonth[m.k].libre; });
+    return s;
+  };
+  /* al cerrar la ventana hay que poder apartar lo de los meses cuyo cobro
+     todavía no cae dentro */
+  const pendiente = sum(otros.filter(m => cobro(m.k) > FL.hasta)
+                             .map(m => byMonth[m.k].libre));
+  const ok = S => FLUJO.every(d => saldoCon(d.fecha, S) >= FL.colchonMinimo)
+               && saldoCon(FL.hasta, S) - pendiente >= FL.colchonMinimo;
+  if (!ok(0)) return null;
+  let lo = 0, hi = 200000;
+  for (let i = 0; i < 60; i++) { const m = (lo + hi) / 2; ok(m) ? lo = m : hi = m; }
+  return lo;
+}
+
 function renderApartado() {
   const piso = DATA.metaMuebles.pisoGastoLibre;
   const meses = resumenMensual();
   const filas = meses.map((m, i) => {
     /* al cerrar el mes i ya se pagaron los cargos de los meses 0..i−1 */
     const caja = m.cierre - piso * i;
-    return { k: m.k, caja, apartado: piso, libre: caja - piso };
+    const genera = byMonth[m.k] ? byMonth[m.k].libre : m.genera;
+    return { k: m.k, caja, apartado: piso, libre: caja - piso,
+             genera, techo: techoMes(m.k) };
   });
   const ok = filas.every(f => f.libre >= 0);
 
@@ -925,6 +959,18 @@ function renderApartado() {
         <div class="row-d">Cierras con ${money(f.caja)} · apartas ${money(f.apartado)} para el mes que sigue</div>
       </div>
       <div class="row-amt">${money(f.libre)}<span class="sub">libre de verdad</span></div>
+    </div>`).join("")}
+    <div class="day-sep">Hasta dónde puedes estirarte sin quitarle a los meses que siguen</div>
+    ${filas.map(f => `<div class="row">
+      <div class="row-ic">${f.techo == null ? "·" : f.genera >= piso ? "🟢" : "🟡"}</div>
+      <div class="row-main">
+        <div class="row-t" style="text-transform:capitalize">${mLabel(f.k, true)}</div>
+        <div class="row-d">${f.techo == null
+          ? "necesita el mes siguiente para calcularse"
+          : `Genera ${money(f.genera)} por sí solo · de ahí para arriba sale del colchón`}</div>
+      </div>
+      <div class="row-amt${f.techo == null ? " soft" : ""}">${f.techo == null ? "—" : money(f.techo)}
+        <span class="sub">${f.techo == null ? "sin dato" : "techo"}</span></div>
     </div>`).join("")}
     <div class="tip" style="margin-top:16px;padding-top:16px;border-top:1px solid var(--hairline)">
       <div class="ic">${ok ? "✅" : "⚠️"}</div>
