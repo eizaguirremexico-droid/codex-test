@@ -859,6 +859,47 @@ function renderFlujoHero() {
 }
 
 /* Bolsa por mes y tope por quincena. Nada de gasto diario. */
+/* ─── el método de apartar ───
+   Casi todo el gasto va a tarjeta, así que lo que gastas en un mes no sale
+   de la cuenta hasta el siguiente. La caja de fin de mes se ve grande justo
+   por eso. Apartar ese monto es lo que evita gastarlo dos veces: una al
+   cargarlo y otra al verlo todavía en la cuenta. */
+function renderApartado() {
+  const piso = DATA.metaMuebles.pisoGastoLibre;
+  const meses = resumenMensual();
+  const filas = meses.map((m, i) => {
+    /* al cerrar el mes i ya se pagaron los cargos de los meses 0..i−1 */
+    const caja = m.cierre - piso * i;
+    return { k: m.k, caja, apartado: piso, libre: caja - piso };
+  });
+  const ok = filas.every(f => f.libre >= 0);
+
+  document.getElementById("flujo-apartado").innerHTML = `
+    <div class="card-head">
+      <div><div class="card-title">Lo que apartas para el mes que viene</div>
+        <div class="card-sub">Si cargas ${money(piso)} al mes a las tarjetas, ese dinero sigue en tu
+          cuenta al cerrar el mes pero ya no es tuyo: lo cobran el mes siguiente.</div></div>
+    </div>
+    ${filas.map(f => `<div class="row">
+      <div class="row-ic">🔒</div>
+      <div class="row-main">
+        <div class="row-t" style="text-transform:capitalize">${mLabel(f.k, true)}</div>
+        <div class="row-d">Cierras con ${money(f.caja)} · apartas ${money(f.apartado)} para el mes que sigue</div>
+      </div>
+      <div class="row-amt">${money(f.libre)}<span class="sub">libre de verdad</span></div>
+    </div>`).join("")}
+    <div class="tip" style="margin-top:16px;padding-top:16px;border-top:1px solid var(--hairline)">
+      <div class="ic">${ok ? "✅" : "⚠️"}</div>
+      <div class="tx">${ok
+        ? `<b>Así se sostiene solo.</b> Cada mes gastas ${money(piso)} con tarjeta, apartas
+           ${money(piso)} de la caja, y aun así te sobra. El apartado nunca se toca: sale
+           en automático cuando llega el estado de cuenta.`
+        : `<b>No alcanza a cubrirse.</b> Con ${money(piso)} de gasto al mes, algún mes cierra
+           sin poder apartar lo que se cobra el siguiente. Hay que bajar el gasto o mover un pago.`}
+      </div>
+    </div>`;
+}
+
 function renderFlujoMensual() {
   const meses = resumenMensual();
   const topes = topesQuincena();
@@ -2189,6 +2230,7 @@ function renderAll() {
   renderFlujoHero();
   renderFlujoCharts();
   renderFlujoMensual();
+  renderApartado();
   renderFlujoFijos();
   renderFlujoCalendario();
 
