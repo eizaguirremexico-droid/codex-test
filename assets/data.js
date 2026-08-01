@@ -90,7 +90,7 @@ const DATA = {
     { concepto: "Gym FITSI",            corto: "Gym",      monto: 1283.40,
       detalle: "se carga el día 23", via: "servicios" },
     { concepto: "Teléfono",             corto: "Teléfono", monto: 350,
-      detalle: "recargas Telcel sueltas", via: "tarjetas" }
+      detalle: "cargo mensual — falta confirmar dónde se cobra", via: "tarjetas" }
   ],
 
   /* ── Suscripciones ── */
@@ -137,7 +137,7 @@ const DATA = {
          (que se van a 3 MSI en el corte) y las suscripciones, que ya se
          cuentan aparte. Con esto el corte cuadra exacto con el pago. */
       consumoCiclo: { corte:"2026-08-03", monto:361.35,
-        detalle:"Telcel $90 · Google FaceApp $100 · Meshy $52.35 · otros $119" },
+        detalle:"Telcel $90 (no es el teléfono fijo) · Google FaceApp $100 · Meshy $52.35 · otros $119" },
       tono:"grafito" },
     { id:"servicios", alias:"Amex Gold Servicios", term:"21009", emisor:"American Express",
       tipo:"cargo", linea:null, disponible:null, saldo:0, tasa:null,
