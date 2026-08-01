@@ -896,8 +896,9 @@ function renderFlujoHero() {
                 genera y que paga el mes siguiente. Guíate por los ${money(propio)}.`}`
         : propio >= piso
         ? `Todo esto lo genera ${mLabel(ago.k, true)} con su propio sueldo, sin tocar colchón.
-           Van ${money(propio - piso)} arriba de tu piso de ${money(piso)}: eso es lo que puede
-           irse al ahorro de los muebles sin que el mes se apriete.`
+           Van ${money(propio - piso)} arriba de tu piso de ${money(piso)}. El ahorro de los
+           muebles no arranca hasta ${mLabel(DATA.metaMuebles.inicioAhorro, true)}, cuando
+           termina el crédito a tu mamá, así que esto de más es colchón: red por si algo sale mal.`
         : `${mLabel(ago.k, true)} genera <b>${money(propio)}</b> y no trae nada extra de dónde
            tomar, así que se queda ${money(piso - propio)} por debajo de tu piso de ${money(piso)}.
            Hay que mover un pago de mes o bajar el gasto.`}
