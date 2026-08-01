@@ -15,15 +15,15 @@ const DATA = {
   ingreso: { quincena: 17500, mensual: 35000, diasPago: [15, 30] },
 
   /* ── Efectivo disponible ── */
-  efectivo: { ahorro: 14662.97, asOf: "2026-07-27" },
+  efectivo: { ahorro: 22349, asOf: "2026-07-31" },
 
   /* ── Dinero de un mes que ya quedó apartado en un mes anterior ──
      No vuelve a consumir el ingreso del mes en que se paga: por eso se
      resta de los compromisos de ese mes al calcular el gasto libre. */
   prefondeo: [
-    { mes: "2026-08", monto: 10369.02,
-      concepto: "Reserva Amex Gold Elite",
-      nota: "apartada el 30 de julio, la tarjeta la cobra el 23 de agosto" }
+    { mes: "2026-08", monto: 6209,
+      concepto: "Mensualidad del auto",
+      nota: "pagada por adelantado el 30 de julio con dinero de julio" }
   ],
 
   /* ── Crédito a mamá ──
@@ -34,7 +34,7 @@ const DATA = {
   prestamoMama: {
     total: 42636,
     pagos: [
-      { fecha: "2026-07-30", monto: 10659 },
+      { fecha: "2026-08-01", monto: 10659 },
       { fecha: "2026-08-30", monto: 10659 },
       { fecha: "2026-09-30", monto: 7106 },
       { fecha: "2026-10-30", monto: 7106 },
@@ -124,15 +124,17 @@ const DATA = {
   /* ── Tarjetas ── */
   tarjetas: [
     { id:"elite", alias:"Amex Gold Elite", term:"11005", emisor:"American Express",
-      tipo:"revolvente", linea:92000, disponible:77666, saldo:3261.35, tasa:61.48,
-      corte:3, vence:23, proximoPago:{ fecha:"2026-08-23", monto:10369.02 },
+      tipo:"revolvente", linea:92000, disponible:77241, saldo:4110.07, tasa:61.48,
+      corte:3, vence:23, proximoPago:{ fecha:"2026-08-23", monto:10793.74, estimado:true },
+      puntos:4003,
       tono:"grafito" },
     { id:"servicios", alias:"Amex Gold Servicios", term:"21009", emisor:"American Express",
-      tipo:"cargo", linea:null, disponible:null, saldo:1788.35, tasa:null,
-      corte:22, vence:11, proximoPago:{ fecha:"2026-08-11", monto:1788.35 },
+      tipo:"cargo", linea:null, disponible:null, saldo:0, tasa:null,
+      corte:22, vence:11, proximoPago:{ fecha:"2026-09-11", monto:1788.35 },
+      puntos:4281,
       tono:"oro" },
     { id:"costco", alias:"Costco Banamex Visa", term:"104", emisor:"Banamex",
-      tipo:"revolvente", linea:50000, disponible:42716.22, saldo:0, tasa:60.58,
+      tipo:"revolvente", linea:50000, disponible:41196.22, saldo:3461.26, tasa:60.58,
       corte:13, vence:3, proximoPago:{ fecha:"2026-09-03", monto:1155.58 },
       tono:"azul" },
     { id:"santander", alias:"Santander LikeU", term:"6240", emisor:"Santander",
@@ -174,9 +176,10 @@ const DATA = {
     fecha: "2026-07-30",
     acciones: [
       { concepto:"Pago 1 de 5 a mamá",             monto:10659.00, tipo:"salida" },
-      { concepto:"Reserva Amex Gold Elite",        monto:10369.02, tipo:"reserva",
-        nota:"se aparta hoy, la tarjeta lo cobra el 23 de agosto" },
-      { concepto:"Adelanto Amex Gold Servicios",   monto:2882.85,  tipo:"salida" },
+      { concepto:"Adelanto Amex Gold Servicios",   monto:3542.94,  tipo:"salida", pagado:"2026-07-30",
+        nota:"fueron 3,542.94, no los 2,882.85 planeados; dejó la tarjeta en cero" },
+      { concepto:"Mensualidad de agosto del auto", monto:6209.00,  tipo:"salida", pagado:"2026-07-30",
+        nota:"adelantada: agosto ya no la paga" },
       { concepto:"Adelanto Costco Banamex",        monto:2317.03,  tipo:"salida", pagado:"2026-07-27" },
       { concepto:"Adelanto Santander LikeU",       monto:600.00,   tipo:"salida", pagado:"2026-07-27" }
     ]
@@ -196,6 +199,39 @@ const DATA = {
     { fecha:"2026-09-23", concepto:"Vence Amex Gold Elite",     monto:3726.23,  tipo:"salida",   nota:"MSI julio 3/3 + Alo Yoga 2/3 + suscripciones" },
     { fecha:"2026-09-30", concepto:"Pago 3 de 4 a mamá",        monto:10659.00, tipo:"salida",   nota:"" }
   ],
+
+  /* ── Flujo diario de caja ──
+     Pagos con fecha y monto reales. Los que dicen `estimado` todavía no
+     cortan, así que el monto es cálculo, no dato del banco.
+     El presupuesto NO es parejo: los pagos se amontonan antes de cada
+     quincena del 15, así que cada tramo aguanta distinto. */
+  flujo: {
+    desde: "2026-08-01",
+    hasta: "2026-09-30",
+    colchonMinimo: 2000,
+    pagos: [
+      { fecha:"2026-08-01", concepto:"Pago 1 de 5 a mamá",            monto:10659.00, cat:"mama" },
+      { fecha:"2026-08-03", concepto:"Liquidar Costco Banamex",        monto:3461.26,  cat:"tarjeta" },
+      { fecha:"2026-08-12", concepto:"Dejar Costco en cero (antes del corte)", monto:2145.00, cat:"tarjeta", estimado:true },
+      { fecha:"2026-08-23", concepto:"Amex Gold Elite",                monto:10793.74, cat:"tarjeta", estimado:true,
+        nota:"MSI junio 3/3 + MSI julio 2/3 + Alo Yoga 1/3 + consumo" },
+      { fecha:"2026-08-30", concepto:"Pago 2 de 5 a mamá",             monto:10659.00, cat:"mama" },
+      { fecha:"2026-09-03", concepto:"Costco Banamex (solo MSI)",      monto:1155.58,  cat:"tarjeta" },
+      { fecha:"2026-09-11", concepto:"Amex Gold Servicios",            monto:1788.35,  cat:"tarjeta",
+        nota:"gym del 23 de julio + Amazon MSI" },
+      { fecha:"2026-09-15", concepto:"Mensualidad auto BYD",           monto:6209.00,  cat:"auto" },
+      { fecha:"2026-09-23", concepto:"Amex Gold Elite",                monto:3726.39,  cat:"tarjeta", estimado:true,
+        nota:"MSI julio 3/3 + Alo Yoga 2/3 + suscripciones" },
+      { fecha:"2026-09-30", concepto:"Pago 3 de 5 a mamá",             monto:7106.00,  cat:"mama",
+        nota:"ya con el reparto que hay que negociar" }
+    ],
+    presupuesto: [
+      { desde:"2026-08-01", hasta:"2026-08-14", porDia:150, nota:"le pagas a mamá y liquidas Costco sin quincena de por medio" },
+      { desde:"2026-08-15", hasta:"2026-08-29", porDia:400, nota:"el tramo más holgado" },
+      { desde:"2026-08-30", hasta:"2026-09-14", porDia:200, nota:"una sola quincena contra tres pagos" },
+      { desde:"2026-09-15", hasta:"2026-09-30", porDia:380, nota:"dos quincenas, cierras con colchón" }
+    ]
+  },
 
   /* ── Horizonte de la proyección de compromisos ── */
   horizonte: { desde: "2026-08", hasta: "2027-09" },
