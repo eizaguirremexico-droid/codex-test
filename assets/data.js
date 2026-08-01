@@ -95,7 +95,7 @@ const DATA = {
 
   /* ── Suscripciones ── */
   suscripciones: [
-    { servicio: "Claude (Anthropic)", monto: 359.56, nota: "USD $20", tarjeta: "Amex Gold Elite" },
+    { servicio: "Claude (Anthropic)", monto: 359.72, nota: "USD $20 · cobrado el 30 jul", tarjeta: "Amex Gold Elite" },
     { servicio: "ChatGPT",            monto: 399.00, nota: "",         tarjeta: "Amex Gold Elite" }
   ],
 
@@ -132,6 +132,12 @@ const DATA = {
       tipo:"revolvente", linea:92000, disponible:77241, saldo:4110.07, tasa:61.48,
       corte:3, vence:23, proximoPago:{ fecha:"2026-08-23", monto:10793.74, estimado:true },
       puntos:4003,
+      /* Consumo suelto del ciclo que cierra el 3 de agosto: lo que quedó del
+         saldo de $4,110.07 al 31 de julio, quitando los $2,990 de Alo Yoga
+         (que se van a 3 MSI en el corte) y las suscripciones, que ya se
+         cuentan aparte. Con esto el corte cuadra exacto con el pago. */
+      consumoCiclo: { corte:"2026-08-03", monto:361.35,
+        detalle:"Telcel $90 · Google FaceApp $100 · Meshy $52.35 · otros $119" },
       tono:"grafito" },
     { id:"servicios", alias:"Amex Gold Servicios", term:"21009", emisor:"American Express",
       tipo:"cargo", linea:null, disponible:null, saldo:0, tasa:null,
