@@ -367,6 +367,18 @@ const FL = DATA.flujo;
    de monto cero: informa, pero no toca el saldo. */
 const mismaTarjeta = (alias, ref) => alias.startsWith(ref) || ref.startsWith(alias);
 
+/* ─── gasto libre ya hecho ───
+   No es compromiso: es la bolsa del mes, ya usada. Se registra con la fecha
+   de la compra, pero el efectivo sale el día que vence la tarjeta donde cayó. */
+const GASTO_LIBRE = DATA.gastoLibre || [];
+const gastadoMes  = k => sum(GASTO_LIBRE.filter(g => g.fecha.slice(0, 7) === k).map(g => g.monto));
+const gastoEnCorte = (id, corte) => GASTO_LIBRE.filter(g => {
+  if (g.tarjeta !== id) return false;
+  const c = DATA.tarjetas.find(x => x.id === id);
+  const fl = c && flotante(c, g.fecha);
+  return fl && fl.corte === corte;
+});
+
 function cargosDelCorte(c, k, f) {
   const items = [];
   msiEnMes(k).filter(s => mismaTarjeta(c.alias, s.tarjeta)).forEach(s =>
@@ -382,6 +394,9 @@ function cargosDelCorte(c, k, f) {
   if (c.consumoCiclo && c.consumoCiclo.corte === f)
     items.push({ t: "Consumo del ciclo", m: c.consumoCiclo.monto,
                  n: c.consumoCiclo.detalle, firme: true });
+  const mio = gastoEnCorte(c.id, f);
+  if (mio.length) items.push({ t: "Tu gasto", m: sum(mio.map(g => g.monto)),
+                               n: mio.map(g => g.concepto).join(" · "), firme: true });
   return items;
 }
 
@@ -434,6 +449,15 @@ function construirFlujo() {
       eventos.push({ concepto: p.concepto, monto: -p.monto, cat: p.cat,
                      estimado: p.estimado, nota: p.nota }));
     if (recargas[f]) eventos.push({ concepto: "Recarga de tag", monto: -recargas[f], cat: "tag" });
+    const mio = GASTO_LIBRE.filter(g => {
+      const c = DATA.tarjetas.find(x => x.id === g.tarjeta);
+      const fl = c && flotante(c, g.fecha);
+      return (fl ? fl.vence : g.fecha) === f;
+    });
+    if (mio.length) eventos.push({
+      concepto: `Tu gasto de ${mLabel(mio[0].fecha.slice(0, 7), true)}`,
+      monto: -sum(mio.map(g => g.monto)), cat: "gasto",
+      nota: mio.map(g => g.concepto).join(" · ") });
     cortesDelDia(f).forEach(e => eventos.push(e));
 
     const entra = sum(eventos.filter(e => e.monto > 0).map(e => e.monto));
@@ -850,7 +874,7 @@ const ESTRATEGIAS = [
    RENDER — Flujo diario
    ══════════════════════════════════════════════════════════════════════ */
 
-const CAT_ICONO = { ingreso:"💵", mama:"❤️", tarjeta:"💳", auto:"🚗", tag:"🛣️" };
+const CAT_ICONO = { ingreso:"💵", mama:"❤️", tarjeta:"💳", auto:"🚗", tag:"🛣️", gasto:"🛍️" };
 
 let mesFlujo = null;   // null = el primero de la ventana
 
@@ -877,6 +901,8 @@ function renderFlujoHero() {
   const ago = meses[i];
   const piso = DATA.metaMuebles.pisoGastoLibre;
   const real = realDelMes(i);
+  const yaGastado = gastadoMes(ago.k);
+  const queda = real - yaGastado;
   /* Lo que el mes genera por sí solo, ya descontados TODOS sus compromisos
      (vista de devengado). Lo demás de la bolsa es colchón heredado del mes
      anterior: se puede gastar, pero es de una sola vez. */
@@ -889,11 +915,13 @@ function renderFlujoHero() {
   const rotulo = "traes de antes";
 
   document.getElementById("flujo-hero").innerHTML = `
-    <div class="h-label">Para gastar en ${mLabel(ago.k, true)}</div>
-    <div class="h-value">${moneyRich(real)}</div>
+    <div class="h-label">${yaGastado > 0 ? `Te queda para ${mLabel(ago.k, true)}`
+                                          : `Para gastar en ${mLabel(ago.k, true)}`}</div>
+    <div class="h-value">${moneyRich(queda)}</div>
     <div class="h-chips">
       <span class="h-chip"><span class="k">${propio < 0 ? `le falta a ${mLabel(ago.k, true)}` : `lo genera ${mLabel(ago.k, true)}`}</span> <b>${money(Math.abs(propio))}</b></span>
       ${heredado >= 1 ? `<span class="h-chip"><span class="k">${rotulo}</span> <b>${money(heredado)}</b></span>` : ""}
+      ${yaGastado > 0 ? `<span class="h-chip"><span class="k">ya gastaste</span> <b>${money(yaGastado)}</b></span>` : ""}
     </div>
     <div class="h-tabs">
       ${meses.map(m => `<button type="button" class="h-tab${m.k === ago.k ? " on" : ""}"
@@ -928,7 +956,7 @@ function renderFlujoHero() {
            Hay que mover un pago de mes o bajar el gasto.`}
       <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--hero-inset)">
         Tu banco va a decir <b>${money(ago.cierre)}</b> el ${dLabelLong(FLUJO.filter(d =>
-          d.fecha.startsWith(ago.k)).at(-1).fecha)}, ${money(ago.cierre - real)} de más.
+          d.fecha.startsWith(ago.k)).at(-1).fecha)}, ${money(ago.cierre - queda)} de más.
         Esa diferencia ya tiene dueño: cuentas que todavía no te cobran${i > 0
           ? ` y lo que hayas gastado con tarjeta y aún no sale`: ""}. No la gastes.
       </div>
