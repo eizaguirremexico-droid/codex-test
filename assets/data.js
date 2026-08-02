@@ -100,6 +100,17 @@ const DATA = {
       detalle: "cargo mensual — falta confirmar dónde se cobra", via: "tarjetas" }
   ],
 
+  /* ── Gasto libre ya hecho ──
+     Esto NO es compromiso: es tu bolsa del mes, ya gastada. Sirve para dos
+     cosas: restarlo de lo que te queda por gastar, y saber en qué corte cae
+     para que salga de la cuenta el día correcto. */
+  gastoLibre: [
+    { fecha:"2026-08-01", concepto:"Restaurante LCDP Galerías", monto:445.50, tarjeta:"servicios" },
+    { fecha:"2026-08-01", concepto:"Liverpool Atizapán",        monto:278.60, tarjeta:"servicios" },
+    { fecha:"2026-08-01", concepto:"Miniso Cúspide",            monto:329.80, tarjeta:"servicios" },
+    { fecha:"2026-08-01", concepto:"Cinépolis dulcería",        monto:728.00, tarjeta:"servicios" }
+  ],
+
   /* ── Suscripciones ── */
   suscripciones: [
     { servicio: "Claude (Anthropic)", monto: 359.72, nota: "USD $20 · cobrado el 30 jul", tarjeta: "Amex Gold Elite" },
@@ -147,8 +158,10 @@ const DATA = {
         detalle:"Telcel $90 (no es el teléfono fijo) · Google FaceApp $100 · Meshy $52.35 · otros $119" },
       tono:"grafito" },
     { id:"servicios", alias:"Amex Gold Servicios", term:"21009", emisor:"American Express",
-      tipo:"cargo", linea:null, disponible:null, saldo:0, tasa:null,
-      corte:22, vence:11, proximoPago:{ fecha:"2026-09-11", monto:1788.35 },
+      tipo:"cargo", linea:null, disponible:null, saldo:1781.90, tasa:null,
+      /* El pago del 11 de septiembre = gym $1,283.40 + Amazon MSI $504.95
+         + los $1,781.90 de consumo del 1 de agosto. */
+      corte:22, vence:11, proximoPago:{ fecha:"2026-09-11", monto:3570.25, estimado:true },
       puntos:4281,
       tono:"oro" },
     { id:"costco", alias:"Costco Banamex Visa", term:"104", emisor:"Banamex",
