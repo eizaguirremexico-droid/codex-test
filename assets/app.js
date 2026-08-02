@@ -544,20 +544,30 @@ function renderTopbar() {
     h < 12 ? "Buenos días" : h < 19 ? "Buenas tardes" : "Buenas noches";
 }
 
+/* La portada muestra LA BOLSA DEL MES, el mismo número que la pantalla de
+   Flujo. Antes mostraba la ventana de efectivo hasta la próxima quincena, que
+   es otra cosa y con otro monto: como casi todo se carga a tarjeta, esa
+   ventana no limita el gasto y tener dos cifras distintas con el mismo
+   nombre solo confundía. La ventana de efectivo queda como nota al pie. */
 function renderHero() {
-  const h = document.getElementById("hero");
-  h.innerHTML = `
-    <div class="h-label">Gasto libre disponible</div>
-    <div class="h-value">${moneyRich(PERIODO.libre)}</div>
+  const k = MESES[0];
+  const real = realDelMes(0), ya = gastadoMes(k), queda = real - ya;
+  const propio = byMonth[k].libre;
+  document.getElementById("hero").innerHTML = `
+    <div class="h-label">${ya > 0 ? `Te queda para ${mLabel(k, true)}` : `Para gastar en ${mLabel(k, true)}`}</div>
+    <div class="h-value">${moneyRich(queda)}</div>
     <div class="h-chips">
-      <span class="h-chip"><span class="k">por día</span> <b>${money(PERIODO.porDia)}</b></span>
-      <span class="h-chip"><span class="k">quedan</span> <b>${PERIODO.dias} días</b></span>
+      <span class="h-chip"><span class="k">lo genera ${mLabel(k, true)}</span> <b>${money(propio)}</b></span>
+      ${ya > 0 ? `<span class="h-chip"><span class="k">ya gastaste</span> <b>${money(ya)}</b></span>` : ""}
     </div>
     <div class="h-foot">
-      Tu efectivo de ${money(DATA.efectivo.ahorro)} más ${money(PERIODO.entra)} de quincena,
-      menos ${money(PERIODO.sale)} comprometidos y ${money(PERIODO.trayecto)} de
-      tag y gasolina (${PERIODO.tr.idas} idas a la oficina).
-      Esto es para comida y todo lo demás, hasta el ${dLabelLong(PERIODO.hasta)}.
+      Es la bolsa del mes: gástala como quieras, un día ${money(1000)} y otro nada.
+      <br><br>
+      En <b>efectivo</b> traes ${money(DATA.efectivo.ahorro)} y hasta tu quincena del
+      ${dLabel(PERIODO.hasta)} se te van ${money(PERIODO.trayecto)} de tag y gasolina
+      (${PERIODO.tr.idas} idas a la oficina)${PERIODO.sale > 0
+        ? ` más ${money(PERIODO.sale)} de pagos` : ""}: quedan ${money(PERIODO.libre)}
+      para lo que pagues sin tarjeta en estos ${PERIODO.dias} días.
     </div>`;
 }
 
