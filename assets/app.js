@@ -2128,11 +2128,13 @@ function renderMonthList() {
           </span>
           <span class="m-free">
             <span class="v" style="${r.libreDespues < PISO_ACTUAL - 1 ? `color:${css("--crit-ink")}` : ""}">${money(r.libreDespues)}</span>
-            <span class="k">${r.ahorro > 0
-              ? `libre · ya apartaste ${money(r.ahorro)} para la meta`
-              : r.prefondeado > 0
-                ? `libre · incluye ${money(r.prefondeado)} apartados antes`
-                : "libre"}</span>
+            <span class="k">${gastadoMes(r.k) > 0
+              ? `genera el mes · ya gastaste ${money(gastadoMes(r.k))}`
+              : r.ahorro > 0
+                ? `libre · ya apartaste ${money(r.ahorro)} para la meta`
+                : r.prefondeado > 0
+                  ? `libre · incluye ${money(r.prefondeado)} apartados antes`
+                  : "libre"}</span>
           </span>
           <span class="m-caret">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
