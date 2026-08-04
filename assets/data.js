@@ -88,7 +88,10 @@ const DATA = {
     /* "cada-dia"  = recargas por reflejo cada día de oficina
        "cuando-falta" = recargas solo cuando el saldo no alcanza el viaje */
     estrategia: "cuando-falta",
-    nota: "cobrado a débito, sale el mismo día"
+    /* Dónde se cobra la recarga: "debito" sale el mismo día; el id de una
+       tarjeta la difiere hasta que vence esa tarjeta. */
+    via: "santander",
+    nota: "cargado a la Santander LikeU, no a débito"
   },
 
   /* ── Gastos fijos de vida (todos los meses) ──
@@ -111,7 +114,10 @@ const DATA = {
     { fecha:"2026-08-01", concepto:"Restaurante LCDP Galerías", monto:445.50, tarjeta:"servicios" },
     { fecha:"2026-08-01", concepto:"Liverpool Atizapán",        monto:278.60, tarjeta:"servicios" },
     { fecha:"2026-08-01", concepto:"Miniso Cúspide",            monto:329.80, tarjeta:"servicios" },
-    { fecha:"2026-08-01", concepto:"Cinépolis dulcería",        monto:728.00, tarjeta:"servicios" }
+    { fecha:"2026-08-01", concepto:"Cinépolis dulcería",        monto:728.00, tarjeta:"servicios" },
+    /* La LikeU pasó de $880 el 31 de julio a $1,080 el 4 de agosto. No se
+       sabe qué fue; queda registrado para no perderlo de la cuenta. */
+    { fecha:"2026-08-02", concepto:"Cargo sin identificar",      monto:200.00, tarjeta:"santander" }
   ],
 
   /* ── Suscripciones ── */
@@ -180,12 +186,17 @@ const DATA = {
         detalle:"gasolina del 1 al 12 de agosto · 5 idas a $168.31" },
       tono:"azul" },
     { id:"santander", alias:"Santander LikeU", term:"6240", emisor:"Santander",
-      tipo:"revolvente", linea:170400, disponible:169520, saldo:880.00, tasa:null,
+      tipo:"revolvente", linea:170400, disponible:169320, saldo:1080.00, tasa:null,
       /* corte desconocido. El 31 de julio la app marcaba pago mínimo $0 y pago
          para no generar intereses $0 con límite el 3 de agosto: o sea que los
          $880 son consumo POSTERIOR al último corte y no se deben todavía —
          entran al siguiente estado de cuenta y se pagan el 3 de septiembre. */
-      corte:null, vence:3, proximoPago:{ fecha:"2026-09-03", monto:880.00, estimado:true },
+      /* El corte real sigue sin conocerse. `corteSupuesto` asume el estándar
+         de ~20 días antes del vencimiento (vence día 3 → corta día 13). Todo
+         lo que dependa de esto queda marcado como supuesto hasta confirmarlo
+         con el primer estado de cuenta. */
+      corte:null, corteSupuesto:13, vence:3,
+      proximoPago:{ fecha:"2026-09-03", monto:1080.00, estimado:true },
       tono:"rojo" }
   ],
 
@@ -269,7 +280,7 @@ const DATA = {
       { fecha:"2026-08-30", concepto:"Pago 2 de 5 a mamá",             monto:10659.00, cat:"mama" },
       { fecha:"2026-09-03", concepto:"Costco Banamex",                 monto:1997.11,  cat:"tarjeta", estimado:true, tarjeta:"costco",
         nota:"MSI $1,155.58 + gasolina del 1 al 12 de agosto, que entró al corte después del pago" },
-      { fecha:"2026-09-03", concepto:"Santander LikeU",                monto:880.00,   cat:"tarjeta", estimado:true, tarjeta:"santander", previo:880.00,
+      { fecha:"2026-09-03", concepto:"Santander LikeU",                monto:1080.00,  cat:"tarjeta", estimado:true, tarjeta:"santander", previo:880.00,
         nota:"consumo posterior al corte de julio — el 3 de agosto no debías nada" },
       { fecha:"2026-09-11", concepto:"Amex Gold Servicios",            monto:1788.35,  cat:"tarjeta", tarjeta:"servicios",
         nota:"gym del 23 de julio + Amazon MSI" },
