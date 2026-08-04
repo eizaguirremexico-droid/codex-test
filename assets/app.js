@@ -440,6 +440,18 @@ function construirFlujo() {
     saldoTag -= OFI.costoCaseta;
   }
 
+  /* recargas que van a tarjeta: se agrupan en la fecha en que se pagan */
+  const t2 = id => DATA.tarjetas.find(x => x.id === id);
+  const tarjetaTag = OFI.via && OFI.via !== "debito" ? t2(OFI.via) : null;
+  const tagDiferido = {};
+  if (tarjetaTag) Object.keys(recargas).forEach(f => {
+    const fl = flotante(tarjetaTag, f);
+    const cae = fl ? fl.vence : f;
+    const g = tagDiferido[cae] = tagDiferido[cae] || { monto: 0, n: 0, fechas: [], supuesto: !!(fl && fl.supuesto) };
+    g.monto += recargas[f]; g.n++; g.fechas.push(f);
+    delete recargas[f];
+  });
+
   const dias = [];
   let saldo = DATA.efectivo.ahorro;
   for (let f = FL.desde; f <= FL.hasta; f = dAdd(f, 1)) {
@@ -450,6 +462,13 @@ function construirFlujo() {
       eventos.push({ concepto: p.concepto, monto: -p.monto, cat: p.cat,
                      estimado: p.estimado, nota: p.nota }));
     if (recargas[f]) eventos.push({ concepto: "Recarga de tag", monto: -recargas[f], cat: "tag" });
+    /* Si el tag se carga a una tarjeta, el efectivo no sale el día de la
+       recarga sino cuando vence esa tarjeta. */
+    if (tagDiferido[f]) eventos.push({
+      concepto: `Recarga${tagDiferido[f].n > 1 ? "s" : ""} de tag`,
+      monto: -tagDiferido[f].monto, cat: "tag", estimado: tagDiferido[f].supuesto,
+      nota: `cargada${tagDiferido[f].n > 1 ? "s" : ""} a ${t2(OFI.via).alias} el ${
+        tagDiferido[f].fechas.map(x => dLabel(x)).join(" y ")}` });
     const mio = GASTO_LIBRE.filter(g => {
       const c = DATA.tarjetas.find(x => x.id === g.tarjeta);
       const fl = c && flotante(c, g.fecha);
@@ -1185,8 +1204,10 @@ function renderFlujoFijos() {
   const filas = [
     { concepto: "Auto BYD", monto: DATA.auto.mensualidad, via: "debito",
       donde: "Débito, día 15", cuando: "sale ese mismo día" },
-    { concepto: "Tag Pase", monto: tagMes(MESES[0]), via: "debito",
-      donde: "Débito, en cada recarga", cuando: "sale ese mismo día" },
+    { concepto: "Tag Pase", monto: tagMes(MESES[0]),
+      via: OFI.via === "debito" ? "debito" : OFI.via,
+      donde: OFI.via === "debito" ? "Débito, en cada recarga" : t(OFI.via).alias,
+      cuando: OFI.via === "debito" ? "sale ese mismo día" : desfase(OFI.via) },
     ...DATA.vidaFija.map(v => ({
       concepto: v.concepto, monto: v.monto, via: v.via,
       donde: v.via === "tarjetas" ? "Repartido entre tarjetas" : t(v.via).alias,
@@ -1528,12 +1549,14 @@ function drawOficinaChart(filas) {
    Una compra cae en el corte que todavía no pasa; de ahí al vencimiento
    es el tiempo que el dinero se queda contigo. */
 function flotante(c, f) {
-  if (c.corte == null) return null;
+  const dia = c.corte != null ? c.corte : c.corteSupuesto;
+  if (dia == null) return null;
   const d = dParse(f);
-  const corte = new Date(d.getFullYear(), d.getMonth() + (d.getDate() > c.corte ? 1 : 0), c.corte, 12);
-  const vence = new Date(corte.getFullYear(), corte.getMonth() + (c.vence <= c.corte ? 1 : 0), c.vence, 12);
+  const corte = new Date(d.getFullYear(), d.getMonth() + (d.getDate() > dia ? 1 : 0), dia, 12);
+  const vence = new Date(corte.getFullYear(), corte.getMonth() + (c.vence <= dia ? 1 : 0), c.vence, 12);
   const iso = x => new Date(x.getTime() - x.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
-  return { corte: iso(corte), vence: iso(vence), dias: Math.round((vence - d) / 86400000) };
+  return { corte: iso(corte), vence: iso(vence), dias: Math.round((vence - d) / 86400000),
+           supuesto: c.corte == null };
 }
 
 function renderQueTarjeta() {
