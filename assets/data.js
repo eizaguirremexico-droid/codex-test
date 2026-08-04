@@ -147,15 +147,16 @@ const DATA = {
   /* ── Tarjetas ── */
   tarjetas: [
     { id:"elite", alias:"Amex Gold Elite", term:"11005", emisor:"American Express",
-      tipo:"revolvente", linea:92000, disponible:77241, saldo:4110.07, tasa:61.48,
-      corte:3, vence:23, proximoPago:{ fecha:"2026-08-23", monto:10793.74, estimado:true },
-      puntos:4003,
-      /* Consumo suelto del ciclo que cierra el 3 de agosto: lo que quedó del
-         saldo de $4,110.07 al 31 de julio, quitando los $2,990 de Alo Yoga
-         (que se van a 3 MSI en el corte) y las suscripciones, que ya se
-         cuentan aparte. Con esto el corte cuadra exacto con el pago. */
-      consumoCiclo: { corte:"2026-08-03", monto:361.35,
-        detalle:"Telcel $90 (no es el teléfono fijo) · Google FaceApp $100 · Meshy $52.35 · otros $119" },
+      tipo:"revolvente", linea:92000, disponible:77112, saldo:10922.74, tasa:61.48,
+      /* Estado de cuenta del corte del 3 de agosto, ya emitido: saldo a pagar
+         $10,922.74 con fecha límite el 24 de agosto (mínimo $1,150). */
+      corte:3, vence:24, proximoPago:{ fecha:"2026-08-24", monto:10922.74 },
+      puntos:4010,
+      /* Consumo suelto de ese ciclo, ya confirmado: el estado de cuenta menos
+         los MSI ($9,673.67) y las suscripciones ($758.72). Antes estaba
+         estimado en $361.35 con lo que se alcanzaba a ver en la app. */
+      consumoCiclo: { corte:"2026-08-03", monto:490.35,
+        detalle:"Telcel $90 (no es el teléfono fijo) · Google FaceApp $100 · Meshy $52.35 · otros $248" },
       tono:"grafito" },
     { id:"servicios", alias:"Amex Gold Servicios", term:"21009", emisor:"American Express",
       tipo:"cargo", linea:null, disponible:null, saldo:1781.90, tasa:null,
@@ -260,8 +261,8 @@ const DATA = {
       /* El 1 de agosto se pagaron el crédito de julio a mamá ($10,659) y el saldo
          de la Costco ($3,461.26). Ya no aparecen aquí: el efectivo de arriba es
          posterior a los dos. La Costco quedó en CERO ese día. */
-      { fecha:"2026-08-23", concepto:"Amex Gold Elite",                monto:10793.74, cat:"tarjeta", estimado:true, tarjeta:"elite", previo:1120.07,
-        nota:"MSI junio 3/3 + MSI julio 2/3 + Alo Yoga 1/3 + consumo" },
+      { fecha:"2026-08-24", concepto:"Amex Gold Elite",                monto:10922.74, cat:"tarjeta", tarjeta:"elite", previo:1249.07,
+        nota:"estado de cuenta emitido · MSI junio 3/3 + MSI julio 2/3 + Alo Yoga 1/3 + consumo de julio" },
       { fecha:"2026-08-30", concepto:"Pago 2 de 5 a mamá",             monto:10659.00, cat:"mama" },
       { fecha:"2026-09-03", concepto:"Costco Banamex",                 monto:1997.11,  cat:"tarjeta", estimado:true, tarjeta:"costco",
         nota:"MSI $1,155.58 + gasolina del 1 al 12 de agosto, que entró al corte después del pago" },
@@ -270,7 +271,7 @@ const DATA = {
       { fecha:"2026-09-11", concepto:"Amex Gold Servicios",            monto:1788.35,  cat:"tarjeta", tarjeta:"servicios",
         nota:"gym del 23 de julio + Amazon MSI" },
       { fecha:"2026-09-15", concepto:"Mensualidad auto BYD",           monto:6209.00,  cat:"auto" },
-      { fecha:"2026-09-23", concepto:"Amex Gold Elite",                monto:3726.39,  cat:"tarjeta", estimado:true, tarjeta:"elite",
+      { fecha:"2026-09-24", concepto:"Amex Gold Elite",                monto:3726.39,  cat:"tarjeta", estimado:true, tarjeta:"elite",
         nota:"MSI julio 3/3 + Alo Yoga 2/3 + suscripciones" },
       { fecha:"2026-09-30", concepto:"Pago 3 de 5 a mamá",             monto:7106.00,  cat:"mama",
         nota:"ya con el reparto que hay que negociar" },
@@ -281,7 +282,7 @@ const DATA = {
       { fecha:"2026-10-11", concepto:"Amex Gold Servicios",            monto:1788.35,  cat:"tarjeta", estimado:true, tarjeta:"servicios",
         nota:"gym + Amazon MSI" },
       { fecha:"2026-10-15", concepto:"Mensualidad auto BYD",           monto:6209.00,  cat:"auto" },
-      { fecha:"2026-10-23", concepto:"Amex Gold Elite",                monto:1755.39,  cat:"tarjeta", estimado:true, tarjeta:"elite",
+      { fecha:"2026-10-24", concepto:"Amex Gold Elite",                monto:1755.39,  cat:"tarjeta", estimado:true, tarjeta:"elite",
         nota:"Alo Yoga 3/3 + suscripciones — ya sin los MSI de junio y julio" },
       { fecha:"2026-10-30", concepto:"Pago 4 de 5 a mamá",             monto:7106.00,  cat:"mama" }
     ]
