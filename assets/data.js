@@ -81,7 +81,10 @@ const DATA = {
     costoCaseta: 156,
     montoRecarga: 2000,
     comision: 10,
-    saldoInicial: 0,
+    /* Saldo REAL del tag, medido. Todas las simulaciones arrancan de aquí:
+       antes de esta fecha las recargas eran de $200 y ya están pagadas, así
+       que back-simular desde el ancla daba un saldo inventado. */
+    saldo: { monto: 99, fecha: "2026-08-04" },
     /* "cada-dia"  = recargas por reflejo cada día de oficina
        "cuando-falta" = recargas solo cuando el saldo no alcanza el viaje */
     estrategia: "cuando-falta",

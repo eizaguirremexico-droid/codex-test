@@ -93,12 +93,13 @@ function simularTag(estrategia, montoRecarga) {
   const est = estrategia || OFI.estrategia;
   const monto = montoRecarga || OFI.montoRecarga;
   const porMes = {};
-  let saldo = OFI.saldoInicial;
+  let saldo = OFI.saldo.monto;
+  const desde = OFI.saldo.fecha;
 
-  /* arranca en el mes del ancla, no en el horizonte: si no, agosto empezaría
-     con saldo cero e ignoraría las idas de julio que ya dejaron saldo */
-  mRange(OFI.ancla.slice(0, 7), DATA.horizonteIngresos.hasta).forEach(k => {
-    const dias = diasOficinaMes(k);
+  /* arranca en el saldo medido: las idas anteriores ya se pagaron, contarlas
+     otra vez inventaría recargas que no van a ocurrir */
+  mRange(desde.slice(0, 7), DATA.horizonteIngresos.hasta).forEach(k => {
+    const dias = diasOficinaMes(k).filter(f => f >= desde);
     let recargas = 0;
     dias.forEach(() => {
       if (est === "cada-dia" || saldo < OFI.costoCaseta) {
@@ -133,8 +134,8 @@ const GAS_POR_IDA = GASOLINA_MES / IDAS_MES;
    El tag necesita arrastrar el saldo desde el ancla, porque si no
    no se sabe cuántas recargas caen realmente dentro de la ventana. */
 function trayectoEntre(desde, hasta) {
-  let saldo = OFI.saldoInicial, recargas = 0, idas = 0;
-  for (let f = OFI.ancla; f <= hasta; f = dAdd(f, 1)) {
+  let saldo = OFI.saldo.monto, recargas = 0, idas = 0;
+  for (let f = OFI.saldo.fecha; f <= hasta; f = dAdd(f, 1)) {
     if (!esDiaOficina(f)) continue;
     const dentro = f >= desde;
     if (saldo < OFI.costoCaseta) { saldo += OFI.montoRecarga; if (dentro) recargas++; }
@@ -429,8 +430,8 @@ function cortesDelDia(f) {
 function construirFlujo() {
   /* recargas de tag con el saldo arrastrado desde el ancla */
   const recargas = {};
-  let saldoTag = OFI.saldoInicial;
-  for (let f = OFI.ancla; f <= FL.hasta; f = dAdd(f, 1)) {
+  let saldoTag = OFI.saldo.monto;
+  for (let f = OFI.saldo.fecha; f <= FL.hasta; f = dAdd(f, 1)) {
     if (!esDiaOficina(f)) continue;
     if (saldoTag < OFI.costoCaseta) {
       saldoTag += OFI.montoRecarga;
