@@ -169,10 +169,15 @@ const DATA = {
   anualidadAmex: {
     usd: 600, usdAnterior: 450, tipoCambio: 17.13,
     total: 11922.48, rangoConIva: [11922.48, 11922.48], mensualidad: 3974.16,
-    meses: ["2026-12", "2027-01", "2027-02"],
-    fechas: ["2026-12-11", "2027-01-11", "2027-02-11"],
-    negociarAntes: "2026-09-22",
-    nota: "sube 33% el 22 de septiembre y el beneficio de viajes se reduce a hoteles"
+    /* Amex confirmó que se cobra en el primer corte de octubre. La Gold Card
+       corta el 22, así que cae en el corte del 22 de octubre y se difiere a
+       tres pagos: 11 de noviembre, diciembre y enero.
+       CANCELAR ANTES DEL 22 DE OCTUBRE LA EVITA POR COMPLETO. */
+    meses: ["2026-11", "2026-12", "2027-01"],
+    fechas: ["2026-11-11", "2026-12-11", "2027-01-11"],
+    seCobraEnCorte: "2026-10-22",
+    cancelarAntesDe: "2026-10-22",
+    nota: "se cobra en el corte del 22 de octubre · cancelar antes la evita"
   },
 
   /* ── Tarjetas ── */

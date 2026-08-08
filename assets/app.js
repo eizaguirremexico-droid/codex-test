@@ -2227,9 +2227,9 @@ function renderAcciones() {
       d:`Es el único mes donde el crédito a tu mamá, el primer pago del auto y los tres MSI de Amex caen juntos. No abras ningún gasto nuevo ese mes.`,
       chips:[["crit","riesgo"], [null, `${money(peor.total)} de ${money(DATA.ingreso.mensual)}`]] },
 
-    { t:`Llama a Amex antes del ${dLabelLong(DATA.anualidadAmex.negociarAntes)} por la anualidad`,
-      d:`La anualidad de la Gold de servicios (~${money(DATA.anualidadAmex.total)}) se difiere a 3 pagos de ${money(DATA.anualidadAmex.mensualidad)} y cae justo dentro de tu ventana de ahorro. Negociar exención o descuento vale hasta ${money(DATA.anualidadAmex.total)}.`,
-      chips:[["warn","por agendar"], [null, `ahorro hasta ${money(DATA.anualidadAmex.total)}`]] },
+    { t:`Decide la Gold Card antes del ${dLabelLong(DATA.anualidadAmex.cancelarAntesDe)}`,
+      d:`Amex confirmó que la anualidad se cobra en el corte del ${dLabelLong(DATA.anualidadAmex.seCobraEnCorte)}: ${money(DATA.anualidadAmex.total)} (${DATA.anualidadAmex.usd} USD + IVA, ya con el aumento del 22 de septiembre), diferida a 3 pagos de ${money(DATA.anualidadAmex.mensualidad)}. Cancelar antes de esa fecha la evita por completo. La ventana buena es del 23 de septiembre al 21 de octubre: para entonces ya pagaste 9 de las 12 parcialidades del gym y solo te acelerarían ${money(3850.20)}.`,
+      chips:[["crit",`antes del ${dLabel(DATA.anualidadAmex.cancelarAntesDe)}`], [null, `evita ${money(DATA.anualidadAmex.total)}`]] },
 
     { t:`No abras un solo MSI nuevo hasta ${mLabel(PRIMER_MES_LIBRE, true)}`,
       d:`Cada MSI que abras hoy se come el colchón de la meta. Tu carga baja sola: ${money(msiAhora)} en ${mLabel(MESES[0], true)} → ${money(msiLibre)} en ${mLabel(PRIMER_MES_LIBRE, true)}.`,
