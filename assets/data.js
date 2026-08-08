@@ -100,8 +100,6 @@ const DATA = {
   vidaFija: [
     { concepto: "Gasolina y pastillas", corto: "Gasolina", monto: 2200,
       detalle: "commute Atizapán → Ajusco", via: "costco" },
-    { concepto: "Gym FITSI",            corto: "Gym",      monto: 1283.40,
-      detalle: "se carga el día 23", via: "servicios" },
     { concepto: "Teléfono",             corto: "Teléfono", monto: 350,
       detalle: "cargo mensual — falta confirmar dónde se cobra", via: "tarjetas" }
   ],
@@ -149,17 +147,32 @@ const DATA = {
       montoOriginal:10998, monto:916.50,  desde:"2026-08", hasta:"2026-12", pagados:7, total:12 },
     { id:"costco-b",  tarjeta:"Costco Banamex", label:"Amazon",
       montoOriginal:2869,  monto:239.08,  desde:"2026-08", hasta:"2027-02", pagados:5, total:12 },
+    /* Del estado de cuenta del corte del 22 de julio de 2026, sección
+       "Resumen de Planes de Pagos Diferidos". Ya no hay nada supuesto aquí. */
     { id:"serv-amz",  tarjeta:"Amex Gold Servicios", label:"Amazon",
-      montoOriginal:null,  monto:504.95,  desde:"2026-08", hasta:"2027-09", pagados:null, total:null,
-      supuesto:true, nota:"parcialidades restantes desconocidas — proyectado hasta sep 2027" }
+      montoOriginal:3029.90, monto:504.95, desde:"2026-08", hasta:"2026-08", pagados:5, total:6,
+      nota:"último pago · saldo pendiente $504.95" },
+    /* La membresía del gym se compró el 15 de enero en UN pago de $15,400.80
+       y Amex la difirió a 12 meses. NO es un gasto fijo mensual: se acaba en
+       el corte de diciembre. Si la renuevas en enero vuelve a empezar. */
+    { id:"serv-gym",  tarjeta:"Amex Gold Servicios", label:"Gym FITSI (anualidad)",
+      montoOriginal:15400.80, monto:1283.40, desde:"2026-08", hasta:"2026-12", pagados:7, total:12,
+      nota:"saldo pendiente $6,417.00 · renueva en enero 2027" }
   ],
 
   /* ── Anualidad Amex (se difiere a 3 meses) ── */
+  /* Está en DÓLARES, no en pesos, y sube el 22 de septiembre de 2026:
+     de $450 USD + IVA a $600 USD + IVA, diferida a 3 meses.
+     A 17.13 por dólar son $11,922.48 MXN al año contra $8,941.86 antes.
+     Además la bonificación de $3,000 de viajes deja de aplicar en vuelos,
+     paquetes y renta de auto: queda solo para hotel. */
   anualidadAmex: {
-    total: 9000, rangoConIva: [9000, 10440], mensualidad: 3000,
+    usd: 600, usdAnterior: 450, tipoCambio: 17.13,
+    total: 11922.48, rangoConIva: [11922.48, 11922.48], mensualidad: 3974.16,
     meses: ["2026-12", "2027-01", "2027-02"],
     fechas: ["2026-12-11", "2027-01-11", "2027-02-11"],
-    negociarAntes: "2026-11-22"
+    negociarAntes: "2026-09-22",
+    nota: "sube 33% el 22 de septiembre y el beneficio de viajes se reduce a hoteles"
   },
 
   /* ── Tarjetas ── */
@@ -180,6 +193,9 @@ const DATA = {
       tipo:"cargo", linea:null, disponible:null, saldo:2021.49, tasa:null,
       /* El pago del 11 de septiembre = gym $1,283.40 + Amazon MSI $504.95
          + los $1,781.90 de consumo del 1 de agosto. */
+      /* Tiene tarjeta adicional a nombre de Aleli (cuenta ...21017): su
+         gasto cae en este mismo estado de cuenta. */
+      adicional: "Aleli Michel Pérez Martínez",
       corte:22, vence:11, proximoPago:{ fecha:"2026-09-11", monto:3809.84, estimado:true },
       puntos:4402,
       tono:"oro" },

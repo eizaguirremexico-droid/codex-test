@@ -1866,7 +1866,7 @@ function renderFijosTimeline() {
   const host = document.getElementById("fijos-timeline");
   const cargos = [
     { d: DATA.auto.diaPago, t: "Auto BYD", a: DATA.auto.mensualidad, s: "cargo a débito" },
-    { d: 23, t: "Gym FITSI", a: 1283.40, s: "a la Amex Gold de servicios" },
+    { d: 23, t: "Gym FITSI (última hasta dic)", a: 1283.40, s: "MSI 8 de 12 en la Gold Card" },
     { d: 3,  t: "Vence Costco Banamex", a: null, s: "corte el día 13" },
     { d: 11, t: "Vence Amex Gold Servicios", a: null, s: "corte el día 22" },
     { d: 23, t: "Vence Amex Gold Elite", a: null, s: "corte el día 3" }
@@ -2247,9 +2247,9 @@ function renderAcciones() {
       d:`Amueblar completo sale entre ${money(m.estimadoRealista[0])} y ${money(hi)} porque el depto no trae ${m.noIncluye.join(" ni ")}. O subes el ahorro a ${money(REQ_REAL)} al mes, o recortas categorías al comprar. Decidirlo ahora es gratis.`,
       chips:[["warn","decisión pendiente"], [null, `faltan ${money(hi - m.metaDeclarada)}`]] },
 
-    { t:`Confirma las parcialidades del ${serv.label} de la ${serv.tarjeta}`,
+    ...(serv ? [{ t:`Confirma las parcialidades del ${serv.label} de la ${serv.tarjeta}`,
       d:`Son ${money2(serv.monto)} al mes y es el único compromiso sin fecha de término conocida. Aquí está proyectado hasta ${mLabel(serv.hasta, true)}; si termina antes, ese dinero se te libera.`,
-      chips:[["warn","dato faltante"], [null, `${money2(serv.monto)} al mes en juego`]] },
+      chips:[["warn","dato faltante"], [null, `${money2(serv.monto)} al mes en juego`]] }] : []),
 
     { t:`Costco Banamex se apaga solo y te devuelve ${money2(costcoMes)} al mes`,
       d:`Los dos planes de Amazon terminan en ${costco.map(s => mLabel(s.hasta, true)).join(" y ")}. A partir de ahí tu piso fijo baja a ${money(byMonth[ultimoMes].total)}.`,
@@ -2277,8 +2277,9 @@ function renderNotas() {
   const notas = [
     `Las cifras salen de tus estados de cuenta al ${dLabelLong(DATA.meta.corte)}. Los saldos de tarjetas cambian todos los días; los planes a meses y las fechas de corte son estables.`,
     `El piso fijo calculado por componentes da ${money2(PISO_FIJO)} (${mLabel(PRIMER_MES_LIBRE, true)}, ya sin el crédito a mamá). Tu resumen original decía $14,861.49: la diferencia de $200 parece un colchón sobre el Tag Pase. Aquí se usa el cálculo por componentes.`,
-    `El ${serv.label} de la ${serv.tarjeta} (${money2(serv.monto)} al mes) está proyectado hasta ${mLabel(serv.hasta, true)} porque no se conocen las parcialidades restantes. Es el supuesto más frágil del modelo.`,
-    `La anualidad de Amex está estimada en ${money(DATA.anualidadAmex.total)}; el rango real con IVA va de ${money(DATA.anualidadAmex.rangoConIva[0])} a ${money(DATA.anualidadAmex.rangoConIva[1])}.`,
+    ...(serv ? [`El ${serv.label} de la ${serv.tarjeta} (${money2(serv.monto)} al mes) está proyectado hasta ${mLabel(serv.hasta, true)} porque no se conocen las parcialidades restantes.`] : [
+      `Los planes a meses de la Gold Card salen del estado de cuenta del corte del 22 de julio: ya no hay nada supuesto ahí. El gym es un MSI de 12, no un gasto fijo.`]),
+    `La anualidad de Amex está en dólares: ${money(DATA.anualidadAmex.usdAnterior)} USD hoy y ${money(DATA.anualidadAmex.usd)} USD desde el 22 de septiembre de 2026, más IVA y diferida a 3 meses. A ${DATA.anualidadAmex.tipoCambio} por dólar son ${money(DATA.anualidadAmex.total)} al año.`,
     `El Tag Pase se calcula con tus días de oficina reales (patrón de dos semanas: ${OFI.patron[0].dias.map(d=>DOW_LARGO[d-1]).join("/")} y ${OFI.patron[1].dias.map(d=>DOW_LARGO[d-1]).join("/")}) y simulando el saldo del tag día por día. No descuenta festivos ni vacaciones, así que es el techo.`,
     `El viaje cuesta ${money(OFI.costoCaseta)} pero la recarga mínima es ${money(OFI.montoRecarga)} + ${money(OFI.comision)} de comisión. Como el saldo se acumula, el modelo asume que recargas solo cuando no alcanza para el viaje. Si recargas cada día que vas a la oficina, salen ${money(sum(MESES.map(k=>simularTag("cada-dia",200)[k].salida))/MESES.length)} al mes en vez de ${money(sum(MESES.map(k=>tagMes(k)))/MESES.length)} — la diferencia no se pierde, se queda estacionada en el tag.`,
     `El gasto libre NO descuenta comida, salidas ni imprevistos: es lo que queda después de compromisos, y de ahí sale todo lo demás.`,
