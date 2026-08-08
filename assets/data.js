@@ -79,19 +79,19 @@ const DATA = {
        Recargando 2,000 la comisión sale en 0.5% en vez del 5% que costaba
        recargar de 200 en 200. */
     costoCaseta: 156,
-    montoRecarga: 2000,
+    montoRecarga: 600,
     comision: 10,
     /* Saldo REAL del tag, medido. Todas las simulaciones arrancan de aquí:
        antes de esta fecha las recargas eran de $200 y ya están pagadas, así
        que back-simular desde el ancla daba un saldo inventado. */
-    saldo: { monto: 1631, fecha: "2026-08-08" },   /* 2,099 tras recargar, menos 3 idas */
+    saldo: { monto: 418.72, fecha: "2026-08-08" },  /* medido en la app de PASE */
     /* "cada-dia"  = recargas por reflejo cada día de oficina
        "cuando-falta" = recargas solo cuando el saldo no alcanza el viaje */
     estrategia: "cuando-falta",
     /* Dónde se cobra la recarga: "debito" sale el mismo día; el id de una
        tarjeta la difiere hasta que vence esa tarjeta. */
     via: "debito",
-    nota: "recargado el 4 de agosto a débito · $2,000 + $10 de comisión"
+    nota: "recarga real de $600, no de $2,000 · a débito"
   },
 
   /* ── Gastos fijos de vida (todos los meses) ──
@@ -116,11 +116,13 @@ const DATA = {
     { fecha:"2026-08-01", concepto:"Miniso Cúspide",            monto:329.80, tarjeta:"servicios" },
     { fecha:"2026-08-01", concepto:"Cinépolis dulcería",        monto:728.00, tarjeta:"servicios" },
     { fecha:"2026-08-04", concepto:"Headway (suscripción anual)", monto:525.00, tarjeta:"elite" },
-    /* Cargos a la Costco después de liquidarla el 1 de agosto */
+    /* Cargos a la Costco después de liquidarla el 1 de agosto.
+       El cargo de $824.70 del 7 de agosto NO está aquí: es la gasolina,
+       que ya se cuenta como gasto fijo. Meterla también aquí la cobraría
+       dos veces. */
     { fecha:"2026-08-02", concepto:"Tesco China",                monto:248.00, tarjeta:"costco" },
     { fecha:"2026-08-05", concepto:"Restaurante La Cuchara",     monto:110.00, tarjeta:"costco" },
     { fecha:"2026-08-06", concepto:"Clip",                       monto:150.00, tarjeta:"costco" },
-    { fecha:"2026-08-07", concepto:"Costco",                     monto:824.70, tarjeta:"costco" },
     /* Diferencia entre el saldo medido de la Gold Card ($2,021.49) y los
        cuatro cargos del 1 de agosto. Falta identificar qué fue. */
     { fecha:"2026-08-06", concepto:"Cargos sin identificar (Gold Card)", monto:239.59, tarjeta:"servicios" },
