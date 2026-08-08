@@ -15,7 +15,7 @@ const DATA = {
   ingreso: { quincena: 17500, mensual: 35000, diasPago: [15, 30] },
 
   /* ── Efectivo disponible ── */
-  efectivo: { ahorro: 8228.74, asOf: "2026-08-01" },
+  efectivo: { ahorro: 5500.00, asOf: "2026-08-08" },
 
   /* ── Dinero de un mes que ya quedó apartado en un mes anterior ──
      No vuelve a consumir el ingreso del mes en que se paga: por eso se
@@ -84,14 +84,14 @@ const DATA = {
     /* Saldo REAL del tag, medido. Todas las simulaciones arrancan de aquí:
        antes de esta fecha las recargas eran de $200 y ya están pagadas, así
        que back-simular desde el ancla daba un saldo inventado. */
-    saldo: { monto: 99, fecha: "2026-08-04" },
+    saldo: { monto: 1631, fecha: "2026-08-08" },   /* 2,099 tras recargar, menos 3 idas */
     /* "cada-dia"  = recargas por reflejo cada día de oficina
        "cuando-falta" = recargas solo cuando el saldo no alcanza el viaje */
     estrategia: "cuando-falta",
     /* Dónde se cobra la recarga: "debito" sale el mismo día; el id de una
        tarjeta la difiere hasta que vence esa tarjeta. */
-    via: "santander",
-    nota: "cargado a la Santander LikeU, no a débito"
+    via: "debito",
+    nota: "recargado el 4 de agosto a débito · $2,000 + $10 de comisión"
   },
 
   /* ── Gastos fijos de vida (todos los meses) ──
@@ -115,9 +115,16 @@ const DATA = {
     { fecha:"2026-08-01", concepto:"Liverpool Atizapán",        monto:278.60, tarjeta:"servicios" },
     { fecha:"2026-08-01", concepto:"Miniso Cúspide",            monto:329.80, tarjeta:"servicios" },
     { fecha:"2026-08-01", concepto:"Cinépolis dulcería",        monto:728.00, tarjeta:"servicios" },
-    /* La LikeU pasó de $880 el 31 de julio a $1,080 el 4 de agosto. No se
-       sabe qué fue; queda registrado para no perderlo de la cuenta. */
-    { fecha:"2026-08-02", concepto:"Cargo sin identificar",      monto:200.00, tarjeta:"santander" }
+    { fecha:"2026-08-04", concepto:"Headway (suscripción anual)", monto:525.00, tarjeta:"elite" },
+    /* Cargos a la Costco después de liquidarla el 1 de agosto */
+    { fecha:"2026-08-02", concepto:"Tesco China",                monto:248.00, tarjeta:"costco" },
+    { fecha:"2026-08-05", concepto:"Restaurante La Cuchara",     monto:110.00, tarjeta:"costco" },
+    { fecha:"2026-08-06", concepto:"Clip",                       monto:150.00, tarjeta:"costco" },
+    { fecha:"2026-08-07", concepto:"Costco",                     monto:824.70, tarjeta:"costco" },
+    /* Diferencia entre el saldo medido de la Gold Card ($2,021.49) y los
+       cuatro cargos del 1 de agosto. Falta identificar qué fue. */
+    { fecha:"2026-08-06", concepto:"Cargos sin identificar (Gold Card)", monto:239.59, tarjeta:"servicios" },
+    { fecha:"2026-08-06", concepto:"Cargo sin identificar (LikeU)",      monto:180.00, tarjeta:"santander" }
   ],
 
   /* ── Suscripciones ── */
@@ -156,11 +163,11 @@ const DATA = {
   /* ── Tarjetas ── */
   tarjetas: [
     { id:"elite", alias:"Amex Gold Elite", term:"11005", emisor:"American Express",
-      tipo:"revolvente", linea:92000, disponible:77112, saldo:10922.74, tasa:61.48,
+      tipo:"revolvente", linea:92000, disponible:76587, saldo:11447.74, tasa:61.48,
       /* Estado de cuenta del corte del 3 de agosto, ya emitido: saldo a pagar
          $10,922.74 con fecha límite el 24 de agosto (mínimo $1,150). */
       corte:3, vence:24, proximoPago:{ fecha:"2026-08-24", monto:10922.74 },
-      puntos:4010,
+      puntos:4040,
       /* Consumo suelto de ese ciclo, ya confirmado: el estado de cuenta menos
          los MSI ($9,673.67) y las suscripciones ($758.72). Antes estaba
          estimado en $361.35 con lo que se alcanzaba a ver en la app. */
@@ -168,14 +175,14 @@ const DATA = {
         detalle:"Telcel $90 (no es el teléfono fijo) · Google FaceApp $100 · Meshy $52.35 · otros $248" },
       tono:"grafito" },
     { id:"servicios", alias:"Amex Gold Servicios", term:"21009", emisor:"American Express",
-      tipo:"cargo", linea:null, disponible:null, saldo:1781.90, tasa:null,
+      tipo:"cargo", linea:null, disponible:null, saldo:2021.49, tasa:null,
       /* El pago del 11 de septiembre = gym $1,283.40 + Amazon MSI $504.95
          + los $1,781.90 de consumo del 1 de agosto. */
-      corte:22, vence:11, proximoPago:{ fecha:"2026-09-11", monto:3570.25, estimado:true },
-      puntos:4281,
+      corte:22, vence:11, proximoPago:{ fecha:"2026-09-11", monto:3809.84, estimado:true },
+      puntos:4402,
       tono:"oro" },
     { id:"costco", alias:"Costco Banamex Visa", term:"104", emisor:"Banamex",
-      tipo:"revolvente", linea:50000, disponible:44657.48, saldo:0, tasa:60.58,
+      tipo:"revolvente", linea:50000, disponible:43324.78, saldo:750.00, tasa:60.58,
       /* Liquidada el 1 de agosto: saldo en cero y crédito disponible de $44,657.48
          (lo que falta para los $50,000 es el capital vivo de los MSI).
          `enCeroHasta` = hasta esa fecha el consumo del ciclo ya está pagado, así
@@ -185,8 +192,13 @@ const DATA = {
       consumoCiclo:{ corte:"2026-08-13", monto:841.53,
         detalle:"gasolina del 1 al 12 de agosto · 5 idas a $168.31" },
       tono:"azul" },
+    /* Tarjeta nueva, sin estrenar. Falta su fecha de corte y su vencimiento. */
+    { id:"bbva", alias:"BBVA TC M", term:"9871", emisor:"BBVA",
+      tipo:"revolvente", linea:81300, disponible:81300, saldo:0, tasa:null,
+      corte:null, vence:null, proximoPago:null,
+      tono:"azul" },
     { id:"santander", alias:"Santander LikeU", term:"6240", emisor:"Santander",
-      tipo:"revolvente", linea:170400, disponible:169320, saldo:1080.00, tasa:null,
+      tipo:"revolvente", linea:170400, disponible:170220, saldo:180.00, tasa:null,
       /* corte desconocido. El 31 de julio la app marcaba pago mínimo $0 y pago
          para no generar intereses $0 con límite el 3 de agosto: o sea que los
          $880 son consumo POSTERIOR al último corte y no se deben todavía —
@@ -196,7 +208,7 @@ const DATA = {
          lo que dependa de esto queda marcado como supuesto hasta confirmarlo
          con el primer estado de cuenta. */
       corte:null, corteSupuesto:13, vence:3,
-      proximoPago:{ fecha:"2026-09-03", monto:1080.00, estimado:true },
+      proximoPago:{ fecha:"2026-09-03", monto:180.00, estimado:true },
       tono:"rojo" }
   ],
 
@@ -280,7 +292,7 @@ const DATA = {
       { fecha:"2026-08-30", concepto:"Pago 2 de 5 a mamá",             monto:10659.00, cat:"mama" },
       { fecha:"2026-09-03", concepto:"Costco Banamex",                 monto:1997.11,  cat:"tarjeta", estimado:true, tarjeta:"costco",
         nota:"MSI $1,155.58 + gasolina del 1 al 12 de agosto, que entró al corte después del pago" },
-      { fecha:"2026-09-03", concepto:"Santander LikeU",                monto:1080.00,  cat:"tarjeta", estimado:true, tarjeta:"santander", previo:880.00,
+      { fecha:"2026-09-03", concepto:"Santander LikeU",                monto:180.00,   cat:"tarjeta", estimado:true, tarjeta:"santander",
         nota:"consumo posterior al corte de julio — el 3 de agosto no debías nada" },
       { fecha:"2026-09-11", concepto:"Amex Gold Servicios",            monto:1788.35,  cat:"tarjeta", tarjeta:"servicios",
         nota:"gym del 23 de julio + Amazon MSI" },
