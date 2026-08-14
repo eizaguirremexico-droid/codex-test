@@ -8,8 +8,12 @@
 const NF0 = new Intl.NumberFormat("es-MX", { maximumFractionDigits: 0 });
 const NF2 = new Intl.NumberFormat("es-MX", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-const money  = v => "$" + NF0.format(Math.round(v));
-const money2 = v => "$" + NF2.format(v);
+/* El signo va ANTES del peso: "$-1,786" se lee como un precio raro, "−$1,786"
+   se lee como lo que es. Pasa poco, pero cuando pasa es justo el número que
+   más importa leer bien. */
+const signo = (v, s) => (v < 0 ? "−$" : "$") + s;
+const money  = v => signo(v, NF0.format(Math.abs(Math.round(v))));
+const money2 = v => signo(v, NF2.format(Math.abs(v)));
 
 /* número al estilo de la referencia: entero fuerte, decimales atenuados */
 function moneyRich(v) {
@@ -146,6 +150,15 @@ function trayectoEntre(desde, hasta) {
            tag: recargas * (OFI.montoRecarga + OFI.comision),
            gasolina: idas * GAS_POR_IDA };
 }
+
+/* Desglose del efectivo por cuenta. `ahorro` manda; esto solo lo explica.
+   Si las cuentas no suman, el desglose está viejo y no se muestra: mejor
+   un número sin desglose que un desglose que no cuadra. */
+const CUENTAS = (() => {
+  const cs = DATA.efectivo.cuentas || [];
+  if (cs.length < 2) return cs;
+  return Math.abs(sum(cs.map(c => c.monto)) - DATA.efectivo.ahorro) < 0.01 ? cs : [];
+})();
 
 const VIDA_BASE = sum(DATA.vidaFija.map(x => x.monto));
 const vidaMes = k => VIDA_BASE + tagMes(k);
@@ -291,7 +304,12 @@ function construirQuincenas(desdeISO, hastaMes) {
   return out;
 }
 
-const QUINCENAS = construirQuincenas(hoyISO, DATA.horizonteIngresos.hasta);
+/* Las quincenas que ya están dentro del efectivo medido no son ingreso por
+   venir: si se dejan, la portada promete otra vez un dinero que ya gastaste.
+   Pasa cada vez que la nómina se adelanta por caer en fin de semana. */
+const YA_COBRADAS = DATA.efectivo.quincenasCobradas || [];
+const QUINCENAS = construirQuincenas(hoyISO, DATA.horizonteIngresos.hasta)
+  .filter(q => !YA_COBRADAS.includes(q.iso));
 const PROX_QUINCENA = QUINCENAS[0];
 const TOTAL_INGRESO = sum(QUINCENAS.map(q => q.monto));
 
@@ -472,7 +490,11 @@ function construirFlujo() {
     const mio = GASTO_LIBRE.filter(g => {
       const c = DATA.tarjetas.find(x => x.id === g.tarjeta);
       const fl = c && flotante(c, g.fecha);
-      return (fl ? fl.vence : g.fecha) === f;
+      if ((fl ? fl.vence : g.fecha) !== f) return false;
+      /* Si ese día ya hay un pago de esa misma tarjeta, su monto sale del
+         estado de cuenta y YA trae este consumo adentro. Sumarlo aparte lo
+         cobraba dos veces: septiembre aparecía con $3,419.49 de más. */
+      return !FL.pagos.some(p => p.fecha === f && p.tarjeta === g.tarjeta);
     });
     if (mio.length) eventos.push({
       concepto: `Tu gasto de ${mLabel(mio[0].fecha.slice(0, 7), true)}`,
@@ -602,24 +624,36 @@ function renderEfectivo() {
     </div>
     <div class="row">
       <div class="row-ic">💵</div>
-      <div class="row-main"><div class="row-t">Hoy en la cuenta</div>
-        <div class="row-d">${PLAN_PAGADO.length
-          ? `ya con ${PLAN_PAGADO.length} adelanto${PLAN_PAGADO.length === 1 ? "" : "s"} pagado${PLAN_PAGADO.length === 1 ? "" : "s"}`
-          : "antes del movimiento del 30 de julio"}</div></div>
+      <div class="row-main"><div class="row-t">Hoy en tus cuentas</div>
+        <div class="row-d">${CUENTAS.length > 1
+          ? `repartido en ${CUENTAS.length} cuentas de débito`
+          : (PLAN_PAGADO.length
+            ? `ya con ${PLAN_PAGADO.length} adelanto${PLAN_PAGADO.length === 1 ? "" : "s"} pagado${PLAN_PAGADO.length === 1 ? "" : "s"}`
+            : "antes del movimiento del 30 de julio")}</div></div>
       <div class="row-amt">${money2(DATA.efectivo.ahorro)}</div>
     </div>
-    <div class="row">
+    ${CUENTAS.length > 1 ? CUENTAS.map(c => `
+      <div class="row sub-row">
+        <div class="row-ic">🏦</div>
+        <div class="row-main"><div class="row-t">${c.nombre}</div>
+          ${c.nota ? `<div class="row-d">${c.nota}</div>` : ""}</div>
+        <div class="row-amt">${money2(c.monto)}</div>
+      </div>`).join("") : ""}
+    ${/* Estas dos filas traían la fecha escrita a mano ("el 30 de julio") y
+          se quedaban en $0.00 cuando la ventana ya no las contenía. Ahora
+          salen solo si hay algo que mostrar, y con su fecha real. */""}
+    ${PERIODO.sale > 0 ? `<div class="row">
       <div class="row-ic">📤</div>
-      <div class="row-main"><div class="row-t">Sale el 30 de julio</div>
-        <div class="row-d">${DATA.planJulio.acciones.filter(a => !a.pagado).map(a => a.concepto.replace(/^(Pago|Adelanto|Reserva) /, "")).join(" + ")}</div></div>
+      <div class="row-main"><div class="row-t">Sale antes del ${dLabel(PERIODO.hasta)}</div>
+        <div class="row-d">${PERIODO.detalle.map(d => d.concepto).join(" + ")}</div></div>
       <div class="row-amt">−${money2(PERIODO.sale)}</div>
-    </div>
-    <div class="row">
+    </div>` : ""}
+    ${PERIODO.entra > 0 ? `<div class="row">
       <div class="row-ic">📥</div>
-      <div class="row-main"><div class="row-t">Entra el 30 de julio</div>
-        <div class="row-d">tu quincena</div></div>
+      <div class="row-main"><div class="row-t">Entra el ${dLabel(PERIODO.ingresos[0].iso)}</div>
+        <div class="row-d">${PERIODO.ingresos.length > 1 ? `${PERIODO.ingresos.length} quincenas` : "tu quincena"}</div></div>
       <div class="row-amt">+${money2(PERIODO.entra)}</div>
-    </div>
+    </div>` : ""}
     <div class="row">
       <div class="row-ic">🚗</div>
       <div class="row-main"><div class="row-t">Tag y gasolina</div>
@@ -914,7 +948,14 @@ let mesFlujo = null;   // null = el primero de la ventana
    todavía no te cobran. Lo que de verdad traes de antes es el efectivo
    menos todo lo que se debía desde antes de la ventana. */
 const DEUDA_PREVIA  = sum(FL.pagos.map(p => p.previo || 0));
-const COLCHON_LIMPIO = DATA.efectivo.ahorro - DEUDA_PREVIA;
+/* La medición del banco casi nunca cae el día 1. Si ya trae adentro una
+   quincena del mes en curso y ya le salió un compromiso de ese mismo mes,
+   sumarle `libre` completo contaría las dos cosas dos veces: el ingreso
+   una vez en el saldo y otra en el modelo. Revertirlas devuelve el saldo
+   con el que arrancó el mes, que es lo que el devengado espera. */
+const COLCHON_LIMPIO = DATA.efectivo.ahorro - DEUDA_PREVIA
+  - YA_COBRADAS.length * DATA.ingreso.quincena
+  + (DATA.efectivo.compromisoPagado || 0);
 
 /* Dinero real disponible en el mes i: el colchón limpio más lo que han
    generado los meses hasta ese, menos lo que se supone gastado en los

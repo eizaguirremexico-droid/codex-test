@@ -239,6 +239,12 @@ button { font: inherit; }
 .row-d { font-size: 12px; color: var(--ink-muted); margin-top: 2px; }
 .row-amt { font-size: 14.5px; font-weight: 600; text-align: right; white-space: nowrap; }
 .row-amt.soft { font-weight: 500; color: var(--ink-muted); }
+/* Desglose colgado de la fila de arriba: sin línea propia, sangrado y
+   atenuado, para que se lea como parte de ella y no como otro concepto. */
+.row.sub-row { border-top: none; padding: 4px 0 4px 16px; }
+.row.sub-row .row-ic { width: 26px; height: 26px; border-radius: 9px; font-size: 12px; }
+.row.sub-row .row-t { font-size: 13px; font-weight: 450; color: var(--ink-2); }
+.row.sub-row .row-amt { font-size: 13px; font-weight: 500; color: var(--ink-2); }
 .row-amt .sub { display: block; font-size: 11.5px; font-weight: 500; color: var(--ink-muted); margin-top: 2px; }
 
 .day-sep {

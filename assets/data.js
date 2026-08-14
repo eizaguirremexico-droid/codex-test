@@ -15,7 +15,29 @@ const DATA = {
   ingreso: { quincena: 17500, mensual: 35000, diasPago: [15, 30] },
 
   /* ── Efectivo disponible ── */
-  efectivo: { ahorro: 5500.00, asOf: "2026-08-08" },
+  /* Medido en la Santander Priority ...329, que es la cuenta de nómina.
+     OJO con esta medición: ya trae DENTRO la quincena del 15 y ya le salió
+     el pago de la Amex Elite del 14 de agosto. Si se usara tal cual, el
+     modelo de devengado contaría dos veces las dos cosas (el ingreso de
+     agosto y el compromiso de agosto ya liquidado). Por eso se anotan
+     aparte: el colchón limpio las revierte y deja el saldo con el que
+     arrancó agosto de verdad. */
+  /* El efectivo NO vive en una sola cuenta: `ahorro` es la suma de todas.
+     Verlo solo en la de nómina hacía aparecer un faltante de $5,066.08 que
+     en realidad estaba en la otra. */
+  efectivo: {
+    ahorro: 12077.26, asOf: "2026-08-14",
+    cuentas: [
+      { nombre: "Santander Priority ···329", monto: 7011.18, nota: "aquí cae la nómina" },
+      { nombre: "Segunda cuenta de débito",  monto: 5066.08, nota: "falta identificar cuál es" }
+    ],
+    /* Quincenas que YA están dentro del saldo de arriba. El calendario de
+       ingresos las descuenta para no prometerlas otra vez como dinero por
+       llegar: el 15 cayó en sábado y se depositó el viernes 14. */
+    quincenasCobradas: ["2026-08-15"],
+    compromisoPagado: 10922.74,    /* Amex Elite, liquidada el 14 de agosto */
+    nota: "medido el 14 de agosto, ya sin la Amex Elite"
+  },
 
   /* ── Dinero de un mes que ya quedó apartado en un mes anterior ──
      No vuelve a consumir el ingreso del mes en que se paga: por eso se
@@ -124,7 +146,12 @@ const DATA = {
     /* Diferencia entre el saldo medido de la Gold Card ($2,021.49) y los
        cuatro cargos del 1 de agosto. Falta identificar qué fue. */
     { fecha:"2026-08-06", concepto:"Cargos sin identificar (Gold Card)", monto:239.59, tarjeta:"servicios" },
-    { fecha:"2026-08-06", concepto:"Cargo sin identificar (LikeU)",      monto:180.00, tarjeta:"santander" }
+    { fecha:"2026-08-06", concepto:"Cargo sin identificar (LikeU)",      monto:180.00, tarjeta:"santander" },
+    /* Cargo de la tarjeta adicional de Aleli — cae en el mismo estado de
+       cuenta de la Gold Card. */
+    { fecha:"2026-08-11", concepto:"TikTok Shop (adicional de Aleli)",   monto:185.00, tarjeta:"servicios" },
+    /* La BBVA dejó de estar en ceros. Falta identificar qué fue. */
+    { fecha:"2026-08-12", concepto:"Cargo sin identificar (BBVA)",       monto:160.02, tarjeta:"bbva" }
   ],
 
   /* ── Suscripciones ── */
@@ -183,41 +210,39 @@ const DATA = {
   /* ── Tarjetas ── */
   tarjetas: [
     { id:"elite", alias:"Amex Gold Elite", term:"11005", emisor:"American Express",
-      tipo:"revolvente", linea:92000, disponible:76587, saldo:11447.74, tasa:61.48,
-      /* Estado de cuenta del corte del 3 de agosto, ya emitido: saldo a pagar
-         $10,922.74 con fecha límite el 24 de agosto (mínimo $1,150). */
-      corte:3, vence:24, proximoPago:{ fecha:"2026-08-24", monto:10922.74 },
+      /* LIQUIDADA el 14 de agosto: se pagaron los $10,922.74 del corte del 3.
+         Lo único vivo es el Headway del 4 de agosto, que entró después del
+         corte y se paga hasta el 24 de septiembre. */
+      tipo:"revolvente", linea:92000, disponible:87510, saldo:525.00, tasa:61.48,
+      corte:3, vence:24,
+      proximoPago:{ fecha:"2026-09-24", monto:4251.39, estimado:true },
       puntos:4040,
-      /* Consumo suelto de ese ciclo, ya confirmado: el estado de cuenta menos
-         los MSI ($9,673.67) y las suscripciones ($758.72). Antes estaba
-         estimado en $361.35 con lo que se alcanzaba a ver en la app. */
-      consumoCiclo: { corte:"2026-08-03", monto:490.35,
-        detalle:"Telcel $90 (no es el teléfono fijo) · Google FaceApp $100 · Meshy $52.35 · otros $248" },
       tono:"grafito" },
     { id:"servicios", alias:"Amex Gold Servicios", term:"21009", emisor:"American Express",
-      tipo:"cargo", linea:null, disponible:null, saldo:2021.49, tasa:null,
-      /* El pago del 11 de septiembre = gym $1,283.40 + Amazon MSI $504.95
-         + los $1,781.90 de consumo del 1 de agosto. */
+      tipo:"cargo", linea:null, disponible:null, saldo:2206.49, tasa:null,
+      /* El pago del 11 de septiembre = gym $1,283.40 + último Amazon MSI
+         $504.95 + los $2,206.49 de consumo de agosto. */
       /* Tiene tarjeta adicional a nombre de Aleli (cuenta ...21017): su
          gasto cae en este mismo estado de cuenta. */
       adicional: "Aleli Michel Pérez Martínez",
-      corte:22, vence:11, proximoPago:{ fecha:"2026-09-11", monto:3809.84, estimado:true },
-      puntos:4402,
+      corte:22, vence:11, proximoPago:{ fecha:"2026-09-11", monto:3994.84, estimado:true },
+      puntos:4413,
       tono:"oro" },
     { id:"costco", alias:"Costco Banamex Visa", term:"104", emisor:"Banamex",
-      tipo:"revolvente", linea:50000, disponible:43324.78, saldo:750.00, tasa:60.58,
-      /* Liquidada el 1 de agosto: saldo en cero y crédito disponible de $44,657.48
-         (lo que falta para los $50,000 es el capital vivo de los MSI).
-         `enCeroHasta` = hasta esa fecha el consumo del ciclo ya está pagado, así
-         que al corte del 13 solo llega la gasolina posterior. */
-      corte:13, vence:3, proximoPago:{ fecha:"2026-09-03", monto:1997.11, estimado:true },
-      enCeroHasta:"2026-08-01",
-      consumoCiclo:{ corte:"2026-08-13", monto:841.53,
-        detalle:"gasolina del 1 al 12 de agosto · 5 idas a $168.31" },
+      tipo:"revolvente", linea:50000, disponible:42471.78, saldo:2427.70, tasa:60.58,
+      /* Corte del 13 de agosto YA EMITIDO: pago para no generar intereses
+         $2,427.70, mínimo $630.00, fecha límite 2 de septiembre. Ya no es
+         estimación — es el estado de cuenta. Estaba modelado en $1,997.11
+         (MSI + gasolina) y le faltaban $430.59 de consumo del ciclo.
+         Ojo: vence el 2, no el 3 como se venía suponiendo. */
+      corte:13, vence:2, proximoPago:{ fecha:"2026-09-02", monto:2427.70 },
       tono:"azul" },
-    /* Tarjeta nueva, sin estrenar. Falta su fecha de corte y su vencimiento. */
+    /* Ya estrenada, pero todavía sin estado de cuenta: la app marca "Tu
+       próximo pago —", así que sigue sin conocerse el corte ni el
+       vencimiento. Hasta que salga el primero, su saldo no tiene fecha de
+       pago en el flujo. */
     { id:"bbva", alias:"BBVA TC M", term:"9871", emisor:"BBVA",
-      tipo:"revolvente", linea:81300, disponible:81300, saldo:0, tasa:null,
+      tipo:"revolvente", linea:81300, disponible:81139.98, saldo:160.02, tasa:null,
       corte:null, vence:null, proximoPago:null,
       tono:"azul" },
     { id:"santander", alias:"Santander LikeU", term:"6240", emisor:"Santander",
@@ -267,7 +292,8 @@ const DATA = {
   planJulio: {
     fecha: "2026-07-30",
     acciones: [
-      { concepto:"Pago 1 de 5 a mamá",             monto:10659.00, tipo:"salida" },
+      { concepto:"Pago 1 de 5 a mamá",             monto:10659.00, tipo:"salida", pagado:"2026-08-01",
+        nota:"se recorrió unos días, pero salió del dinero de julio" },
       { concepto:"Adelanto Amex Gold Servicios",   monto:3542.94,  tipo:"salida", pagado:"2026-07-30",
         nota:"fueron 3,542.94, no los 2,882.85 planeados; dejó la tarjeta en cero" },
       { concepto:"Mensualidad de agosto del auto", monto:6209.00,  tipo:"salida", pagado:"2026-07-30",
@@ -282,14 +308,14 @@ const DATA = {
     { fecha:"2026-08-03", concepto:"Vence Santander LikeU",     monto:600.00,   tipo:"pagado", nota:"liquidado el 27 de julio" },
     { fecha:"2026-08-03", concepto:"Vence Costco Banamex",      monto:2317.03,  tipo:"pagado", nota:"liquidado el 27 de julio" },
     { fecha:"2026-08-11", concepto:"Vence Amex Gold Servicios", monto:1788.35,  tipo:"cubierto", nota:"cubierto por el adelanto de $2,882.85 del 30 jul" },
-    { fecha:"2026-08-15", concepto:"1ª mensualidad auto BYD",   monto:6209.00,  tipo:"salida",   nota:"36 pagos, día 15 de cada mes" },
-    { fecha:"2026-08-23", concepto:"Vence Amex Gold Elite",     monto:10369.02, tipo:"reservado",nota:"MSI junio 3/3 + MSI julio 2/3 + Alo Yoga 1/3 + consumo" },
-    { fecha:"2026-08-30", concepto:"Pago 2 de 4 a mamá",        monto:10659.00, tipo:"salida",   nota:"" },
-    { fecha:"2026-09-03", concepto:"Vence Costco Banamex",      monto:1155.58,  tipo:"salida",   nota:"MSI de Amazon" },
-    { fecha:"2026-09-11", concepto:"Vence Amex Gold Servicios", monto:1788.35,  tipo:"salida",   nota:"gym + Amazon MSI" },
+    { fecha:"2026-08-15", concepto:"1ª mensualidad auto BYD",   monto:6209.00,  tipo:"pagado",   nota:"adelantada el 30 de julio" },
+    { fecha:"2026-08-24", concepto:"Vence Amex Gold Elite",     monto:10922.74, tipo:"pagado",   nota:"liquidada el 14 de agosto, diez días antes" },
+    { fecha:"2026-08-30", concepto:"Pago 2 de 5 a mamá",        monto:10659.00, tipo:"salida",   nota:"" },
+    { fecha:"2026-09-02", concepto:"Vence Costco Banamex",      monto:2427.70,  tipo:"salida",   nota:"estado de cuenta del corte del 13 de agosto · mínimo $630" },
+    { fecha:"2026-09-11", concepto:"Vence Amex Gold Servicios", monto:3994.84,  tipo:"salida",   nota:"gym + último Amazon MSI + consumo de agosto" },
     { fecha:"2026-09-15", concepto:"Mensualidad auto BYD",      monto:6209.00,  tipo:"salida",   nota:"" },
-    { fecha:"2026-09-23", concepto:"Vence Amex Gold Elite",     monto:3726.23,  tipo:"salida",   nota:"MSI julio 3/3 + Alo Yoga 2/3 + suscripciones" },
-    { fecha:"2026-09-30", concepto:"Pago 3 de 4 a mamá",        monto:10659.00, tipo:"salida",   nota:"" }
+    { fecha:"2026-09-24", concepto:"Vence Amex Gold Elite",     monto:4251.39,  tipo:"salida",   nota:"MSI julio 3/3 + Alo Yoga 2/3 + suscripciones + Headway" },
+    { fecha:"2026-09-30", concepto:"Pago 3 de 5 a mamá",        monto:7106.00,  tipo:"salida",   nota:"sujeto a la renegociación" }
   ],
 
   /* ── Flujo diario de caja ──
@@ -299,7 +325,11 @@ const DATA = {
      días de $0). El mapa muestra solo movimientos reales con fecha, y el
      gasto libre se maneja como bolsa mensual. */
   flujo: {
-    desde: "2026-08-01",
+    /* Arranca el 16 y no el 1 a propósito: el efectivo de arriba está medido
+       el 14, ya con la quincena del 15 adentro. Si la ventana empezara antes,
+       el mapa volvería a sumar esa quincena y a restar la Amex que ya se
+       pagó. Del 1 al 15 de agosto ya no hay nada que proyectar: pasó. */
+    desde: "2026-08-16",
     hasta: "2026-10-31",
     colchonMinimo: 2000,
     /* `previo` = cuánto de ese pago es deuda de ANTES de la ventana (consumo
@@ -310,26 +340,29 @@ const DATA = {
       /* El 1 de agosto se pagaron el crédito de julio a mamá ($10,659) y el saldo
          de la Costco ($3,461.26). Ya no aparecen aquí: el efectivo de arriba es
          posterior a los dos. La Costco quedó en CERO ese día. */
-      { fecha:"2026-08-24", concepto:"Amex Gold Elite",                monto:10922.74, cat:"tarjeta", tarjeta:"elite", previo:1249.07,
-        nota:"estado de cuenta emitido · MSI junio 3/3 + MSI julio 2/3 + Alo Yoga 1/3 + consumo de julio" },
+      /* La Amex Elite del corte del 3 ($10,922.74) se pagó el 14 de agosto,
+         diez días antes de vencer. Ya no aparece aquí: el efectivo de arriba
+         es posterior a ese pago. */
       { fecha:"2026-08-30", concepto:"Pago 2 de 5 a mamá",             monto:10659.00, cat:"mama" },
-      { fecha:"2026-09-03", concepto:"Costco Banamex",                 monto:1997.11,  cat:"tarjeta", estimado:true, tarjeta:"costco",
-        nota:"MSI $1,155.58 + gasolina del 1 al 12 de agosto, que entró al corte después del pago" },
+      { fecha:"2026-09-02", concepto:"Costco Banamex",                 monto:2427.70,  cat:"tarjeta", tarjeta:"costco",
+        nota:"estado de cuenta emitido del corte del 13 de agosto · mínimo $630" },
       { fecha:"2026-09-03", concepto:"Santander LikeU",                monto:180.00,   cat:"tarjeta", estimado:true, tarjeta:"santander",
         nota:"consumo posterior al corte de julio — el 3 de agosto no debías nada" },
-      { fecha:"2026-09-11", concepto:"Amex Gold Servicios",            monto:1788.35,  cat:"tarjeta", tarjeta:"servicios",
-        nota:"gym del 23 de julio + Amazon MSI" },
+      { fecha:"2026-09-11", concepto:"Amex Gold Servicios",            monto:3994.84,  cat:"tarjeta", estimado:true, tarjeta:"servicios",
+        nota:"gym $1,283.40 + último Amazon MSI $504.95 + consumo de agosto $2,206.49" },
       { fecha:"2026-09-15", concepto:"Mensualidad auto BYD",           monto:6209.00,  cat:"auto" },
-      { fecha:"2026-09-24", concepto:"Amex Gold Elite",                monto:3726.39,  cat:"tarjeta", estimado:true, tarjeta:"elite",
-        nota:"MSI julio 3/3 + Alo Yoga 2/3 + suscripciones" },
+      { fecha:"2026-09-24", concepto:"Amex Gold Elite",                monto:4251.39,  cat:"tarjeta", estimado:true, tarjeta:"elite",
+        nota:"MSI julio 3/3 + Alo Yoga 2/3 + suscripciones + Headway $525, que entró después del corte del 3" },
       { fecha:"2026-09-30", concepto:"Pago 3 de 5 a mamá",             monto:7106.00,  cat:"mama",
         nota:"ya con el reparto que hay que negociar" },
       /* Octubre sale del mismo modelo de cortes: cada pago es lo que cerró en
          el corte anterior de esa tarjeta, con los MSI que siguen vivos. */
-      { fecha:"2026-10-03", concepto:"Costco Banamex",                 monto:3355.58,  cat:"tarjeta", estimado:true, tarjeta:"costco",
+      { fecha:"2026-10-02", concepto:"Costco Banamex",                 monto:3355.58,  cat:"tarjeta", estimado:true, tarjeta:"costco",
         nota:"MSI + gasolina del ciclo — baja a $1,156 si la dejas en cero antes del corte" },
-      { fecha:"2026-10-11", concepto:"Amex Gold Servicios",            monto:1788.35,  cat:"tarjeta", estimado:true, tarjeta:"servicios",
-        nota:"gym + Amazon MSI" },
+      /* En octubre el Amazon de la Gold Card ya se acabó (último pago en
+         agosto): solo queda el gym. Lo que gastes en septiembre se suma. */
+      { fecha:"2026-10-11", concepto:"Amex Gold Servicios",            monto:1283.40,  cat:"tarjeta", estimado:true, tarjeta:"servicios",
+        nota:"solo el gym — el Amazon MSI terminó en agosto · falta sumarle tu consumo de septiembre" },
       { fecha:"2026-10-15", concepto:"Mensualidad auto BYD",           monto:6209.00,  cat:"auto" },
       { fecha:"2026-10-24", concepto:"Amex Gold Elite",                monto:1755.39,  cat:"tarjeta", estimado:true, tarjeta:"elite",
         nota:"Alo Yoga 3/3 + suscripciones — ya sin los MSI de junio y julio" },
