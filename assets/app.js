@@ -151,6 +151,15 @@ function trayectoEntre(desde, hasta) {
            gasolina: idas * GAS_POR_IDA };
 }
 
+/* Desglose del efectivo por cuenta. `ahorro` manda; esto solo lo explica.
+   Si las cuentas no suman, el desglose está viejo y no se muestra: mejor
+   un número sin desglose que un desglose que no cuadra. */
+const CUENTAS = (() => {
+  const cs = DATA.efectivo.cuentas || [];
+  if (cs.length < 2) return cs;
+  return Math.abs(sum(cs.map(c => c.monto)) - DATA.efectivo.ahorro) < 0.01 ? cs : [];
+})();
+
 const VIDA_BASE = sum(DATA.vidaFija.map(x => x.monto));
 const vidaMes = k => VIDA_BASE + tagMes(k);
 const SUBS_MES  = sum(DATA.suscripciones.map(x => x.monto));
@@ -611,24 +620,36 @@ function renderEfectivo() {
     </div>
     <div class="row">
       <div class="row-ic">💵</div>
-      <div class="row-main"><div class="row-t">Hoy en la cuenta</div>
-        <div class="row-d">${PLAN_PAGADO.length
-          ? `ya con ${PLAN_PAGADO.length} adelanto${PLAN_PAGADO.length === 1 ? "" : "s"} pagado${PLAN_PAGADO.length === 1 ? "" : "s"}`
-          : "antes del movimiento del 30 de julio"}</div></div>
+      <div class="row-main"><div class="row-t">Hoy en tus cuentas</div>
+        <div class="row-d">${CUENTAS.length > 1
+          ? `repartido en ${CUENTAS.length} cuentas de débito`
+          : (PLAN_PAGADO.length
+            ? `ya con ${PLAN_PAGADO.length} adelanto${PLAN_PAGADO.length === 1 ? "" : "s"} pagado${PLAN_PAGADO.length === 1 ? "" : "s"}`
+            : "antes del movimiento del 30 de julio")}</div></div>
       <div class="row-amt">${money2(DATA.efectivo.ahorro)}</div>
     </div>
-    <div class="row">
+    ${CUENTAS.length > 1 ? CUENTAS.map(c => `
+      <div class="row sub-row">
+        <div class="row-ic">🏦</div>
+        <div class="row-main"><div class="row-t">${c.nombre}</div>
+          ${c.nota ? `<div class="row-d">${c.nota}</div>` : ""}</div>
+        <div class="row-amt">${money2(c.monto)}</div>
+      </div>`).join("") : ""}
+    ${/* Estas dos filas traían la fecha escrita a mano ("el 30 de julio") y
+          se quedaban en $0.00 cuando la ventana ya no las contenía. Ahora
+          salen solo si hay algo que mostrar, y con su fecha real. */""}
+    ${PERIODO.sale > 0 ? `<div class="row">
       <div class="row-ic">📤</div>
-      <div class="row-main"><div class="row-t">Sale el 30 de julio</div>
-        <div class="row-d">${DATA.planJulio.acciones.filter(a => !a.pagado).map(a => a.concepto.replace(/^(Pago|Adelanto|Reserva) /, "")).join(" + ")}</div></div>
+      <div class="row-main"><div class="row-t">Sale antes del ${dLabel(PERIODO.hasta)}</div>
+        <div class="row-d">${PERIODO.detalle.map(d => d.concepto).join(" + ")}</div></div>
       <div class="row-amt">−${money2(PERIODO.sale)}</div>
-    </div>
-    <div class="row">
+    </div>` : ""}
+    ${PERIODO.entra > 0 ? `<div class="row">
       <div class="row-ic">📥</div>
-      <div class="row-main"><div class="row-t">Entra el 30 de julio</div>
-        <div class="row-d">tu quincena</div></div>
+      <div class="row-main"><div class="row-t">Entra el ${dLabel(PERIODO.ingresos[0].iso)}</div>
+        <div class="row-d">${PERIODO.ingresos.length > 1 ? `${PERIODO.ingresos.length} quincenas` : "tu quincena"}</div></div>
       <div class="row-amt">+${money2(PERIODO.entra)}</div>
-    </div>
+    </div>` : ""}
     <div class="row">
       <div class="row-ic">🚗</div>
       <div class="row-main"><div class="row-t">Tag y gasolina</div>

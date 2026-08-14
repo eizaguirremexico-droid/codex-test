@@ -22,9 +22,15 @@ const DATA = {
      agosto y el compromiso de agosto ya liquidado). Por eso se anotan
      aparte: el colchón limpio las revierte y deja el saldo con el que
      arrancó agosto de verdad. */
+  /* El efectivo NO vive en una sola cuenta: `ahorro` es la suma de todas.
+     Verlo solo en la de nómina hacía aparecer un faltante de $5,066.08 que
+     en realidad estaba en la otra. */
   efectivo: {
-    ahorro: 7011.18, asOf: "2026-08-14",
-    cuenta: "Santander Priority ...329 (nómina)",
+    ahorro: 12077.26, asOf: "2026-08-14",
+    cuentas: [
+      { nombre: "Santander Priority ···329", monto: 7011.18, nota: "aquí cae la nómina" },
+      { nombre: "Segunda cuenta de débito",  monto: 5066.08, nota: "falta identificar cuál es" }
+    ],
     /* Quincenas que YA están dentro del saldo de arriba. El calendario de
        ingresos las descuenta para no prometerlas otra vez como dinero por
        llegar: el 15 cayó en sábado y se depositó el viernes 14. */
@@ -286,7 +292,8 @@ const DATA = {
   planJulio: {
     fecha: "2026-07-30",
     acciones: [
-      { concepto:"Pago 1 de 5 a mamá",             monto:10659.00, tipo:"salida" },
+      { concepto:"Pago 1 de 5 a mamá",             monto:10659.00, tipo:"salida", pagado:"2026-08-01",
+        nota:"se recorrió unos días, pero salió del dinero de julio" },
       { concepto:"Adelanto Amex Gold Servicios",   monto:3542.94,  tipo:"salida", pagado:"2026-07-30",
         nota:"fueron 3,542.94, no los 2,882.85 planeados; dejó la tarjeta en cero" },
       { concepto:"Mensualidad de agosto del auto", monto:6209.00,  tipo:"salida", pagado:"2026-07-30",
