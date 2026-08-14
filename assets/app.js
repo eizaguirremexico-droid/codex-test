@@ -490,7 +490,11 @@ function construirFlujo() {
     const mio = GASTO_LIBRE.filter(g => {
       const c = DATA.tarjetas.find(x => x.id === g.tarjeta);
       const fl = c && flotante(c, g.fecha);
-      return (fl ? fl.vence : g.fecha) === f;
+      if ((fl ? fl.vence : g.fecha) !== f) return false;
+      /* Si ese día ya hay un pago de esa misma tarjeta, su monto sale del
+         estado de cuenta y YA trae este consumo adentro. Sumarlo aparte lo
+         cobraba dos veces: septiembre aparecía con $3,419.49 de más. */
+      return !FL.pagos.some(p => p.fecha === f && p.tarjeta === g.tarjeta);
     });
     if (mio.length) eventos.push({
       concepto: `Tu gasto de ${mLabel(mio[0].fecha.slice(0, 7), true)}`,
