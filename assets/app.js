@@ -8,8 +8,12 @@
 const NF0 = new Intl.NumberFormat("es-MX", { maximumFractionDigits: 0 });
 const NF2 = new Intl.NumberFormat("es-MX", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-const money  = v => "$" + NF0.format(Math.round(v));
-const money2 = v => "$" + NF2.format(v);
+/* El signo va ANTES del peso: "$-1,786" se lee como un precio raro, "−$1,786"
+   se lee como lo que es. Pasa poco, pero cuando pasa es justo el número que
+   más importa leer bien. */
+const signo = (v, s) => (v < 0 ? "−$" : "$") + s;
+const money  = v => signo(v, NF0.format(Math.abs(Math.round(v))));
+const money2 = v => signo(v, NF2.format(Math.abs(v)));
 
 /* número al estilo de la referencia: entero fuerte, decimales atenuados */
 function moneyRich(v) {
@@ -291,7 +295,12 @@ function construirQuincenas(desdeISO, hastaMes) {
   return out;
 }
 
-const QUINCENAS = construirQuincenas(hoyISO, DATA.horizonteIngresos.hasta);
+/* Las quincenas que ya están dentro del efectivo medido no son ingreso por
+   venir: si se dejan, la portada promete otra vez un dinero que ya gastaste.
+   Pasa cada vez que la nómina se adelanta por caer en fin de semana. */
+const YA_COBRADAS = DATA.efectivo.quincenasCobradas || [];
+const QUINCENAS = construirQuincenas(hoyISO, DATA.horizonteIngresos.hasta)
+  .filter(q => !YA_COBRADAS.includes(q.iso));
 const PROX_QUINCENA = QUINCENAS[0];
 const TOTAL_INGRESO = sum(QUINCENAS.map(q => q.monto));
 
@@ -914,7 +923,14 @@ let mesFlujo = null;   // null = el primero de la ventana
    todavía no te cobran. Lo que de verdad traes de antes es el efectivo
    menos todo lo que se debía desde antes de la ventana. */
 const DEUDA_PREVIA  = sum(FL.pagos.map(p => p.previo || 0));
-const COLCHON_LIMPIO = DATA.efectivo.ahorro - DEUDA_PREVIA;
+/* La medición del banco casi nunca cae el día 1. Si ya trae adentro una
+   quincena del mes en curso y ya le salió un compromiso de ese mismo mes,
+   sumarle `libre` completo contaría las dos cosas dos veces: el ingreso
+   una vez en el saldo y otra en el modelo. Revertirlas devuelve el saldo
+   con el que arrancó el mes, que es lo que el devengado espera. */
+const COLCHON_LIMPIO = DATA.efectivo.ahorro - DEUDA_PREVIA
+  - YA_COBRADAS.length * DATA.ingreso.quincena
+  + (DATA.efectivo.compromisoPagado || 0);
 
 /* Dinero real disponible en el mes i: el colchón limpio más lo que han
    generado los meses hasta ese, menos lo que se supone gastado en los
