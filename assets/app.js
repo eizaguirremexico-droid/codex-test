@@ -393,6 +393,10 @@ const GASTO_LIBRE = DATA.gastoLibre || [];
 const gastadoMes  = k => sum(GASTO_LIBRE.filter(g => g.fecha.slice(0, 7) === k).map(g => g.monto));
 const gastoEnCorte = (id, corte) => GASTO_LIBRE.filter(g => {
   if (g.tarjeta !== id) return false;
+  /* Si ya se liquidó antes del corte, no llega al estado de cuenta: el corte
+     del 22 de agosto salía en $4,593.84 cuando el pago del 11 de septiembre
+     es de $2,387.35, porque seguía contando lo que se adelantó el 17. */
+  if (g.pagado) return false;
   const c = DATA.tarjetas.find(x => x.id === id);
   const fl = c && flotante(c, g.fecha);
   return fl && fl.corte === corte;
