@@ -158,7 +158,18 @@ const DATA = {
     { fecha:"2026-08-14", concepto:"Costco",                             monto:239.00, tarjeta:"costco" },
     { fecha:"2026-08-15", concepto:"Cinépolis",                          monto:442.00, tarjeta:"costco" },
     { fecha:"2026-08-15", concepto:"Steren",                             monto:428.00, tarjeta:"costco" },
-    { fecha:"2026-08-15", concepto:"330 Sendero Ixtapaluca",             monto:149.00, tarjeta:"costco" }
+    { fecha:"2026-08-15", concepto:"330 Sendero Ixtapaluca",             monto:149.00, tarjeta:"costco" },
+    /* Tarde en Perisur del 16 de agosto, toda a la Elite. Cae en el corte
+       del 3 de septiembre y se paga el 24 de septiembre. */
+    { fecha:"2026-08-16", concepto:"MixUp Perisur",                      monto:436.00,  tarjeta:"elite" },
+    { fecha:"2026-08-16", concepto:"L'Occitane Perisur",                 monto:660.00,  tarjeta:"elite" },
+    { fecha:"2026-08-16", concepto:"H&M Perisur",                        monto:249.00,  tarjeta:"elite" },
+    /* En la app salen TRES líneas de $843.70: el cargo, una devolución en
+       verde ("Restaurante Mifel") y el cargo otra vez. Es un solo consumo
+       que se duplicó y el banco ya revirtió el duplicado: neto uno. */
+    { fecha:"2026-08-16", concepto:"Café Bucra Perisur",                 monto:843.70,  tarjeta:"elite",
+      nota:"aparece duplicado con su devolución — es un solo cargo" },
+    { fecha:"2026-08-16", concepto:"Mango Perisur",                      monto:1103.00, tarjeta:"elite" }
   ],
 
   /* ── Suscripciones ── */
@@ -220,9 +231,11 @@ const DATA = {
       /* LIQUIDADA el 14 de agosto: se pagaron los $10,922.74 del corte del 3.
          Lo único vivo es el Headway del 4 de agosto, que entró después del
          corte y se paga hasta el 24 de septiembre. */
-      tipo:"revolvente", linea:92000, disponible:87510, saldo:525.00, tasa:61.48,
+      /* Saldo y disponible calculados: la app de Amex mostraba $525.00 el 14
+         de agosto y los cargos de Perisur del 16 siguen en "Pendiente". */
+      tipo:"revolvente", linea:92000, disponible:84218.30, saldo:3816.70, tasa:61.48,
       corte:3, vence:24,
-      proximoPago:{ fecha:"2026-09-24", monto:4251.39, estimado:true },
+      proximoPago:{ fecha:"2026-09-24", monto:7543.09, estimado:true },
       puntos:4040,
       tono:"grafito" },
     { id:"servicios", alias:"Amex Gold Servicios", term:"21009", emisor:"American Express",
@@ -358,8 +371,8 @@ const DATA = {
       { fecha:"2026-09-11", concepto:"Amex Gold Servicios",            monto:3994.84,  cat:"tarjeta", estimado:true, tarjeta:"servicios",
         nota:"gym $1,283.40 + último Amazon MSI $504.95 + consumo de agosto $2,206.49" },
       { fecha:"2026-09-15", concepto:"Mensualidad auto BYD",           monto:6209.00,  cat:"auto" },
-      { fecha:"2026-09-24", concepto:"Amex Gold Elite",                monto:4251.39,  cat:"tarjeta", estimado:true, tarjeta:"elite",
-        nota:"MSI julio 3/3 + Alo Yoga 2/3 + suscripciones + Headway $525, que entró después del corte del 3" },
+      { fecha:"2026-09-24", concepto:"Amex Gold Elite",                monto:7543.09,  cat:"tarjeta", estimado:true, tarjeta:"elite",
+        nota:"MSI julio 3/3 + Alo Yoga 2/3 + suscripciones + Headway $525 + los $3,291.70 de Perisur del 16 de agosto" },
       { fecha:"2026-09-30", concepto:"Pago 3 de 5 a mamá",             monto:7106.00,  cat:"mama",
         nota:"ya con el reparto que hay que negociar" },
       /* Octubre sale del mismo modelo de cortes: cada pago es lo que cerró en
