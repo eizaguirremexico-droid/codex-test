@@ -172,6 +172,10 @@ const DATA = {
     { fecha:"2026-08-15", concepto:"Cinépolis",                          monto:442.00, tarjeta:"costco" },
     { fecha:"2026-08-15", concepto:"Steren",                             monto:428.00, tarjeta:"costco" },
     { fecha:"2026-08-15", concepto:"330 Sendero Ixtapaluca",             monto:149.00, tarjeta:"costco" },
+    /* Segunda compra en Sendero Ixtapaluca el mismo día, pero a la Gold
+       Card. Cayó ANTES del corte del 22, así que entra al estado de cuenta
+       que se paga el 11 de septiembre — el adelanto del 17 no la cubre. */
+    { fecha:"2026-08-15", concepto:"330 Sendero Ixtapaluca",             monto:599.00, tarjeta:"servicios" },
     /* Tarde en Perisur del 16 de agosto, toda a la Elite. Cae en el corte
        del 3 de septiembre y se paga el 24 de septiembre. */
     { fecha:"2026-08-16", concepto:"MixUp Perisur",                      monto:436.00,  tarjeta:"elite" },
@@ -244,9 +248,14 @@ const DATA = {
       /* LIQUIDADA el 14 de agosto: se pagaron los $10,922.74 del corte del 3.
          Lo único vivo es el Headway del 4 de agosto, que entró después del
          corte y se paga hasta el 24 de septiembre. */
-      /* Saldo y disponible calculados: la app de Amex mostraba $525.00 el 14
-         de agosto y los cargos de Perisur del 16 siguen en "Pendiente". */
-      tipo:"revolvente", linea:92000, disponible:84218.30, saldo:3816.70, tasa:61.48,
+      /* Saldo y disponible como los muestra Amex el 17 de agosto. El saldo
+         sigue en $525.00 porque los $3,291.70 de Perisur están "Pendientes"
+         y todavía no se aplican — pero el crédito disponible SÍ bajó
+         ($87,510 → $84,219), que es la prueba de que ya están apartados.
+         Lo que de verdad debes es $3,816.70; el pago del 24 de septiembre
+         ya lo contempla. */
+      tipo:"revolvente", linea:92000, disponible:84219.00, saldo:525.00, tasa:61.48,
+      pendiente:3291.70,
       corte:3, vence:24,
       proximoPago:{ fecha:"2026-09-24", monto:7543.09, estimado:true },
       puntos:4040,
@@ -259,7 +268,8 @@ const DATA = {
       /* Tiene tarjeta adicional a nombre de Aleli (cuenta ...21017): su
          gasto cae en este mismo estado de cuenta. */
       adicional: "Aleli Michel Pérez Martínez",
-      corte:22, vence:11, proximoPago:{ fecha:"2026-09-11", monto:1788.35, estimado:true },
+      corte:22, vence:11, proximoPago:{ fecha:"2026-09-11", monto:2387.35, estimado:true },
+      pendiente:599.00,
       puntos:4413,
       tono:"oro" },
     { id:"costco", alias:"Costco Banamex Visa", term:"104", emisor:"Banamex",
@@ -385,8 +395,8 @@ const DATA = {
          17 de agosto y el efectivo de arriba ya lo refleja. */
       { fecha:"2026-09-03", concepto:"Santander LikeU",                monto:180.00,   cat:"tarjeta", estimado:true, tarjeta:"santander",
         nota:"consumo posterior al corte de julio — el 3 de agosto no debías nada" },
-      { fecha:"2026-09-11", concepto:"Amex Gold Servicios",            monto:1788.35,  cat:"tarjeta", estimado:true, tarjeta:"servicios",
-        nota:"solo gym $1,283.40 + último Amazon MSI $504.95 — el consumo de agosto se adelantó" },
+      { fecha:"2026-09-11", concepto:"Amex Gold Servicios",            monto:2387.35,  cat:"tarjeta", estimado:true, tarjeta:"servicios",
+        nota:"gym $1,283.40 + último Amazon MSI $504.95 + Sendero $599 del 15 de agosto — el resto del consumo se adelantó" },
       { fecha:"2026-09-15", concepto:"Mensualidad auto BYD",           monto:6209.00,  cat:"auto" },
       { fecha:"2026-09-24", concepto:"Amex Gold Elite",                monto:7543.09,  cat:"tarjeta", estimado:true, tarjeta:"elite",
         nota:"MSI julio 3/3 + Alo Yoga 2/3 + suscripciones + Headway $525 + los $3,291.70 de Perisur del 16 de agosto" },
