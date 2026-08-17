@@ -488,6 +488,10 @@ function construirFlujo() {
       nota: `cargada${tagDiferido[f].n > 1 ? "s" : ""} a ${t2(OFI.via).alias} el ${
         tagDiferido[f].fechas.map(x => dLabel(x)).join(" y ")}` });
     const mio = GASTO_LIBRE.filter(g => {
+      /* Su tarjeta ya se adelantó: el dinero salió antes y el efectivo
+         medido ya lo refleja. Sigue contando como gasto del mes, pero no
+         vuelve a salir de la cuenta más adelante. */
+      if (g.pagado) return false;
       const c = DATA.tarjetas.find(x => x.id === g.tarjeta);
       const fl = c && flotante(c, g.fecha);
       if ((fl ? fl.vence : g.fecha) !== f) return false;
@@ -953,9 +957,10 @@ const DEUDA_PREVIA  = sum(FL.pagos.map(p => p.previo || 0));
    sumarle `libre` completo contaría las dos cosas dos veces: el ingreso
    una vez en el saldo y otra en el modelo. Revertirlas devuelve el saldo
    con el que arrancó el mes, que es lo que el devengado espera. */
+const PAGADO_YA = sum((DATA.efectivo.compromisosPagados || []).map(p => p.monto));
 const COLCHON_LIMPIO = DATA.efectivo.ahorro - DEUDA_PREVIA
   - YA_COBRADAS.length * DATA.ingreso.quincena
-  + (DATA.efectivo.compromisoPagado || 0);
+  + PAGADO_YA;
 
 /* Dinero real disponible en el mes i: el colchón limpio más lo que han
    generado los meses hasta ese, menos lo que se supone gastado en los
