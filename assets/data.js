@@ -26,10 +26,12 @@ const DATA = {
      Verlo solo en la de nómina hacía aparecer un faltante de $5,066.08 que
      en realidad estaba en la otra. */
   efectivo: {
-    ahorro: 7443.07, asOf: "2026-08-17",
+    ahorro: 6443.07, asOf: "2026-08-17",
     cuentas: [
       { nombre: "Santander Priority ···329", monto: 2376.99, nota: "aquí cae la nómina" },
-      { nombre: "Segunda cuenta de débito",  monto: 5066.08, nota: "falta identificar cuál es" }
+      /* De aquí salió la transferencia del cargador. Falta saber de qué banco
+         es y qué rendimiento paga. */
+      { nombre: "Cuenta ···5910",            monto: 4066.08, nota: "falta identificar el banco" }
     ],
     /* Quincenas que YA están dentro del saldo de arriba. El calendario de
        ingresos las descuenta para no prometerlas otra vez como dinero por
@@ -189,7 +191,11 @@ const DATA = {
        que se duplicó y el banco ya revirtió el duplicado: neto uno. */
     { fecha:"2026-08-16", concepto:"Café Bucra Perisur",                 monto:843.70,  tarjeta:"elite",
       nota:"aparece duplicado con su devolución — es un solo cargo" },
-    { fecha:"2026-08-16", concepto:"Mango Perisur",                      monto:1103.00, tarjeta:"elite" }
+    { fecha:"2026-08-16", concepto:"Mango Perisur",                      monto:1103.00, tarjeta:"elite" },
+    /* A débito, no a tarjeta: reembolso a su mamá por el cargador del BYD que
+       ella compró. No tiene nada que ver con el crédito de los $42,636 — es
+       gasto suelto y sale de la bolsa del mes. Ya salió de la cuenta. */
+    { fecha:"2026-08-17", concepto:"Cargador del BYD (reembolso a mamá)", monto:1000.00, tarjeta:"debito", pagado:true }
   ],
 
   /* ── Suscripciones ── */
