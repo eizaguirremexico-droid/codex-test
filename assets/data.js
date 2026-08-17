@@ -132,8 +132,11 @@ const DATA = {
   vidaFija: [
     { concepto: "Gasolina y pastillas", corto: "Gasolina", monto: 2200,
       detalle: "commute Atizapán → Ajusco", via: "costco" },
-    { concepto: "Teléfono",             corto: "Teléfono", monto: 350,
-      detalle: "cargo mensual — falta confirmar dónde se cobra", via: "tarjetas" }
+    /* Identificado en el estado de cuenta de la Joy: "AT&T CR" el 25 de julio
+       por $360.00. Ya no es un cargo suelto sin dueño: es recurrente, cae en
+       la Joy y son $360, no $350. */
+    { concepto: "Teléfono AT&T",        corto: "Teléfono", monto: 360,
+      detalle: "cargo recurrente el 25 de cada mes", via: "joy" }
   ],
 
   /* ── Gasto libre ya hecho ──
@@ -217,6 +220,13 @@ const DATA = {
     /* La membresía del gym se compró el 15 de enero en UN pago de $15,400.80
        y Amex la difirió a 12 meses. NO es un gasto fijo mensual: se acaba en
        el corte de diciembre. Si la renuevas en enero vuelve a empezar. */
+    /* Del estado de cuenta de la Joy del corte del 4 de agosto: compra del
+       4 de julio en Ticketmaster por $5,942.50 diferida a 3 meses. Van 2 de
+       3 pagados (el primero se liquidó con el abono del 15 de julio), queda
+       $1,980.84 que se cobra en el corte del 4 de septiembre. */
+    { id:"joy-tm",    tarjeta:"Joy Banamex", label:"Ticketmaster",
+      montoOriginal:5942.50, monto:1980.84, desde:"2026-09", hasta:"2026-09", pagados:2, total:3,
+      nota:"último pago · vence el 24 de septiembre" },
     { id:"serv-gym",  tarjeta:"Amex Gold Servicios", label:"Gym FITSI (anualidad)",
       montoOriginal:15400.80, monto:1283.40, desde:"2026-08", hasta:"2026-12", pagados:7, total:12,
       nota:"saldo pendiente $6,417.00 · renueva en enero 2027" }
@@ -292,6 +302,17 @@ const DATA = {
       tipo:"revolvente", linea:81300, disponible:81139.98, saldo:160.02, tasa:null,
       corte:null, vence:null, proximoPago:null,
       tono:"azul" },
+    /* Estado de cuenta del corte del 4 de agosto. El saldo de $1,980.84 NO es
+       consumo nuevo: es el capital que falta del Ticketmaster a 3 meses. Por
+       eso el pago para no generar intereses del 24 de agosto fue de $360 (el
+       AT&T) y no de $2,340.84 — y ese $360 ya se pagó.
+       OJO con la comisión por inactividad: $149 + IVA al mes si no le haces
+       al menos una compra de $300. El cargo recurrente de AT&T la exenta,
+       así que no muevas el teléfono de aquí sin darle otro uso a la tarjeta. */
+    { id:"joy", alias:"Joy Banamex", term:"331", emisor:"Banamex",
+      tipo:"revolvente", linea:41000, disponible:39019.16, saldo:1980.84, tasa:62.98,
+      corte:4, vence:24, proximoPago:{ fecha:"2026-09-24", monto:2340.84, estimado:true },
+      tono:"rojo" },
     { id:"santander", alias:"Santander LikeU", term:"6240", emisor:"Santander",
       tipo:"revolvente", linea:170400, disponible:170220, saldo:180.00, tasa:null,
       /* corte desconocido. El 31 de julio la app marcaba pago mínimo $0 y pago
@@ -398,6 +419,8 @@ const DATA = {
       { fecha:"2026-09-11", concepto:"Amex Gold Servicios",            monto:2387.35,  cat:"tarjeta", estimado:true, tarjeta:"servicios",
         nota:"gym $1,283.40 + último Amazon MSI $504.95 + Sendero $599 del 15 de agosto — el resto del consumo se adelantó" },
       { fecha:"2026-09-15", concepto:"Mensualidad auto BYD",           monto:6209.00,  cat:"auto" },
+      { fecha:"2026-09-24", concepto:"Joy Banamex",                    monto:2340.84,  cat:"tarjeta", estimado:true, tarjeta:"joy",
+        nota:"último pago del Ticketmaster $1,980.84 + teléfono AT&T $360" },
       { fecha:"2026-09-24", concepto:"Amex Gold Elite",                monto:7543.09,  cat:"tarjeta", estimado:true, tarjeta:"elite",
         nota:"MSI julio 3/3 + Alo Yoga 2/3 + suscripciones + Headway $525 + los $3,291.70 de Perisur del 16 de agosto" },
       { fecha:"2026-09-30", concepto:"Pago 3 de 5 a mamá",             monto:7106.00,  cat:"mama",
@@ -411,6 +434,8 @@ const DATA = {
       { fecha:"2026-10-11", concepto:"Amex Gold Servicios",            monto:1283.40,  cat:"tarjeta", estimado:true, tarjeta:"servicios",
         nota:"solo el gym — el Amazon MSI terminó en agosto · falta sumarle tu consumo de septiembre" },
       { fecha:"2026-10-15", concepto:"Mensualidad auto BYD",           monto:6209.00,  cat:"auto" },
+      { fecha:"2026-10-24", concepto:"Joy Banamex",                    monto:360.00,   cat:"tarjeta", estimado:true, tarjeta:"joy",
+        nota:"solo el teléfono AT&T — el Ticketmaster se acaba en septiembre" },
       { fecha:"2026-10-24", concepto:"Amex Gold Elite",                monto:1755.39,  cat:"tarjeta", estimado:true, tarjeta:"elite",
         nota:"Alo Yoga 3/3 + suscripciones — ya sin los MSI de junio y julio" },
       { fecha:"2026-10-30", concepto:"Pago 4 de 5 a mamá",             monto:7106.00,  cat:"mama" }
