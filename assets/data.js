@@ -151,7 +151,14 @@ const DATA = {
        cuenta de la Gold Card. */
     { fecha:"2026-08-11", concepto:"TikTok Shop (adicional de Aleli)",   monto:185.00, tarjeta:"servicios" },
     /* La BBVA dejó de estar en ceros. Falta identificar qué fue. */
-    { fecha:"2026-08-12", concepto:"Cargo sin identificar (BBVA)",       monto:160.02, tarjeta:"bbva" }
+    { fecha:"2026-08-12", concepto:"Cargo sin identificar (BBVA)",       monto:160.02, tarjeta:"bbva" },
+    /* Cargos posteriores al corte del 13 de agosto: NO entran al pago del 2
+       de septiembre. Caen en el corte del 13 de septiembre y se pagan el 2
+       de octubre. Son gasto de agosto aunque el dinero salga en dos meses. */
+    { fecha:"2026-08-14", concepto:"Costco",                             monto:239.00, tarjeta:"costco" },
+    { fecha:"2026-08-15", concepto:"Cinépolis",                          monto:442.00, tarjeta:"costco" },
+    { fecha:"2026-08-15", concepto:"Steren",                             monto:428.00, tarjeta:"costco" },
+    { fecha:"2026-08-15", concepto:"330 Sendero Ixtapaluca",             monto:149.00, tarjeta:"costco" }
   ],
 
   /* ── Suscripciones ── */
@@ -229,7 +236,7 @@ const DATA = {
       puntos:4413,
       tono:"oro" },
     { id:"costco", alias:"Costco Banamex Visa", term:"104", emisor:"Banamex",
-      tipo:"revolvente", linea:50000, disponible:42471.78, saldo:2427.70, tasa:60.58,
+      tipo:"revolvente", linea:50000, disponible:41213.78, saldo:3583.28, tasa:60.58,
       /* Corte del 13 de agosto YA EMITIDO: pago para no generar intereses
          $2,427.70, mínimo $630.00, fecha límite 2 de septiembre. Ya no es
          estimación — es el estado de cuenta. Estaba modelado en $1,997.11
@@ -357,8 +364,8 @@ const DATA = {
         nota:"ya con el reparto que hay que negociar" },
       /* Octubre sale del mismo modelo de cortes: cada pago es lo que cerró en
          el corte anterior de esa tarjeta, con los MSI que siguen vivos. */
-      { fecha:"2026-10-02", concepto:"Costco Banamex",                 monto:3355.58,  cat:"tarjeta", estimado:true, tarjeta:"costco",
-        nota:"MSI + gasolina del ciclo — baja a $1,156 si la dejas en cero antes del corte" },
+      { fecha:"2026-10-02", concepto:"Costco Banamex",                 monto:4613.58,  cat:"tarjeta", estimado:true, tarjeta:"costco",
+        nota:"MSI $1,155.58 + gasolina $2,200 + los $1,258 del 14 y 15 de agosto, que entraron después del corte" },
       /* En octubre el Amazon de la Gold Card ya se acabó (último pago en
          agosto): solo queda el gym. Lo que gastes en septiembre se suma. */
       { fecha:"2026-10-11", concepto:"Amex Gold Servicios",            monto:1283.40,  cat:"tarjeta", estimado:true, tarjeta:"servicios",
