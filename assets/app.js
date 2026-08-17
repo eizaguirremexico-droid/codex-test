@@ -1765,11 +1765,11 @@ function renderMsiList() {
     }).join("")}`;
 }
 
-const MSI_CARDS = [
-  { id:"Amex Gold Elite",     label:"Amex Gold Elite",     v:"--s1" },
-  { id:"Costco Banamex",      label:"Costco Banamex",      v:"--s2" },
-  { id:"Amex Gold Servicios", label:"Amex Gold Servicios", v:"--s3" }
-];
+/* Se deriva de los planes vigentes, no se escribe a mano: una tarjeta nueva
+   con MSI dejaba su columna sin serie y la gráfica salía con NaN. El orden
+   sigue al de `DATA.msi` para que los colores no bailen entre recargas. */
+const MSI_CARDS = [...new Set(DATA.msi.map(s => s.tarjeta))]
+  .map((t, i) => ({ id: t, label: t, v: `--s${(i % 6) + 1}` }));
 
 function renderMsiRunoff() {
   const host = document.getElementById("msi-runoff");
