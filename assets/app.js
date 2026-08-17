@@ -958,9 +958,16 @@ const DEUDA_PREVIA  = sum(FL.pagos.map(p => p.previo || 0));
    una vez en el saldo y otra en el modelo. Revertirlas devuelve el saldo
    con el que arrancó el mes, que es lo que el devengado espera. */
 const PAGADO_YA = sum((DATA.efectivo.compromisosPagados || []).map(p => p.monto));
+/* Gasto que salió en efectivo, no con tarjeta: baja el saldo medido Y lo
+   cuenta `gastadoMes`. Sin devolverlo al colchón se restaría dos veces. Los
+   `pagado` que sí son de una tarjeta no entran aquí: esos ya vienen dentro
+   de `compromisosPagados`, que es el adelanto con el que se liquidaron. */
+const GASTO_EN_EFECTIVO = sum(GASTO_LIBRE
+  .filter(g => g.pagado && !DATA.tarjetas.some(c => c.id === g.tarjeta))
+  .map(g => g.monto));
 const COLCHON_LIMPIO = DATA.efectivo.ahorro - DEUDA_PREVIA
   - YA_COBRADAS.length * DATA.ingreso.quincena
-  + PAGADO_YA;
+  + PAGADO_YA + GASTO_EN_EFECTIVO;
 
 /* Dinero real disponible en el mes i: el colchón limpio más lo que han
    generado los meses hasta ese, menos lo que se supone gastado en los
