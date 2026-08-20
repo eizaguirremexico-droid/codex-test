@@ -26,12 +26,15 @@ const DATA = {
      Verlo solo en la de nómina hacía aparecer un faltante de $5,066.08 que
      en realidad estaba en la otra. */
   efectivo: {
-    ahorro: 6443.07, asOf: "2026-08-17",
+    ahorro: 6485.51, asOf: "2026-08-20",
     cuentas: [
-      { nombre: "Santander Priority ···329", monto: 2376.99, nota: "aquí cae la nómina" },
+      { nombre: "Santander Priority ···329", monto: 2376.99, nota: "medido el 17 de agosto" },
       /* De aquí salió la transferencia del cargador. Falta saber de qué banco
          es y qué rendimiento paga. */
-      { nombre: "Cuenta ···5910",            monto: 4066.08, nota: "falta identificar el banco" }
+      { nombre: "Cuenta ···5910",            monto: 4066.08, nota: "medido el 17 · falta el banco" },
+      /* Apareció en la pantalla de pago de la Santander. Casi vacía, pero es
+         de donde se domicilian los pagos de la LikeU. */
+      { nombre: "Santander Super Nómina ···4507", monto: 42.44, nota: "medido el 19 de agosto" }
     ],
     /* Quincenas que YA están dentro del saldo de arriba. El calendario de
        ingresos las descuenta para no prometerlas otra vez como dinero por
@@ -165,6 +168,11 @@ const DATA = {
        cuatro cargos del 1 de agosto. Falta identificar qué fue. */
     { fecha:"2026-08-06", concepto:"Cargos sin identificar (Gold Card)", monto:239.59, tarjeta:"servicios", pagado:true },
     { fecha:"2026-08-06", concepto:"Cargo sin identificar (LikeU)",      monto:180.00, tarjeta:"santander" },
+    /* La LikeU trae $3,416.00 y solo $180 estaban identificados. Estos
+       $3,236.00 son la diferencia medida el 19 de agosto — falta ver el
+       desglose. OJO: si parte de esto son recargas del tag, estarían
+       contadas dos veces (el tag ya va en `vidaFija` como gasto fijo). */
+    { fecha:"2026-08-19", concepto:"Cargos sin identificar (LikeU)",     monto:3236.00, tarjeta:"santander" },
     /* Cargo de la tarjeta adicional de Aleli — cae en el mismo estado de
        cuenta de la Gold Card. */
     { fecha:"2026-08-11", concepto:"TikTok Shop (adicional de Aleli)",   monto:185.00, tarjeta:"servicios", pagado:true },
@@ -195,7 +203,15 @@ const DATA = {
     /* A débito, no a tarjeta: reembolso a su mamá por el cargador del BYD que
        ella compró. No tiene nada que ver con el crédito de los $42,636 — es
        gasto suelto y sale de la bolsa del mes. Ya salió de la cuenta. */
-    { fecha:"2026-08-17", concepto:"Cargador del BYD (reembolso a mamá)", monto:1000.00, tarjeta:"debito", pagado:true }
+    { fecha:"2026-08-17", concepto:"Cargador del BYD (reembolso a mamá)", monto:1000.00, tarjeta:"debito", pagado:true },
+    { fecha:"2026-08-18", concepto:"Restaurante La Cuchara 2",           monto:110.00,  tarjeta:"elite" },
+    { fecha:"2026-08-19", concepto:"Google · FaceApp",                   monto:100.00,  tarjeta:"elite" },
+    { fecha:"2026-08-19", concepto:"Maison Kayser Tlalpan",              monto:70.00,   tarjeta:"elite" },
+    /* Segundo cargo de AT&T, este en la Gold Card. El teléfono de $360 que
+       ya está en `vidaFija` cae en la Joy, así que o son dos líneas o una de
+       las dos no es lo que creemos. Por ahora va como gasto suelto para no
+       cobrarlo dos veces. */
+    { fecha:"2026-08-19", concepto:"AT&T (segundo cargo)",               monto:179.00,  tarjeta:"servicios" }
   ],
 
   /* ── Suscripciones ── */
@@ -264,35 +280,31 @@ const DATA = {
       /* LIQUIDADA el 14 de agosto: se pagaron los $10,922.74 del corte del 3.
          Lo único vivo es el Headway del 4 de agosto, que entró después del
          corte y se paga hasta el 24 de septiembre. */
-      /* Saldo y disponible como los muestra Amex el 17 de agosto. El saldo
-         sigue en $525.00 porque los $3,291.70 de Perisur están "Pendientes"
-         y todavía no se aplican — pero el crédito disponible SÍ bajó
-         ($87,510 → $84,219), que es la prueba de que ya están apartados.
-         Lo que de verdad debes es $3,816.70; el pago del 24 de septiembre
-         ya lo contempla. */
-      tipo:"revolvente", linea:92000, disponible:84219.00, saldo:525.00, tasa:61.48,
-      pendiente:3291.70,
+      /* Al 19 de agosto los cargos de Perisur ya se aplicaron: el saldo pasó
+         de $525.00 a $4,096.70 (los $3,291.70 más $280 de La Cuchara, FaceApp
+         y Maison Kayser). Ya no hay nada pendiente. */
+      tipo:"revolvente", linea:92000, disponible:83938.00, saldo:4096.70, tasa:61.48,
       corte:3, vence:24,
-      proximoPago:{ fecha:"2026-09-24", monto:7543.09, estimado:true },
-      puntos:4040,
+      proximoPago:{ fecha:"2026-09-24", monto:7823.09, estimado:true },
+      puntos:4251,
       tono:"grafito" },
     { id:"servicios", alias:"Amex Gold Servicios", term:"21009", emisor:"American Express",
       /* Adelantada el 17 de agosto, antes de su corte del 22: quedó en cero.
          Al corte del 22 solo llegan el gym y el último Amazon MSI, así que
          el pago del 11 de septiembre baja de $3,994.84 a $1,788.35. */
-      tipo:"cargo", linea:null, disponible:null, saldo:0, tasa:null,
+      /* Al 19 de agosto: $599 de Sendero + $179 de AT&T = $778.00. */
+      tipo:"cargo", linea:null, disponible:null, saldo:778.00, tasa:null,
       /* Tiene tarjeta adicional a nombre de Aleli (cuenta ...21017): su
          gasto cae en este mismo estado de cuenta. */
       adicional: "Aleli Michel Pérez Martínez",
-      corte:22, vence:11, proximoPago:{ fecha:"2026-09-11", monto:2387.35, estimado:true },
-      pendiente:599.00,
-      puntos:4413,
+      corte:22, vence:11, proximoPago:{ fecha:"2026-09-11", monto:2566.35, estimado:true },
+      puntos:4459,
       tono:"oro" },
     { id:"costco", alias:"Costco Banamex Visa", term:"104", emisor:"Banamex",
       /* Adelantada el 17 de agosto: se pagaron los $2,427.70 del estado de
          cuenta. Lo que queda son los cargos del 14 y 15, que van al corte
          del 13 de septiembre. */
-      tipo:"revolvente", linea:50000, disponible:43641.48, saldo:1155.58, tasa:60.58,
+      tipo:"revolvente", linea:50000, disponible:43641.48, saldo:2413.58, tasa:60.58,
       /* Corte del 13 de agosto YA EMITIDO: pago para no generar intereses
          $2,427.70, mínimo $630.00, fecha límite 2 de septiembre. Ya no es
          estimación — es el estado de cuenta. Estaba modelado en $1,997.11
@@ -320,17 +332,19 @@ const DATA = {
       corte:4, vence:24, proximoPago:{ fecha:"2026-09-24", monto:2340.84, estimado:true },
       tono:"rojo" },
     { id:"santander", alias:"Santander LikeU", term:"6240", emisor:"Santander",
-      tipo:"revolvente", linea:170400, disponible:170220, saldo:180.00, tasa:null,
+      tipo:"revolvente", linea:170400, disponible:166984, saldo:3416.00, tasa:null,
       /* corte desconocido. El 31 de julio la app marcaba pago mínimo $0 y pago
          para no generar intereses $0 con límite el 3 de agosto: o sea que los
          $880 son consumo POSTERIOR al último corte y no se deben todavía —
          entran al siguiente estado de cuenta y se pagan el 3 de septiembre. */
-      /* El corte real sigue sin conocerse. `corteSupuesto` asume el estándar
-         de ~20 días antes del vencimiento (vence día 3 → corta día 13). Todo
-         lo que dependa de esto queda marcado como supuesto hasta confirmarlo
-         con el primer estado de cuenta. */
-      corte:null, corteSupuesto:13, vence:3,
-      proximoPago:{ fecha:"2026-09-03", monto:180.00, estimado:true },
+      /* CONFIRMADO en la app: la fecha límite de pago es el día 1, no el 3, y
+         el pago del 1 de septiembre es de $0.00 — o sea que el último corte
+         cerró en cero y TODO el saldo actual es consumo posterior, que se
+         cobra hasta el 1 de octubre.
+         El corte sigue sin conocerse; `corteSupuesto` asume el estándar de
+         ~20 días antes del vencimiento (vence día 1 → corta día 11). */
+      corte:null, corteSupuesto:11, vence:1,
+      proximoPago:{ fecha:"2026-10-01", monto:3416.00, estimado:true },
       tono:"rojo" }
   ],
 
@@ -386,9 +400,9 @@ const DATA = {
     { fecha:"2026-08-24", concepto:"Vence Amex Gold Elite",     monto:10922.74, tipo:"pagado",   nota:"liquidada el 14 de agosto, diez días antes" },
     { fecha:"2026-08-30", concepto:"Pago 2 de 5 a mamá",        monto:10659.00, tipo:"salida",   nota:"" },
     { fecha:"2026-09-02", concepto:"Vence Costco Banamex",      monto:2427.70,  tipo:"salida",   nota:"estado de cuenta del corte del 13 de agosto · mínimo $630" },
-    { fecha:"2026-09-11", concepto:"Vence Amex Gold Servicios", monto:3994.84,  tipo:"salida",   nota:"gym + último Amazon MSI + consumo de agosto" },
+    { fecha:"2026-09-11", concepto:"Vence Amex Gold Servicios", monto:2566.35,  tipo:"salida",   nota:"gym + último Amazon MSI + Sendero + AT&T" },
     { fecha:"2026-09-15", concepto:"Mensualidad auto BYD",      monto:6209.00,  tipo:"salida",   nota:"" },
-    { fecha:"2026-09-24", concepto:"Vence Amex Gold Elite",     monto:4251.39,  tipo:"salida",   nota:"MSI julio 3/3 + Alo Yoga 2/3 + suscripciones + Headway" },
+    { fecha:"2026-09-24", concepto:"Vence Amex Gold Elite",     monto:7823.09,  tipo:"salida",   nota:"MSI julio 3/3 + Alo Yoga 2/3 + suscripciones + Headway" },
     { fecha:"2026-09-30", concepto:"Pago 3 de 5 a mamá",        monto:7106.00,  tipo:"salida",   nota:"sujeto a la renegociación" }
   ],
 
@@ -420,19 +434,22 @@ const DATA = {
       { fecha:"2026-08-30", concepto:"Pago 2 de 5 a mamá",             monto:10659.00, cat:"mama" },
       /* El Costco del 2 de septiembre ya no aparece: se adelantó completo el
          17 de agosto y el efectivo de arriba ya lo refleja. */
-      { fecha:"2026-09-03", concepto:"Santander LikeU",                monto:180.00,   cat:"tarjeta", estimado:true, tarjeta:"santander",
-        nota:"consumo posterior al corte de julio — el 3 de agosto no debías nada" },
-      { fecha:"2026-09-11", concepto:"Amex Gold Servicios",            monto:2387.35,  cat:"tarjeta", estimado:true, tarjeta:"servicios",
-        nota:"gym $1,283.40 + último Amazon MSI $504.95 + Sendero $599 del 15 de agosto — el resto del consumo se adelantó" },
+      /* La LikeU ya no paga nada el 3 de septiembre: la app confirma $0.00 con
+         límite el 1 de septiembre. Todo su saldo es consumo posterior al corte
+         y cae hasta el 1 de octubre. */
+      { fecha:"2026-09-11", concepto:"Amex Gold Servicios",            monto:2566.35,  cat:"tarjeta", estimado:true, tarjeta:"servicios",
+        nota:"gym $1,283.40 + último Amazon MSI $504.95 + Sendero $599 + AT&T $179 — el resto del consumo se adelantó" },
       { fecha:"2026-09-15", concepto:"Mensualidad auto BYD",           monto:6209.00,  cat:"auto" },
       { fecha:"2026-09-24", concepto:"Joy Banamex",                    monto:2340.84,  cat:"tarjeta", estimado:true, tarjeta:"joy",
         nota:"último pago del Ticketmaster $1,980.84 + teléfono AT&T $360" },
-      { fecha:"2026-09-24", concepto:"Amex Gold Elite",                monto:7543.09,  cat:"tarjeta", estimado:true, tarjeta:"elite",
-        nota:"MSI julio 3/3 + Alo Yoga 2/3 + suscripciones + Headway $525 + los $3,291.70 de Perisur del 16 de agosto" },
+      { fecha:"2026-09-24", concepto:"Amex Gold Elite",                monto:7823.09,  cat:"tarjeta", estimado:true, tarjeta:"elite",
+        nota:"MSI julio 3/3 + Alo Yoga 2/3 + suscripciones + Headway + Perisur $3,291.70 + $280 del 18 y 19 de agosto" },
       { fecha:"2026-09-30", concepto:"Pago 3 de 5 a mamá",             monto:7106.00,  cat:"mama",
         nota:"ya con el reparto que hay que negociar" },
       /* Octubre sale del mismo modelo de cortes: cada pago es lo que cerró en
          el corte anterior de esa tarjeta, con los MSI que siguen vivos. */
+      { fecha:"2026-10-01", concepto:"Santander LikeU",                monto:3416.00,  cat:"tarjeta", estimado:true, tarjeta:"santander",
+        nota:"todo el consumo de agosto — falta identificar $3,236 de este saldo" },
       { fecha:"2026-10-02", concepto:"Costco Banamex",                 monto:4613.58,  cat:"tarjeta", estimado:true, tarjeta:"costco",
         nota:"MSI $1,155.58 + gasolina $2,200 + los $1,258 del 14 y 15 de agosto, que entraron después del corte" },
       /* En octubre el Amazon de la Gold Card ya se acabó (último pago en

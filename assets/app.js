@@ -17,9 +17,11 @@ const money2 = v => signo(v, NF2.format(Math.abs(v)));
 
 /* número al estilo de la referencia: entero fuerte, decimales atenuados */
 function moneyRich(v) {
-  const s = NF2.format(v);
+  const s = NF2.format(Math.abs(v));
   const i = s.lastIndexOf(".");
-  return `$${s.slice(0, i)}<span class="dec">${s.slice(i)}</span>`;
+  /* Mismo criterio que money(): el signo va antes del peso. Aquí se había
+     quedado sin arreglar y el número grande de la portada salía "$-696.09". */
+  return `${v < 0 ? "−" : ""}$${s.slice(0, i)}<span class="dec">${s.slice(i)}</span>`;
 }
 
 const MES  = ["ene","feb","mar","abr","may","jun","jul","ago","sep","oct","nov","dic"];
