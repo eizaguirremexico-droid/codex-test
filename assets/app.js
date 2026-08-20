@@ -1258,7 +1258,11 @@ function renderFlujoFijos() {
   const desfase = id => {
     const c = t(id);
     if (!c) return "sale en el corte de la que uses";
-    return `corte día ${c.corte} · lo pagas el día ${c.vence}`;
+    /* Una tarjeta sin corte confirmado no puede anunciar un día: la LikeU
+       salía como "corte día null". Con el supuesto se dice, y se marca. */
+    const corte = c.corte ?? c.corteSupuesto;
+    if (corte == null) return `lo pagas el día ${c.vence} · falta su fecha de corte`;
+    return `corte día ${corte}${c.corte == null ? " (supuesto)" : ""} · lo pagas el día ${c.vence}`;
   };
   const filas = [
     { concepto: "Auto BYD", monto: DATA.auto.mensualidad, via: "debito",
