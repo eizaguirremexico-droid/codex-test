@@ -981,7 +981,13 @@ const COLCHON_LIMPIO = DATA.efectivo.ahorro - DEUDA_PREVIA
 function realDelMes(i) {
   const piso = DATA.metaMuebles.pisoGastoLibre;
   const hasta = MESES.slice(0, i + 1).filter(k => byMonth[k]);
-  return COLCHON_LIMPIO + sum(hasta.map(k => byMonth[k].libre)) - piso * i;
+  /* Cuánto se llevaron los meses anteriores. El piso es solo una suposición
+     de planeación: si un mes YA se pasó de él, seguir restando el piso le
+     promete al mes siguiente un sobrante que ya no existe. Se usa lo mayor
+     de los dos — así septiembre nunca ofrece dinero que agosto ya gastó. */
+  const previos = MESES.slice(0, i).filter(k => byMonth[k]);
+  const consumido = sum(previos.map(k => Math.max(piso, gastadoMes(k))));
+  return COLCHON_LIMPIO + sum(hasta.map(k => byMonth[k].libre)) - consumido;
 }
 
 function renderFlujoHero() {
