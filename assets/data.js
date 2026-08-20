@@ -26,15 +26,12 @@ const DATA = {
      Verlo solo en la de nómina hacía aparecer un faltante de $5,066.08 que
      en realidad estaba en la otra. */
   efectivo: {
-    ahorro: 6485.51, asOf: "2026-08-20",
+    ahorro: 6216.00, asOf: "2026-08-20",
     cuentas: [
-      { nombre: "Santander Priority ···329", monto: 2376.99, nota: "medido el 17 de agosto" },
-      /* De aquí salió la transferencia del cargador. Falta saber de qué banco
-         es y qué rendimiento paga. */
-      { nombre: "Cuenta ···5910",            monto: 4066.08, nota: "medido el 17 · falta el banco" },
-      /* Apareció en la pantalla de pago de la Santander. Casi vacía, pero es
-         de donde se domicilian los pagos de la LikeU. */
-      { nombre: "Santander Super Nómina ···4507", monto: 42.44, nota: "medido el 19 de agosto" }
+      /* La cuenta ···5910 es Mifel. Es la que paga ~10% anual a la vista, así
+         que es el mejor lugar donde puede estar el dinero parado hoy. */
+      { nombre: "Mifel ···5910",       monto: 5100.00, nota: "a la vista · ~10% anual" },
+      { nombre: "Banamex Priority",    monto: 1116.00, nota: "" }
     ],
     /* Quincenas que YA están dentro del saldo de arriba. El calendario de
        ingresos las descuenta para no prometerlas otra vez como dinero por
