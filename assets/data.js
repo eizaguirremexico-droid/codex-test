@@ -103,9 +103,14 @@ const DATA = {
      reales de cada mes por el costo de la recarga. */
   oficina: {
     ancla: "2026-07-27",
+    /* Rol nuevo: le dieron un día más de home office. Antes eran 3 y 3 días
+       de oficina por cada dos semanas; ahora son 3 y 2.
+       SUPUESTO: la semana A es la del bloque izquierdo del calendario del
+       equipo, o sea la que arranca en el `ancla`. Si resulta al revés, hay
+       que intercambiar los dos renglones. */
     patron: [
-      { nombre: "A", dias: [1, 2, 5] },   // lunes, martes, viernes
-      { nombre: "B", dias: [2, 3, 4] }    // martes, miércoles, jueves
+      { nombre: "A", dias: [1, 4, 5] },   // lunes, jueves, viernes
+      { nombre: "B", dias: [2, 4] }       // martes, jueves
     ],
     /* El viaje cuesta 156 y la comisión es de 10 pesos por recarga, sin
        importar el monto. El saldo NO se pierde: se acumula. Por eso el
