@@ -126,9 +126,13 @@ const DATA = {
        "cuando-falta" = recargas solo cuando el saldo no alcanza el viaje */
     estrategia: "cuando-falta",
     /* Dónde se cobra la recarga: "debito" sale el mismo día; el id de una
-       tarjeta la difiere hasta que vence esa tarjeta. */
-    via: "debito",
-    nota: "recarga real de $600, no de $2,000 · a débito"
+       tarjeta la difiere hasta que vence esa tarjeta.
+       CONFIRMADO en los movimientos de la LikeU: las recargas aparecen como
+       "PAYPAL *PASESERVICI" de $600 (13 y 19 de agosto). Van a la tarjeta, no
+       a débito — o sea que no salen de la cuenta el día de la recarga sino
+       cuando vence la LikeU. */
+    via: "santander",
+    nota: "recargas de $600 por PayPal, cargadas a la Santander LikeU"
   },
 
   /* ── Gastos fijos de vida (todos los meses) ──
@@ -167,12 +171,17 @@ const DATA = {
     /* Diferencia entre el saldo medido de la Gold Card ($2,021.49) y los
        cuatro cargos del 1 de agosto. Falta identificar qué fue. */
     { fecha:"2026-08-06", concepto:"Cargos sin identificar (Gold Card)", monto:239.59, tarjeta:"servicios", pagado:true },
-    { fecha:"2026-08-06", concepto:"Cargo sin identificar (LikeU)",      monto:180.00, tarjeta:"santander" },
-    /* La LikeU trae $3,416.00 y solo $180 estaban identificados. Estos
-       $3,236.00 son la diferencia medida el 19 de agosto — falta ver el
-       desglose. OJO: si parte de esto son recargas del tag, estarían
-       contadas dos veces (el tag ya va en `vidaFija` como gasto fijo). */
-    { fecha:"2026-08-19", concepto:"Cargos sin identificar (LikeU)",     monto:3236.00, tarjeta:"santander" },
+    /* El saldo de $3,416.00 de la LikeU ya está desglosado y casi nada de él
+       es gasto libre:
+         · $1,200 de PayPal*PASESERVICI son recargas del tag (13 y 19 de
+           agosto). El tag ya va como gasto fijo en `vidaFija`, así que aquí
+           NO se cuentan — se contaban dos veces.
+         · $2,036.00 de MercadoPago del 15 de agosto los pidió su mamá y los
+           paga ella. No es gasto suyo: es un préstamo que se recupera. Sigue
+           dentro del saldo de la tarjeta y del pago del 1 de octubre, porque
+           el dinero sí sale de su cuenta ese día.
+       Lo único suyo es el Samsung. */
+    { fecha:"2026-08-12", concepto:"MercadoPago · Samsung",              monto:383.01, tarjeta:"santander" },
     /* Cargo de la tarjeta adicional de Aleli — cae en el mismo estado de
        cuenta de la Gold Card. */
     { fecha:"2026-08-11", concepto:"TikTok Shop (adicional de Aleli)",   monto:185.00, tarjeta:"servicios", pagado:true },
@@ -449,7 +458,7 @@ const DATA = {
       /* Octubre sale del mismo modelo de cortes: cada pago es lo que cerró en
          el corte anterior de esa tarjeta, con los MSI que siguen vivos. */
       { fecha:"2026-10-01", concepto:"Santander LikeU",                monto:3416.00,  cat:"tarjeta", estimado:true, tarjeta:"santander",
-        nota:"todo el consumo de agosto — falta identificar $3,236 de este saldo" },
+        nota:"tag $1,200 + MercadoPago de tu mamá $2,036 (te lo devuelve) + Samsung $383 — más lo que le cargues de aquí al corte" },
       { fecha:"2026-10-02", concepto:"Costco Banamex",                 monto:4613.58,  cat:"tarjeta", estimado:true, tarjeta:"costco",
         nota:"MSI $1,155.58 + gasolina $2,200 + los $1,258 del 14 y 15 de agosto, que entraron después del corte" },
       /* En octubre el Amazon de la Gold Card ya se acabó (último pago en
