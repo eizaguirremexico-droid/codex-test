@@ -216,11 +216,10 @@ const DATA = {
     { fecha:"2026-08-18", concepto:"Restaurante La Cuchara 2",           monto:110.00,  tarjeta:"elite" },
     { fecha:"2026-08-19", concepto:"Google · FaceApp",                   monto:100.00,  tarjeta:"elite" },
     { fecha:"2026-08-19", concepto:"Maison Kayser Tlalpan",              monto:70.00,   tarjeta:"elite" },
-    /* Segundo cargo de AT&T, este en la Gold Card. El teléfono de $360 que
-       ya está en `vidaFija` cae en la Joy, así que o son dos líneas o una de
-       las dos no es lo que creemos. Por ahora va como gasto suelto para no
-       cobrarlo dos veces. */
-    { fecha:"2026-08-19", concepto:"AT&T (segundo cargo)",               monto:179.00,  tarjeta:"servicios" }
+    /* Datos extra de AT&T, compra de una sola vez. NO es una segunda línea:
+       el plan mensual de $360 sigue siendo el de la Joy. Por eso va aquí como
+       gasto suelto y no en `vidaFija`. */
+    { fecha:"2026-08-19", concepto:"AT&T · datos extra",                 monto:179.00,  tarjeta:"servicios" }
   ],
 
   /* ── Suscripciones ── */
