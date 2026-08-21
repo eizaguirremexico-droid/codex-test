@@ -308,7 +308,10 @@ const DATA = {
          gasto cae en este mismo estado de cuenta. */
       adicional: "Aleli Michel Pérez Martínez",
       corte:22, vence:11, proximoPago:{ fecha:"2026-09-11", monto:2566.35, estimado:true },
-      puntos:4459,
+      /* Bajaron de 4,459 a 819 el 20 de agosto: se usaron 3,640 en "reducir
+         compras con puntos". El crédito todavía no aparece en el saldo — hay
+         que ver de cuánto sale para bajar el pago del 11 de septiembre. */
+      puntos:819,
       tono:"oro" },
     { id:"costco", alias:"Costco Banamex Visa", term:"104", emisor:"Banamex",
       /* Adelantada el 17 de agosto: se pagaron los $2,427.70 del estado de
