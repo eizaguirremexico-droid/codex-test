@@ -133,8 +133,13 @@ const IDAS_MES = (() => {
   const ms = mRange(DATA.horizonte.desde, DATA.horizonte.hasta);
   return sum(ms.map(k => diasOficinaMes(k).length)) / ms.length;
 })();
-const GASOLINA_MES = (DATA.vidaFija.find(v => /gasolina/i.test(v.concepto)) || { monto: 0 }).monto;
-const GAS_POR_IDA = GASOLINA_MES / IDAS_MES;
+/* Gasolina por ida a la oficina. Cuenta lo declarado por día; lo que sea
+   fijo al mes se reparte entre las idas promedio solo si no trae `porDia`.
+   Los trayectos de fin de semana no entran: no dependen de ir a la oficina
+   y meterlos aquí inflaba el costo de cada ida. */
+const GAS_POR_IDA = sum(DATA.vidaFija
+  .filter(v => v.porDia && /gasolina/i.test(v.concepto))
+  .map(v => v.porDia));
 
 /* Costo del trayecto dentro de una ventana de fechas cualquiera.
    El tag necesita arrastrar el saldo desde el ancla, porque si no
@@ -162,8 +167,14 @@ const CUENTAS = (() => {
   return Math.abs(sum(cs.map(c => c.monto)) - DATA.efectivo.ahorro) < 0.01 ? cs : [];
 })();
 
-const VIDA_BASE = sum(DATA.vidaFija.map(x => x.monto));
-const vidaMes = k => VIDA_BASE + tagMes(k);
+/* Un gasto de vida puede ser fijo al mes (`monto`) o por día de oficina
+   (`porDia`). La gasolina del commute es de las segundas: con el rol nuevo
+   son 11 días y no 14, y eso tiene que moverse solo si el rol vuelve a
+   cambiar. Los de `porDia` llevan también un `monto`, que es lo que enseñan
+   las pantallas de "cuánto es al mes"; el modelo usa los días. */
+const VIDA_BASE   = sum(DATA.vidaFija.filter(x => !x.porDia).map(x => x.monto));
+const VIDA_PORDIA = sum(DATA.vidaFija.filter(x =>  x.porDia).map(x => x.porDia));
+const vidaMes = k => VIDA_BASE + VIDA_PORDIA * diasOficinaMes(k).length + tagMes(k);
 /* Las suscripciones se cobran mes con mes, pero se pueden cancelar: `desde`
    y `hasta` acotan cuáles siguen vivas en cada mes. `SUBS_MES` queda como el
    costo de las vigentes hoy, que es lo que muestran las pantallas de gastos
