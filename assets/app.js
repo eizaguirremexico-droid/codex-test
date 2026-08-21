@@ -62,7 +62,7 @@ const CATS = [
       .concat([{ label: "Tag Pase (casetas)", monto: tagMes(k),
                  nota: TAG[k] ? `${TAG[k].dias} días × ${money(OFI.costoCaseta)} de casetas + ${money(TAG[k].comision)} de comisión` : "" }]) },
   { id:"subs",  label:"Suscripciones",    v:"--s5",
-    items: () => DATA.suscripciones.map(s => ({ label: s.servicio, monto: s.monto, nota: s.tarjeta })) },
+    items: () => SUBS_VIGENTES.map(s => ({ label: s.servicio, monto: s.monto, nota: s.tarjeta })) },
   { id:"anual", label:"Anualidad Amex",   v:"--s6",
     items: () => [{ label: "Anualidad diferida a 3 meses", monto: DATA.anualidadAmex.mensualidad }] }
 ];
@@ -164,7 +164,13 @@ const CUENTAS = (() => {
 
 const VIDA_BASE = sum(DATA.vidaFija.map(x => x.monto));
 const vidaMes = k => VIDA_BASE + tagMes(k);
-const SUBS_MES  = sum(DATA.suscripciones.map(x => x.monto));
+/* Las suscripciones se cobran mes con mes, pero se pueden cancelar: `desde`
+   y `hasta` acotan cuáles siguen vivas en cada mes. `SUBS_MES` queda como el
+   costo de las vigentes hoy, que es lo que muestran las pantallas de gastos
+   fijos; el modelo mensual usa `subsMes(k)`. */
+const subsEnMes = k => DATA.suscripciones.filter(s =>
+  (!s.desde || mDiff(s.desde, k) >= 0) && (!s.hasta || mDiff(k, s.hasta) >= 0));
+const subsMes   = k => sum(subsEnMes(k).map(x => x.monto));
 const MESES     = mRange(DATA.horizonte.desde, DATA.horizonte.hasta);
 
 const msiEnMes = k => DATA.msi.filter(s => mDiff(s.desde, k) >= 0 && mDiff(k, s.hasta) >= 0);
@@ -188,7 +194,7 @@ function construirModelo() { return MESES.map(k => {
     mama:  mamaMes(k),
     msi:   sum(streams.map(s => s.monto)),
     vida:  vidaMes(k),
-    subs:  SUBS_MES,
+    subs:  subsMes(k),
     anual: DATA.anualidadAmex.meses.includes(k) ? DATA.anualidadAmex.mensualidad : 0
   };
   const total = sum(CATS.map(x => c[x.id]));
@@ -271,6 +277,12 @@ recalcularModelo();
 /* ─── hoy ─── */
 const HOY = new Date();
 const hoyISO = new Date(HOY.getTime() - HOY.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+/* Lo que vas a pagar de suscripciones DE AQUÍ EN ADELANTE. Se mira el mes
+   entrante y no el actual: una que se canceló este mes ya se cobró, pero
+   anunciarla como gasto fijo mensual sería mentir sobre lo que viene. */
+const MES_SIGUIENTE = mAdd(hoyISO.slice(0, 7), 1);
+const SUBS_VIGENTES = subsEnMes(MES_SIGUIENTE);
+const SUBS_MES = sum(SUBS_VIGENTES.map(x => x.monto));
 
 /* ─── calendario de quincenas ───
    El día 30 no existe en febrero, así que se recorre al último día del mes.
@@ -410,7 +422,7 @@ function cargosDelCorte(c, k, f) {
     items.push({ t: `MSI · ${s.label}`, m: s.monto, msi: true }));
   DATA.vidaFija.filter(v => v.via === c.id).forEach(v =>
     items.push({ t: v.concepto, m: v.monto, n: v.detalle }));
-  const subs = DATA.suscripciones.filter(s => mismaTarjeta(c.alias, s.tarjeta));
+  const subs = subsEnMes(k).filter(s => mismaTarjeta(c.alias, s.tarjeta));
   if (subs.length) items.push({ t: "Suscripciones", m: sum(subs.map(s => s.monto)),
                                 n: subs.map(s => s.servicio).join(" + ") });
   /* consumo suelto ya conocido de un ciclo concreto, leído de la app del banco */
@@ -1870,7 +1882,7 @@ function fijosDesglose() {
       value: s.monto, detalle: `MSI en ${s.tarjeta}`
     })),
     { label:"Suscripciones", value: SUBS_MES,
-      detalle: DATA.suscripciones.map(s => s.servicio).join(" + ") }
+      detalle: SUBS_VIGENTES.map(s => s.servicio).join(" + ") }
   ];
   return items.sort((a, b) => b.value - a.value);
 }
@@ -1923,7 +1935,7 @@ function renderSubs() {
       <div><div class="card-title">Suscripciones</div>
         <div class="card-sub">${money2(SUBS_MES)} al mes · ${money(SUBS_MES * 12)} al año</div></div>
     </div>
-    ${DATA.suscripciones.map(s => `<div class="row">
+    ${SUBS_VIGENTES.map(s => `<div class="row">
       <div class="row-ic sq">${s.servicio[0]}</div>
       <div class="row-main"><div class="row-t">${s.servicio}</div>
         <div class="row-d">${[s.nota, s.tarjeta].filter(Boolean).join(" · ")}</div></div>
