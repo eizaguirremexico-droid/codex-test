@@ -26,7 +26,9 @@ const DATA = {
      Verlo solo en la de nómina hacía aparecer un faltante de $5,066.08 que
      en realidad estaba en la otra. */
   efectivo: {
-    ahorro: 6216.00, asOf: "2026-08-20",
+    ahorro: 6425.00, asOf: "2026-08-21",
+    /* El desglose por cuenta es del 20 de agosto y ya no suma el total: la
+       app lo esconde solo hasta que lleguen los dos saldos nuevos. */
     cuentas: [
       /* La cuenta ···5910 es Mifel. Es la que paga ~10% anual a la vista, así
          que es el mejor lugar donde puede estar el dinero parado hoy. */
@@ -225,9 +227,12 @@ const DATA = {
   ],
 
   /* ── Suscripciones ── */
+  /* `hasta` = último mes en que se cobra. Sin ese campo, cancelar una
+     suscripción la borraba también de los meses en que SÍ se pagó. */
   suscripciones: [
     { servicio: "Claude (Anthropic)", monto: 359.72, nota: "USD $20 · cobrado el 30 jul", tarjeta: "Amex Gold Elite" },
-    { servicio: "ChatGPT",            monto: 399.00, nota: "",         tarjeta: "Amex Gold Elite" }
+    { servicio: "ChatGPT",            monto: 399.00, hasta: "2026-08", tarjeta: "Amex Gold Elite",
+      nota: "cancelada el 21 de agosto · su último cobro entró al corte del 3 de agosto" }
   ],
 
   /* ── Meses sin intereses vigentes ──
