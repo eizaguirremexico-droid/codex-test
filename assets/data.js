@@ -143,8 +143,20 @@ const DATA = {
      `corto` es el nombre que usan las gráficas, donde el espacio manda.
      El Tag Pase no está aquí: se calcula mes a mes desde `oficina`. */
   vidaFija: [
-    { concepto: "Gasolina y pastillas", corto: "Gasolina", monto: 2200,
-      detalle: "commute Atizapán → Ajusco", via: "costco" },
+    /* La gasolina del commute NO es fija al mes: depende de cuántos días vas.
+       Medido: el regreso son 44 km (la ida va en eléctrico). A ~5.5 L/100km
+       y ~$24.50 el litro son $59.29 por día; se redondea a $65 para dejar
+       margen de tráfico, clima y precio. Con 11 días son $715 al mes contra
+       los $2,200 fijos que traía el modelo, que se estimaron antes de saber
+       que la ida iba en eléctrico. */
+    { concepto: "Gasolina · ida a la oficina", corto: "Gasolina", porDia: 65, monto: 715,
+      detalle: "44 km de regreso por día de oficina · la ida va en eléctrico", via: "costco" },
+    /* Fines de semana y vueltas. ESTIMADO: no hay con qué medirlo todavía
+       porque el cargador es nuevo y no hay un mes completo de historia.
+       Es el número más flojo del modelo — corregir con el corte del 13 de
+       septiembre de la Costco. */
+    { concepto: "Gasolina · otros trayectos", corto: "Gas otros", monto: 400,
+      detalle: "estimado · falta un mes completo para medirlo", via: "costco" },
     /* Identificado en el estado de cuenta de la Joy: "AT&T CR" el 25 de julio
        por $360.00. Ya no es un cargo suelto sin dueño: es recurrente, cae en
        la Joy y son $360, no $350. */
