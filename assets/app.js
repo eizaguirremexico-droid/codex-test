@@ -626,23 +626,23 @@ function renderTopbar() {
    nombre solo confundía. La ventana de efectivo queda como nota al pie. */
 function renderHero() {
   const k = MESES[0];
-  const real = realDelMes(0), ya = gastadoMes(k), queda = real - ya;
-  const propio = byMonth[k].libre;
+  const propio = byMonth[k].libre, ya = gastadoMes(k), queda = propio - ya;
   document.getElementById("hero").innerHTML = `
-    <div class="h-label">${ya > 0 ? `Te queda para ${mLabel(k, true)}` : `Para gastar en ${mLabel(k, true)}`}</div>
+    <div class="h-label">${ya > 0 ? `Te queda de ${mLabel(k, true)}` : `Para gastar en ${mLabel(k, true)}`}</div>
     <div class="h-value">${moneyRich(queda)}</div>
     <div class="h-chips">
-      <span class="h-chip"><span class="k">lo genera ${mLabel(k, true)}</span> <b>${money(propio)}</b></span>
+      <span class="h-chip"><span class="k">${mLabel(k, true)} genera</span> <b>${money(propio)}</b></span>
       ${ya > 0 ? `<span class="h-chip"><span class="k">ya gastaste</span> <b>${money(ya)}</b></span>` : ""}
     </div>
     <div class="h-foot">
-      Es la bolsa del mes: gástala como quieras, un día ${money(1000)} y otro nada.
+      Cada mes enseña solo lo suyo. Nada se arrastra al siguiente, para que el
+      mismo dinero no aparezca dos veces.
       <br><br>
-      En <b>efectivo</b> traes ${money(DATA.efectivo.ahorro)} y hasta tu quincena del
-      ${dLabel(PERIODO.hasta)} se te van ${money(PERIODO.trayecto)} de tag y gasolina
-      (${PERIODO.tr.idas} idas a la oficina)${PERIODO.sale > 0
-        ? ` más ${money(PERIODO.sale)} de pagos` : ""}: quedan ${money(PERIODO.libre)}
-      para lo que pagues sin tarjeta en estos ${PERIODO.dias} días.
+      ${queda < 0
+        ? `${mLabel(k, true)} ya se pasó <b>${money(-queda)}</b> de lo que genera. Eso salió de
+           tu colchón, que queda en <b>${money(COLCHON_HOY)}</b>.`
+        : `Aparte traes un colchón de <b>${money(COLCHON_HOY)}</b>. Es de una sola vez y no se
+           repone: es para imprevistos, no para gasto diario.`}
     </div>`;
 }
 
@@ -998,47 +998,41 @@ const COLCHON_LIMPIO = DATA.efectivo.ahorro - DEUDA_PREVIA
   - YA_COBRADAS.length * DATA.ingreso.quincena
   + PAGADO_YA + GASTO_EN_EFECTIVO;
 
-/* Dinero real disponible en el mes i: el colchón limpio más lo que han
-   generado los meses hasta ese, menos lo que se supone gastado en los
-   anteriores (el piso). Nada de saldos de banco. */
+/* Cada mes muestra SOLO lo que ese mes genera. Antes se le sumaba el colchón
+   y el sobrante de los meses anteriores, y el mismo dinero aparecía en dos
+   meses a la vez: septiembre decía $14,059 y octubre volvía a contar lo que
+   sobrara de septiembre. Verlo así invita a gastarlo dos veces. El colchón
+   existe, pero se lleva aparte (`COLCHON_HOY`), no revuelto con el sueldo. */
 function realDelMes(i) {
-  const piso = DATA.metaMuebles.pisoGastoLibre;
-  const hasta = MESES.slice(0, i + 1).filter(k => byMonth[k]);
-  /* Cuánto se llevaron los meses anteriores. El piso es solo una suposición
-     de planeación: si un mes YA se pasó de él, seguir restando el piso le
-     promete al mes siguiente un sobrante que ya no existe. Se usa lo mayor
-     de los dos — así septiembre nunca ofrece dinero que agosto ya gastó. */
-  const previos = MESES.slice(0, i).filter(k => byMonth[k]);
-  const consumido = sum(previos.map(k => Math.max(piso, gastadoMes(k))));
-  return COLCHON_LIMPIO + sum(hasta.map(k => byMonth[k].libre)) - consumido;
+  const k = MESES.filter(x => byMonth[x])[i];
+  return k ? byMonth[k].libre : 0;
 }
+
+/* Lo que un mes se pasó de lo que genera. Ese exceso no desaparece: sale del
+   colchón, que es dinero de una sola vez. */
+const sobregiroMes = k => Math.max(0, gastadoMes(k) - (byMonth[k] ? byMonth[k].libre : 0));
+const MES_HOY = hoyISO.slice(0, 7);
+const COLCHON_HOY = COLCHON_LIMPIO
+  - sum(MESES.filter(k => k <= MES_HOY).map(sobregiroMes));
 
 function renderFlujoHero() {
   const meses = resumenMensual();
   const i = Math.max(0, meses.findIndex(m => m.k === mesFlujo));
   const ago = meses[i];
   const piso = DATA.metaMuebles.pisoGastoLibre;
-  const real = realDelMes(i);
+  /* Solo lo que ESTE mes genera. Sin arrastres: mezclarlos hacía que el
+     sobrante de un mes se contara otra vez en el siguiente. */
+  const propio = byMonth[ago.k] ? byMonth[ago.k].libre : ago.genera;
   const yaGastado = gastadoMes(ago.k);
-  const queda = real - yaGastado;
-  /* Lo que el mes genera por sí solo, ya descontados TODOS sus compromisos
-     (vista de devengado). Lo demás de la bolsa es colchón heredado del mes
-     anterior: se puede gastar, pero es de una sola vez. */
-  const propio  = byMonth[ago.k] ? byMonth[ago.k].libre : ago.genera;
-  const heredado = real - propio;
-  const falta = piso - propio;
-  const primero = ago.k === meses[0].k;
-  /* El resto es lo que llegas trayendo: el colchón limpio de julio más lo
-     que sobró de los meses anteriores por encima del piso. */
-  const rotulo = "traes de antes";
+  const queda = propio - yaGastado;
+  const primero = ago.k === MES_HOY;
 
   document.getElementById("flujo-hero").innerHTML = `
-    <div class="h-label">${yaGastado > 0 ? `Te queda para ${mLabel(ago.k, true)}`
+    <div class="h-label">${yaGastado > 0 ? `Te queda de ${mLabel(ago.k, true)}`
                                           : `Para gastar en ${mLabel(ago.k, true)}`}</div>
     <div class="h-value">${moneyRich(queda)}</div>
     <div class="h-chips">
-      <span class="h-chip"><span class="k">${propio < 0 ? `le falta a ${mLabel(ago.k, true)}` : `lo genera ${mLabel(ago.k, true)}`}</span> <b>${money(Math.abs(propio))}</b></span>
-      ${heredado >= 1 ? `<span class="h-chip"><span class="k">${rotulo}</span> <b>${money(heredado)}</b></span>` : ""}
+      <span class="h-chip"><span class="k">${propio < 0 ? `le falta a ${mLabel(ago.k, true)}` : `${mLabel(ago.k, true)} genera`}</span> <b>${money(Math.abs(propio))}</b></span>
       ${yaGastado > 0 ? `<span class="h-chip"><span class="k">ya gastaste</span> <b>${money(yaGastado)}</b></span>` : ""}
     </div>
     <div class="h-tabs">
@@ -1046,32 +1040,16 @@ function renderFlujoHero() {
         data-mes="${m.k}">${mLabel(m.k, true)}</button>`).join("")}
     </div>
     <div class="h-foot">
-      ${falta > 0 && heredado >= 1
-        ? `${propio < 0
-             ? `${mLabel(ago.k, true)} no genera nada para gastar: sus compromisos se pasan
-                <b>${money(-propio)}</b> de tu sueldo del mes. Todo lo que gastes sale del
-                colchón de ${money(heredado)} que traes de antes.`
-             : `Ojo con la mezcla: ${mLabel(ago.k, true)} por sí solo genera <b>${money(propio)}</b>,
-                por debajo de tu piso de ${money(piso)}. Los otros ${money(heredado)} son colchón
-                que traes de antes.`}
-           Para llegar al piso tomas ${money(falta)} del colchón — para eso está — pero cada peso
-           de más que gastes sale del colchón, no de tu sueldo, y ese no se repone.`
-        : heredado >= 1
-        ? `${mLabel(ago.k, true)} genera <b>${money(propio)}</b> por sí solo, ${propio >= piso
-             ? `${money(propio - piso)} arriba de tu piso de ${money(piso)}`
-             : `por debajo de tu piso de ${money(piso)}`}. ${primero
-             ? `Los otros ${money(heredado)} son colchón que traes de antes: gastarlos no rompe
-                el mes, pero no se repone.`
-             : `Los otros ${money(heredado)} son lo que llegas trayendo: colchón de julio más
-                lo que sobró de los meses anteriores. Gastarlos no rompe el mes, pero no se repone.`}`
+      ${queda < 0
+        ? `${mLabel(ago.k, true)} ya se pasó <b>${money(-queda)}</b> de lo que genera. Ese exceso
+           sale de tu colchón, que queda en <b>${money(COLCHON_HOY)}</b>.`
         : propio >= piso
-        ? `Todo esto lo genera ${mLabel(ago.k, true)} con su propio sueldo, sin tocar colchón.
-           Van ${money(propio - piso)} arriba de tu piso de ${money(piso)}. El ahorro de los
-           muebles no arranca hasta ${mLabel(DATA.metaMuebles.inicioAhorro, true)}, cuando
-           termina el crédito a tu mamá, así que esto de más es colchón: red por si algo sale mal.`
-        : `${mLabel(ago.k, true)} genera <b>${money(propio)}</b> y no trae nada extra de dónde
-           tomar, así que se queda ${money(piso - propio)} por debajo de tu piso de ${money(piso)}.
-           Hay que mover un pago de mes o bajar el gasto.`}
+        ? `Todo esto lo genera ${mLabel(ago.k, true)} con su propio sueldo: van
+           ${money(propio - piso)} arriba de tu piso de ${money(piso)}.`
+        : `${mLabel(ago.k, true)} genera <b>${money(propio)}</b>, ${money(piso - propio)} por debajo
+           de tu piso de ${money(piso)}. Hay que mover un pago de mes o bajar el gasto.`}
+      ${primero && queda >= 0
+        ? ` Aparte traes un colchón de <b>${money(COLCHON_HOY)}</b>, de una sola vez.` : ""}
       <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--hero-inset)">
         Tu banco va a decir <b>${money(ago.cierre)}</b> el ${dLabelLong(FLUJO.filter(d =>
           d.fecha.startsWith(ago.k)).at(-1).fecha)}, ${money(ago.cierre - queda)} de más.
