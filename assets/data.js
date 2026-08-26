@@ -94,7 +94,8 @@ const DATA = {
       { fecha: "2026-10-30", monto: 7106 },
       { fecha: "2026-11-30", monto: 7106 }
     ],
-    nota: "renegociado: los últimos dos pagos repartidos en tres"
+    nota: "ACORDADO con ella: los últimos dos pagos repartidos en tres",
+    acordado: "2026-08-26"
   },
 
   /* ── Auto ── */
