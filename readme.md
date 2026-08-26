@@ -36,6 +36,10 @@ noindex` para que el panel no acabe en buscadores.
 
 También funciona con doble clic en `index.html` desde el disco, sin servidor.
 
+> El panel sigue sin build ni dependencias. El `package.json` de la raíz existe
+> solo para el bot de WhatsApp (`bot/`), que corre como función serverless en
+> `api/`. Nada de eso toca el panel.
+
 ## Las 5 pantallas
 
 | Pantalla | Qué responde |
