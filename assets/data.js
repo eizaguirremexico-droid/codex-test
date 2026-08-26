@@ -262,11 +262,11 @@ const DATA = {
        septiembre y se pagan el 2 de octubre. Las dos del 26 todavía están
        "en proceso" y por eso no aparecen en el saldo, pero el crédito
        disponible ya bajó.
-       OJO: el comercio sale como "Costco" a secas. Si alguna es gasolina
-       estaría contada dos veces, porque la gasolina ya va como gasto fijo. */
+       El comercio sale como "Costco" a secas, pero ya están identificadas:
+       las dos del 26 son regalos, no gasolina. No hay doble cobro. */
     { fecha:"2026-08-21", concepto:"Costco",                             monto:60.00,   tarjeta:"costco" },
-    { fecha:"2026-08-26", concepto:"Costco",                             monto:494.00,  tarjeta:"costco" },
-    { fecha:"2026-08-26", concepto:"Costco",                             monto:85.00,   tarjeta:"costco" }
+    { fecha:"2026-08-26", concepto:"Regalo para Aleli (Costco)",         monto:494.00,  tarjeta:"costco" },
+    { fecha:"2026-08-26", concepto:"Regalo para Aleli (Costco)",         monto:85.00,   tarjeta:"costco" }
     /* El Maison Kayser de $73 del 25 de agosto se cargó y se devolvió el
        mismo día: neto cero, no se registra. */
   ],
