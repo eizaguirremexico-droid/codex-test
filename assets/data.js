@@ -250,7 +250,16 @@ const DATA = {
     /* Datos extra de AT&T, compra de una sola vez. NO es una segunda línea:
        el plan mensual de $360 sigue siendo el de la Joy. Por eso va aquí como
        gasto suelto y no en `vidaFija`. */
-    { fecha:"2026-08-19", concepto:"AT&T · datos extra",                 monto:179.00,  tarjeta:"servicios" }
+    { fecha:"2026-08-19", concepto:"AT&T · datos extra",                 monto:179.00,  tarjeta:"servicios" },
+    /* Los 3,640 puntos de la Gold Card se aplicaron el 21 de agosto en dos
+       créditos: −$185.00 y −$179.00. Salieron a $0.10 por punto, el doble de
+       lo que suele pagar Amex por reducir compras. El segundo dejó el AT&T
+       de arriba en cero. Va como gasto NEGATIVO: es gasto de agosto que se
+       deshizo. */
+    { fecha:"2026-08-21", concepto:"Crédito por redención de puntos",    monto:-364.00, tarjeta:"servicios" },
+    { fecha:"2026-08-23", concepto:"Carl's Jr Bosques Esmeralda",        monto:220.00,  tarjeta:"servicios" }
+    /* El Maison Kayser de $73 del 25 de agosto se cargó y se devolvió el
+       mismo día: neto cero, no se registra. */
   ],
 
   /* ── Suscripciones ── */
@@ -334,8 +343,14 @@ const DATA = {
       /* Adelantada el 17 de agosto, antes de su corte del 22: quedó en cero.
          Al corte del 22 solo llegan el gym y el último Amazon MSI, así que
          el pago del 11 de septiembre baja de $3,994.84 a $1,788.35. */
-      /* Al 19 de agosto: $599 de Sendero + $179 de AT&T = $778.00. */
-      tipo:"cargo", linea:null, disponible:null, saldo:778.00, tasa:null,
+      /* Al 26 de agosto: $1,917.40. Cuadra al peso con sus movimientos —
+         Sendero $599 + AT&T $179 − $364 de créditos por puntos + gym
+         $1,283.40 + Carl's Jr $220, y el Maison Kayser de $73 que se cargó y
+         se devolvió el mismo día.
+         De ese saldo solo vencen $341.00 el 11 de septiembre: el gym y el
+         Carl's Jr entraron el 23, un día DESPUÉS del corte del 22, así que
+         se van al estado de cuenta que se paga el 11 de octubre. */
+      tipo:"cargo", linea:null, disponible:null, saldo:1917.40, tasa:null,
       /* Tiene tarjeta adicional a nombre de Aleli (cuenta ...21017): su
          gasto cae en este mismo estado de cuenta. */
       adicional: "Aleli Michel Pérez Martínez",
@@ -482,8 +497,8 @@ const DATA = {
       /* La LikeU ya no paga nada el 3 de septiembre: la app confirma $0.00 con
          límite el 1 de septiembre. Todo su saldo es consumo posterior al corte
          y cae hasta el 1 de octubre. */
-      { fecha:"2026-09-11", concepto:"Amex Gold Servicios",            monto:2566.35,  cat:"tarjeta", estimado:true, tarjeta:"servicios",
-        nota:"gym $1,283.40 + último Amazon MSI $504.95 + Sendero $599 + AT&T $179 — el resto del consumo se adelantó" },
+      { fecha:"2026-09-11", concepto:"Amex Gold Servicios",            monto:341.00,   cat:"tarjeta", tarjeta:"servicios",
+        nota:"estado de cuenta emitido del corte del 22 de agosto · el gym y el Carl's Jr entraron el 23 y se van a octubre" },
       /* El auto de septiembre ya no aparece: se pagó el 26 de agosto. */
       { fecha:"2026-09-24", concepto:"Joy Banamex",                    monto:2340.84,  cat:"tarjeta", estimado:true, tarjeta:"joy",
         nota:"último pago del Ticketmaster $1,980.84 + teléfono AT&T $360" },
@@ -499,8 +514,8 @@ const DATA = {
         nota:"MSI $1,155.58 + gasolina $2,200 + los $1,258 del 14 y 15 de agosto, que entraron después del corte" },
       /* En octubre el Amazon de la Gold Card ya se acabó (último pago en
          agosto): solo queda el gym. Lo que gastes en septiembre se suma. */
-      { fecha:"2026-10-11", concepto:"Amex Gold Servicios",            monto:1283.40,  cat:"tarjeta", estimado:true, tarjeta:"servicios",
-        nota:"solo el gym — el Amazon MSI terminó en agosto · falta sumarle tu consumo de septiembre" },
+      { fecha:"2026-10-11", concepto:"Amex Gold Servicios",            monto:1576.40,  cat:"tarjeta", estimado:true, tarjeta:"servicios",
+        nota:"gym $1,283.40 + Carl's Jr $220 + Maison Kayser $73, todo del 23 al 25 de agosto · falta sumarle tu consumo de septiembre" },
       { fecha:"2026-10-15", concepto:"Mensualidad auto BYD",           monto:6209.00,  cat:"auto" },
       { fecha:"2026-10-24", concepto:"Joy Banamex",                    monto:360.00,   cat:"tarjeta", estimado:true, tarjeta:"joy",
         nota:"solo el teléfono AT&T — el Ticketmaster se acaba en septiembre" },
