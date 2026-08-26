@@ -257,7 +257,16 @@ const DATA = {
        de arriba en cero. Va como gasto NEGATIVO: es gasto de agosto que se
        deshizo. */
     { fecha:"2026-08-21", concepto:"Crédito por redención de puntos",    monto:-364.00, tarjeta:"servicios" },
-    { fecha:"2026-08-23", concepto:"Carl's Jr Bosques Esmeralda",        monto:220.00,  tarjeta:"servicios" }
+    { fecha:"2026-08-23", concepto:"Carl's Jr Bosques Esmeralda",        monto:220.00,  tarjeta:"servicios" },
+    /* Tres compras en Costco después del corte del 13: van al corte del 13 de
+       septiembre y se pagan el 2 de octubre. Las dos del 26 todavía están
+       "en proceso" y por eso no aparecen en el saldo, pero el crédito
+       disponible ya bajó.
+       OJO: el comercio sale como "Costco" a secas. Si alguna es gasolina
+       estaría contada dos veces, porque la gasolina ya va como gasto fijo. */
+    { fecha:"2026-08-21", concepto:"Costco",                             monto:60.00,   tarjeta:"costco" },
+    { fecha:"2026-08-26", concepto:"Costco",                             monto:494.00,  tarjeta:"costco" },
+    { fecha:"2026-08-26", concepto:"Costco",                             monto:85.00,   tarjeta:"costco" }
     /* El Maison Kayser de $73 del 25 de agosto se cargó y se devolvió el
        mismo día: neto cero, no se registra. */
   ],
@@ -361,10 +370,12 @@ const DATA = {
       puntos:819,
       tono:"oro" },
     { id:"costco", alias:"Costco Banamex Visa", term:"104", emisor:"Banamex",
-      /* Adelantada el 17 de agosto: se pagaron los $2,427.70 del estado de
-         cuenta. Lo que queda son los cargos del 14 y 15, que van al corte
-         del 13 de septiembre. */
-      tipo:"revolvente", linea:50000, disponible:43641.48, saldo:2413.58, tasa:60.58,
+      /* Al 26 de agosto. El adelanto del 17 funcionó: el estado de cuenta del
+         corte del 13 marca $0.00 a pagar el 2 de septiembre.
+         El saldo de $2,473.58 son los cargos del 14 al 21; las dos compras
+         del 26 ($494 y $85) siguen "en proceso" y todavía no entran ahí,
+         aunque el crédito disponible ya las descontó. */
+      tipo:"revolvente", linea:50000, disponible:42873.48, saldo:2473.58, tasa:60.58,
       /* Corte del 13 de agosto YA EMITIDO: pago para no generar intereses
          $2,427.70, mínimo $630.00, fecha límite 2 de septiembre. Ya no es
          estimación — es el estado de cuenta. Estaba modelado en $1,997.11
@@ -510,8 +521,8 @@ const DATA = {
          el corte anterior de esa tarjeta, con los MSI que siguen vivos. */
       { fecha:"2026-10-01", concepto:"Santander LikeU",                monto:3416.00,  cat:"tarjeta", estimado:true, tarjeta:"santander",
         nota:"tag $1,200 + MercadoPago de tu mamá $2,036 (te lo devuelve) + Samsung $383 — más lo que le cargues de aquí al corte" },
-      { fecha:"2026-10-02", concepto:"Costco Banamex",                 monto:4613.58,  cat:"tarjeta", estimado:true, tarjeta:"costco",
-        nota:"MSI $1,155.58 + gasolina $2,200 + los $1,258 del 14 y 15 de agosto, que entraron después del corte" },
+      { fecha:"2026-10-02", concepto:"Costco Banamex",                 monto:5252.58,  cat:"tarjeta", estimado:true, tarjeta:"costco",
+        nota:"MSI $1,155.58 + gasolina + $1,897 de compras del 14 al 26 de agosto, que entraron después del corte del 13" },
       /* En octubre el Amazon de la Gold Card ya se acabó (último pago en
          agosto): solo queda el gym. Lo que gastes en septiembre se suma. */
       { fecha:"2026-10-11", concepto:"Amex Gold Servicios",            monto:1576.40,  cat:"tarjeta", estimado:true, tarjeta:"servicios",
