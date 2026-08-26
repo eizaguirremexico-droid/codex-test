@@ -26,7 +26,11 @@ const DATA = {
      Verlo solo en la de nómina hacía aparecer un faltante de $5,066.08 que
      en realidad estaba en la otra. */
   efectivo: {
-    ahorro: 6425.00, asOf: "2026-08-21",
+    /* DERIVADO, no medido: $6,425.00 del 21 de agosto menos los $6,209 de la
+       mensualidad del auto que se adelantó el 26. Falta confirmarlo con el
+       saldo real — si hubo otros movimientos entre esas dos fechas, este
+       número y el colchón salen mal. */
+    ahorro: 216.00, asOf: "2026-08-26",
     /* El desglose por cuenta es del 20 de agosto y ya no suma el total: la
        app lo esconde solo hasta que lleguen los dos saldos nuevos. */
     cuentas: [
@@ -66,7 +70,14 @@ const DATA = {
        cuenta como compromiso de agosto, igual que el auto. */
     { mes: "2026-08", monto: 10659,
       concepto: "Pago a mamá de julio",
-      nota: "se recorrió al 1 de agosto, pero sale del dinero de julio" }
+      nota: "se recorrió al 1 de agosto, pero sale del dinero de julio" },
+    /* La mensualidad de septiembre se pagó el 26 de agosto, tres semanas
+       antes de vencer. Septiembre ya no la paga — pero el dinero salió del
+       efectivo de agosto, así que el colchón la absorbe. No crea dinero:
+       lo mueve de mes, igual que adelantar una tarjeta. */
+    { mes: "2026-09", monto: 6209,
+      concepto: "Mensualidad del auto",
+      nota: "pagada por adelantado el 26 de agosto con dinero de agosto" }
   ],
 
   /* ── Crédito a mamá ──
@@ -87,9 +98,12 @@ const DATA = {
   },
 
   /* ── Auto ── */
+  /* Del estado de cuenta del crédito PR···4474: $209,800 a 36 recibos, saldo
+     pendiente $208,454.87 después del recibo 2. */
   auto: {
     modelo: "BYD King DM-i PHEV 2026",
     financiera: "BBVA",
+    credito: 209800, saldoPendiente: 208454.87, recibosPagados: 2,
     mensualidad: 6209,
     plazo: 36,
     primerPago: "2026-08",
@@ -469,7 +483,7 @@ const DATA = {
          y cae hasta el 1 de octubre. */
       { fecha:"2026-09-11", concepto:"Amex Gold Servicios",            monto:2566.35,  cat:"tarjeta", estimado:true, tarjeta:"servicios",
         nota:"gym $1,283.40 + último Amazon MSI $504.95 + Sendero $599 + AT&T $179 — el resto del consumo se adelantó" },
-      { fecha:"2026-09-15", concepto:"Mensualidad auto BYD",           monto:6209.00,  cat:"auto" },
+      /* El auto de septiembre ya no aparece: se pagó el 26 de agosto. */
       { fecha:"2026-09-24", concepto:"Joy Banamex",                    monto:2340.84,  cat:"tarjeta", estimado:true, tarjeta:"joy",
         nota:"último pago del Ticketmaster $1,980.84 + teléfono AT&T $360" },
       { fecha:"2026-09-24", concepto:"Amex Gold Elite",                monto:7823.09,  cat:"tarjeta", estimado:true, tarjeta:"elite",
