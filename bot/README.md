@@ -12,6 +12,7 @@ bot/agente.js         el ciclo con Claude y sus dos herramientas
 bot/whatsapp.js       enviar, firmar y leer los mensajes de Meta
 bot/store.js          memoria de cada conversación
 bot/costo.mjs         estima el gasto con tu config
+bot/leads.mjs         lista los pedidos por cotizar que ha juntado
 bot/smoke.mjs         prueba local, sin tocar ninguna API real
 ```
 
@@ -50,6 +51,9 @@ migrar un número lo saca de la app de WhatsApp Business y borra el historial.
 | `WHATSAPP_VERIFY_TOKEN` | Lo inventas tú; lo repites al configurar el webhook |
 | `KV_REST_API_URL` y `KV_REST_API_TOKEN` | Vercel → Storage → crear KV |
 
+Aquí el KV no es opcional: sin avisos a otro celular, es el único lugar donde
+quedan los pedidos por cotizar. Se leen con `node bot/leads.mjs`.
+
 Sin KV el bot funciona, pero cada arranque en frío olvida todo y vuelve a
 preguntar lo mismo. Configúralo antes de dárselo a un cliente real.
 
@@ -71,9 +75,10 @@ npm install
 node bot/smoke.mjs
 ```
 
-Simula 25 casos con las dos APIs interceptadas: firma inválida, reintentos de
+Simula 30 casos con las dos APIs interceptadas: firma inválida, reintentos de
 Meta, llamada a herramienta, escalamiento, audios, acuses de entrega y el cambio
-de modelo. No manda un solo mensaje ni gasta un token.
+de modelo, coexistencia y el relevo del humano. No manda un solo mensaje ni
+gasta un token.
 
 ## Costo
 
@@ -157,6 +162,29 @@ desactiva.
 De esa lista, la que más suele doler es el **catálogo**. Si lo usas en la app,
 esa es la decisión de verdad; el resto rara vez pesa en un negocio de pedidos por
 cotización.
+
+## Cómo ves los pedidos, sin avisos a otro número
+
+`escalamiento.whatsappDueno` está vacío a propósito: con coexistencia los chats
+se ven igual en la app, así que no hace falta un segundo celular. Dos formas de
+no perderte ninguno:
+
+**En la app.** Cuando el bot se hace a un lado, el último mensaje del chat
+empieza con 📋. Al abrir WhatsApp Business, los chats que te tocan saltan a la
+vista en la lista sin tener que entrar a cada uno.
+
+**Desde la terminal.**
+
+```bash
+node bot/leads.mjs        # los últimos 20
+node bot/leads.mjs 100    # los últimos 100
+```
+
+Salen con los datos ya juntos para cotizar y el `wa.me/` para entrar al chat.
+
+Si algún día quieres el ping en otro celular, pon el número en
+`escalamiento.whatsappDueno` y ya. No puede ser el 55 7217 1088: un número no
+puede mandarse mensajes a sí mismo.
 
 ## Lo que el bot NO sabe (y por eso te lo pasa)
 

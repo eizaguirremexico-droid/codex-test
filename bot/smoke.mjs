@@ -83,7 +83,7 @@ const turnosAntes = turnos;
 await post(entrante("wamid.2", "quiero hablar con un asesor"));
 ok("escala sin llamar al modelo", turnos === turnosAntes);
 ok("le avisa al dueño", enviados.some((m) => m.text?.body.includes("Te toca entrar")));
-ok("le responde al cliente", enviados.some((m) => m.to === "5215551234567" && m.text?.body.includes("momento")));
+ok("le responde al cliente", enviados.some((m) => m.to === "5215551234567" && m.text?.body === escalamiento.mensajeDeTransferencia));
 
 // 6. el bot se calla mientras el humano atiende
 enviados.length = 0;
@@ -143,3 +143,13 @@ enviados.length = 0;
 turnos = 1;
 await post(entrante("wamid.9", "y de qué tamaños?", "5215552222222"));
 ok("el eco de su propio mensaje no lo calla", enviados.length > 0);
+
+// 11. sin número de avisos, el bot no le escribe a nadie más
+escalamiento.whatsappDueno = "";
+enviados.length = 0;
+turnos = 0;
+await post(entrante("wamid.10", "quiero 100 stickers de 5 cm", "5215553333333"));
+ok("sin avisos, solo le escribe al cliente",
+  enviados.filter((m) => m.text).every((m) => m.to === "5215553333333"));
+ok("sin avisos, el cliente sí recibe respuesta",
+  enviados.some((m) => m.to === "5215553333333" && m.text));

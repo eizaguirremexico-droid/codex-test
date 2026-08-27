@@ -130,14 +130,12 @@ export const calificacion = {
 };
 
 export const escalamiento = {
-  // ⚠️ NO puede ser el mismo número que conectes a la API: un número no puede
-  // mandarse mensajes a sí mismo. Aquí va otro celular — el personal de quien
-  // atiende los pedidos. Formato: 52 + los 10 dígitos, sin espacios ni signos.
-  //
-  // Con coexistencia puedes dejarlo vacío: los chats se ven igual en la app de
-  // WhatsApp Business. Lo que pierdes es el aviso de "este cliente sí va en serio",
-  // que es justo lo que te ahorra revisar todos los chats.
-  whatsappDueno: "52XXXXXXXXXX",
+  // Vacío a propósito: con coexistencia los chats se ven igual en la app de
+  // WhatsApp Business, así que no hace falta un segundo número. Si algún día
+  // quieres el aviso de "este cliente sí va en serio" en otro celular, pon aquí
+  // 52 + los 10 dígitos, sin espacios ni signos. No puede ser el 55 7217 1088:
+  // un número no puede mandarse mensajes a sí mismo.
+  whatsappDueno: "",
 
   palabrasClave: [
     "asesor", "humano", "persona", "hablar con alguien",
@@ -146,8 +144,12 @@ export const escalamiento = {
 
   horasEnSilencio: 12,
 
+  // Este es el último mensaje que queda en el chat cuando el bot se hace a un
+  // lado, así que es lo que vas a ver en la lista de WhatsApp al abrir la app.
+  // Empieza con 📋 para que los chats que te tocan salten a la vista de un vistazo.
   mensajeDeTransferencia:
-    "Va, ya le pasé tus datos al equipo. En un momento te mandan la cotización exacta. 🙌",
+    "📋 Listo, ya tengo tus datos. Te paso la cotización exacta en horario de " +
+    "oficina (lunes a viernes de 9 a 6). ¡Gracias por la espera! 🙌",
 };
 
 export const modelo = {
