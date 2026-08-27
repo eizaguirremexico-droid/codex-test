@@ -216,8 +216,11 @@ const DATA = {
     /* Cargo de la tarjeta adicional de Aleli — cae en el mismo estado de
        cuenta de la Gold Card. */
     { fecha:"2026-08-11", concepto:"TikTok Shop (adicional de Aleli)",   monto:185.00, tarjeta:"servicios", pagado:true },
-    /* La BBVA dejó de estar en ceros. Falta identificar qué fue. */
+    /* La BBVA dejó de estar en ceros. Falta identificar qué fue: su estado de
+       cuenta del corte del 24 cerró en $539.02 y solo $160.02 estaban
+       registrados, así que hay $379.00 más sin identificar. */
     { fecha:"2026-08-12", concepto:"Cargo sin identificar (BBVA)",       monto:160.02, tarjeta:"bbva" },
+    { fecha:"2026-08-20", concepto:"Cargos sin identificar (BBVA)",      monto:379.00, tarjeta:"bbva" },
     /* Cargos posteriores al corte del 13 de agosto: NO entran al pago del 2
        de septiembre. Caen en el corte del 13 de septiembre y se pagan el 2
        de octubre. Son gasto de agosto aunque el dinero salga en dos meses. */
@@ -383,13 +386,14 @@ const DATA = {
          Ojo: vence el 2, no el 3 como se venía suponiendo. */
       corte:13, vence:2, proximoPago:{ fecha:"2026-10-02", monto:4613.58, estimado:true },
       tono:"azul" },
-    /* Ya estrenada, pero todavía sin estado de cuenta: la app marca "Tu
-       próximo pago —", así que sigue sin conocerse el corte ni el
-       vencimiento. Hasta que salga el primero, su saldo no tiene fecha de
-       pago en el flujo. */
+    /* PRIMER ESTADO DE CUENTA, corte del 24 de agosto: $539.02 con fecha
+       límite el 14 de septiembre. Con eso quedan confirmados el corte (24) y
+       el vencimiento (14), que era el dato que llevaba semanas faltando.
+       Vence ANTES del corte, así que cada corte se paga hasta el mes
+       siguiente: 21 días de flote. */
     { id:"bbva", alias:"BBVA TC M", term:"9871", emisor:"BBVA",
-      tipo:"revolvente", linea:81300, disponible:81139.98, saldo:160.02, tasa:null,
-      corte:null, vence:null, proximoPago:null,
+      tipo:"revolvente", linea:81300, disponible:80760.98, saldo:539.02, tasa:null,
+      corte:24, vence:14, proximoPago:{ fecha:"2026-09-14", monto:539.02 },
       tono:"azul" },
     /* Estado de cuenta del corte del 4 de agosto. El saldo de $1,980.84 NO es
        consumo nuevo: es el capital que falta del Ticketmaster a 3 meses. Por
@@ -508,6 +512,8 @@ const DATA = {
       /* La LikeU ya no paga nada el 3 de septiembre: la app confirma $0.00 con
          límite el 1 de septiembre. Todo su saldo es consumo posterior al corte
          y cae hasta el 1 de octubre. */
+      { fecha:"2026-09-14", concepto:"BBVA TC M",                      monto:539.02,   cat:"tarjeta", tarjeta:"bbva",
+        nota:"primer estado de cuenta · corte del 24 de agosto" },
       { fecha:"2026-09-11", concepto:"Amex Gold Servicios",            monto:341.00,   cat:"tarjeta", tarjeta:"servicios",
         nota:"estado de cuenta emitido del corte del 22 de agosto · el gym y el Carl's Jr entraron el 23 y se van a octubre" },
       /* El auto de septiembre ya no aparece: se pagó el 26 de agosto. */
