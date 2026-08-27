@@ -130,10 +130,13 @@ export const calificacion = {
 };
 
 export const escalamiento = {
-  // ⚠️ Este NO puede ser el mismo número que conectes a la API de WhatsApp.
-  // Un número no se puede mandar mensajes a sí mismo. Aquí va el celular personal
-  // de quien atiende los pedidos, para que le lleguen los avisos.
-  // Formato: 52 + los 10 dígitos, sin espacios ni signos.
+  // ⚠️ NO puede ser el mismo número que conectes a la API: un número no puede
+  // mandarse mensajes a sí mismo. Aquí va otro celular — el personal de quien
+  // atiende los pedidos. Formato: 52 + los 10 dígitos, sin espacios ni signos.
+  //
+  // Con coexistencia puedes dejarlo vacío: los chats se ven igual en la app de
+  // WhatsApp Business. Lo que pierdes es el aviso de "este cliente sí va en serio",
+  // que es justo lo que te ahorra revisar todos los chats.
   whatsappDueno: "52XXXXXXXXXX",
 
   palabrasClave: [

@@ -32,10 +32,12 @@ bot/smoke.mjs         prueba local, sin tocar ninguna API real
 horarios, políticas y tus 10 preguntas frecuentes reales — sácalas de tu WhatsApp
 de hoy.
 
-**2. Da de alta el número en Meta.** En [developers.facebook.com](https://developers.facebook.com)
+**2. Da de alta el número en Meta, con coexistencia.** En [developers.facebook.com](https://developers.facebook.com)
 crea una app de tipo Business, agrega el producto WhatsApp y anota el
-`Phone Number ID`. El número de prueba sirve para probar; para producción hay
-que verificar el negocio.
+`Phone Number ID`. El número de prueba sirve para probar.
+
+Para el número real, **conéctalo con coexistencia** (ver abajo), no migrándolo:
+migrar un número lo saca de la app de WhatsApp Business y borra el historial.
 
 **3. Variables de entorno** (en Vercel: Project → Settings → Environment Variables)
 
@@ -122,6 +124,39 @@ en el plan gratis. Anthropic te factura en dólares.
 que ese modelo acepta (Haiku 4.5, por ejemplo, devuelve un 400 si le mandas
 `effort`). Un modelo que no esté en esa tabla se trata como el mínimo común y
 funciona igual.
+
+## Coexistencia: el bot y la app en el mismo número
+
+El 55 7217 1088 ya se usa en la app de WhatsApp Business. Hay dos formas de
+conectarlo y solo una sirve aquí:
+
+**Migrar (NO hacer esto).** El número sale de la app de WhatsApp Business y ya no
+se puede abrir desde el celular. El historial de chats no se transfiere y se
+pierde. Es reversible dando de baja el número de la API, pero el historial no
+regresa.
+
+**Coexistencia (esto sí).** El mismo número funciona en los dos lados a la vez:
+la app sigue igual, con sus chats y sus contactos, y el bot contesta por la API.
+Lo que manda el bot aparece en la app.
+
+Con coexistencia el bot se hace a un lado solo: en cuanto contestas a mano desde
+la app, Meta manda ese mensaje al webhook (`smb_message_echoes`) y el bot deja de
+responder en ese chat por 12 horas. No hay que avisarle nada — escribes y ya.
+
+Lo que se pierde al activar coexistencia:
+
+- Catálogo y las demás herramientas de negocio de la app
+- Listas de difusión
+- Llamadas de voz y video
+- Grupos, mensajes temporales y de una sola vista
+- La palomita verde de cuenta oficial y la verificación estándar de negocio
+
+Y hay que **abrir la app al menos una vez cada 13 días** o la cuenta se
+desactiva.
+
+De esa lista, la que más suele doler es el **catálogo**. Si lo usas en la app,
+esa es la decisión de verdad; el resto rara vez pesa en un negocio de pedidos por
+cotización.
 
 ## Lo que el bot NO sabe (y por eso te lo pasa)
 

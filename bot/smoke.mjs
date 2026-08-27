@@ -121,3 +121,25 @@ ok("Haiku omite el esfuerzo", peticionClaude.output_config === undefined);
 ok("Haiku omite el fallback", peticionClaude.fallbacks === undefined);
 ok("Haiku no manda la beta", !cabecerasClaude.get("anthropic-beta")?.includes("server-side-fallback"));
 ok("Haiku sigue contestando", enviados.some((m) => m.text?.body.includes("cotizo")));
+
+// 10. coexistencia: el dueño contesta a mano desde la app de WhatsApp Business
+modelo.id = "claude-haiku-4-5";
+const eco = (id, cliente) => ({
+  entry: [{ changes: [{ field: "smb_message_echoes", value: { message_echoes: [{ id, from: "5215572171088", to: cliente, type: "text", text: { body: "yo te cotizo, dame 5" } }] } }] }],
+});
+
+enviados.length = 0;
+await post(eco("wamid.eco1", "5215551111111"));
+await post(entrante("wamid.7", "gracias!", "5215551111111"));
+ok("el bot se calla si el dueño ya contestó a mano", enviados.length === 0);
+
+// Un eco de lo que mandó el propio bot no debe callarlo.
+enviados.length = 0;
+turnos = 1;
+await post(entrante("wamid.8", "cuál es el mínimo?", "5215552222222"));
+const idPropio = "wamid.out"; // el que devuelve la API falsa al enviar
+await post(eco(idPropio, "5215552222222"));
+enviados.length = 0;
+turnos = 1;
+await post(entrante("wamid.9", "y de qué tamaños?", "5215552222222"));
+ok("el eco de su propio mensaje no lo calla", enviados.length > 0);

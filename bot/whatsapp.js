@@ -33,10 +33,15 @@ const partir = (texto, limite = 4000) => {
   return trozos;
 };
 
+// Devuelve los ids de lo que mandó, para poder reconocer después nuestros
+// propios mensajes cuando la app de WhatsApp Business nos los haga eco.
 export const enviar = async (to, texto) => {
+  const ids = [];
   for (const trozo of partir(texto)) {
-    await graph({ to, type: "text", text: { preview_url: false, body: trozo } });
+    const res = await graph({ to, type: "text", text: { preview_url: false, body: trozo } });
+    for (const m of res.messages ?? []) ids.push(m.id);
   }
+  return ids;
 };
 
 // Palomita azul + "escribiendo…". El cliente ve que algo pasa mientras el modelo piensa.
@@ -54,6 +59,15 @@ export const firmaValida = (crudo, cabecera) => {
   const a = Buffer.from(esperada);
   const b = Buffer.from(cabecera);
   return a.length === b.length && crypto.timingSafeEqual(a, b);
+};
+
+// En coexistencia, lo que el dueño escribe a mano desde la app de WhatsApp
+// Business llega aquí como eco. Es la señal más limpia de "ya entró un humano".
+// En un eco, `from` es el número del negocio y `to` el del cliente.
+export const extraerEco = (payload) => {
+  const eco = payload?.entry?.[0]?.changes?.[0]?.value?.message_echoes?.[0];
+  if (!eco) return null;
+  return { id: eco.id, cliente: eco.to };
 };
 
 // Del payload de Meta saca lo único que nos importa: un mensaje entrante.

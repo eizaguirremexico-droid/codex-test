@@ -1,6 +1,7 @@
 import { responder } from "../bot/agente.js";
 import * as store from "../bot/store.js";
-import { acusarRecibo, enviar, extraerMensaje, firmaValida } from "../bot/whatsapp.js";
+import { escalamiento } from "../bot/config.js";
+import { acusarRecibo, enviar, extraerEco, extraerMensaje, firmaValida } from "../bot/whatsapp.js";
 
 // Meta llama esto una sola vez, al dar de alta el webhook en el panel.
 export function GET(request) {
@@ -22,14 +23,35 @@ export async function POST(request) {
   // A partir de aquí siempre devolvemos 200. Un error nuestro no debe hacer que
   // Meta reintente el mismo mensaje en bucle.
   try {
-    const mensaje = extraerMensaje(JSON.parse(crudo));
-    if (mensaje) await atender(mensaje);
+    const payload = JSON.parse(crudo);
+    const eco = extraerEco(payload);
+    if (eco) {
+      await tomoElHumano(eco);
+    } else {
+      const mensaje = extraerMensaje(payload);
+      if (mensaje) await atender(mensaje);
+    }
   } catch (error) {
     console.error("fallo procesando el webhook:", error);
   }
 
   return new Response("ok", { status: 200 });
 }
+
+// El dueño contestó a mano desde la app. El bot se hace a un lado solo, sin que
+// nadie tenga que avisarle: es una conversación entre dos personas ahora.
+const tomoElHumano = async ({ id, cliente }) => {
+  if (await store.get(`wa:propio:${id}`)) return; // era un mensaje del bot, no del dueño
+  await store.set(`wa:pausa:${cliente}`, 1, escalamiento.horasEnSilencio * 3600);
+};
+
+// Manda y anota los ids, para que un eco de nuestro propio mensaje no se
+// confunda con el dueño escribiendo a mano desde la app.
+const responderAlCliente = async (to, texto) => {
+  for (const id of await enviar(to, texto)) {
+    await store.set(`wa:propio:${id}`, 1, 3600);
+  }
+};
 
 const atender = async (mensaje) => {
   if (!(await store.primeraVez(`wa:msg:${mensaje.id}`))) return; // reintento de Meta
@@ -42,7 +64,7 @@ const atender = async (mensaje) => {
   }
 
   if (mensaje.tipo !== "text" || !mensaje.texto.trim()) {
-    await enviar(mensaje.de, "Por ahora solo puedo leer mensajes de texto. ¿Me lo escribes?");
+    await responderAlCliente(mensaje.de, "Por ahora solo puedo leer mensajes de texto. ¿Me lo escribes?");
     return;
   }
 
@@ -52,5 +74,5 @@ const atender = async (mensaje) => {
     nombre: mensaje.nombre,
   });
 
-  await enviar(mensaje.de, respuesta);
+  await responderAlCliente(mensaje.de, respuesta);
 };
