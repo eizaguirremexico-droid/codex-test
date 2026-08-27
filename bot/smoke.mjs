@@ -208,3 +208,27 @@ await post({ entry: [{ changes: [{ value: { messages: [{ id: "wamid.12", from: "
 const grande = peticionClaude.messages.at(-1).content;
 ok("la imagen pesada no se manda", !JSON.stringify(grande).includes('"type":"image"'));
 ok("pero sí se le anuncia al modelo", JSON.stringify(grande).includes("no puedes abrir"));
+
+// 15. la pantalla de pruebas está cerrada mientras no exista el token
+const { POST: probar } = await import("../api/probar.js");
+const pedir = (token, cuerpo = { texto: "hola", sesion: "1" }) =>
+  probar(new Request("https://x/api/probar", {
+    method: "POST",
+    headers: { "content-type": "application/json", ...(token ? { "x-probar-token": token } : {}) },
+    body: JSON.stringify(cuerpo),
+  }));
+
+delete process.env.PROBAR_TOKEN;
+ok("sin PROBAR_TOKEN la pantalla no existe", (await pedir("loquesea")).status === 404);
+
+process.env.PROBAR_TOKEN = "secreto-largo-123";
+ok("con token equivocado tampoco", (await pedir("otro-token-distinto")).status === 404);
+ok("sin token tampoco", (await pedir(null)).status === 404);
+ok("un token del largo correcto pero distinto no pasa", (await pedir("secreto-largo-999")).status === 404);
+
+turnos = 1;
+const buena = await pedir("secreto-largo-123");
+ok("con el token correcto sí contesta", buena.status === 200 && (await buena.json()).respuesta);
+
+turnos = 1;
+ok("sin texto no llama al modelo", (await pedir("secreto-largo-123", { sesion: "1" })).status === 400);

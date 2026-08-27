@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Probar el bot · Felpuditos</title>
+<style>
+  :root {
+    --fondo: #ece5dd; --barra: #075e54; --burbuja-yo: #dcf8c6; --burbuja-bot: #fff;
+    --texto: #111b21; --tenue: #667781; --linea: #d1d7db;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --fondo: #0b141a; --barra: #1f2c33; --burbuja-yo: #005c4b; --burbuja-bot: #202c33;
+      --texto: #e9edef; --tenue: #8696a0; --linea: #2a3942;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--fondo); color: var(--texto);
+    font: 16px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    height: 100dvh; display: flex; flex-direction: column;
+  }
+  header {
+    background: var(--barra); color: #fff; padding: 12px 16px;
+    display: flex; align-items: center; gap: 12px; flex: none;
+  }
+  header .avatar {
+    width: 38px; height: 38px; border-radius: 50%; background: #25d366;
+    display: grid; place-items: center; font-size: 19px; flex: none;
+  }
+  header h1 { margin: 0; font-size: 16px; font-weight: 600; }
+  header p { margin: 0; font-size: 12px; opacity: .75; }
+  header button {
+    margin-left: auto; background: transparent; border: 1px solid rgba(255,255,255,.35);
+    color: #fff; border-radius: 6px; padding: 6px 10px; font-size: 12px; cursor: pointer;
+  }
+  #chat { flex: 1; overflow-y: auto; padding: 16px 12px; display: flex; flex-direction: column; gap: 8px; }
+  .msg {
+    max-width: min(75%, 520px); padding: 8px 11px; border-radius: 10px;
+    white-space: pre-wrap; overflow-wrap: anywhere; box-shadow: 0 1px 1px rgba(0,0,0,.12);
+  }
+  .yo { align-self: flex-end; background: var(--burbuja-yo); border-bottom-right-radius: 2px; }
+  .bot { align-self: flex-start; background: var(--burbuja-bot); border-bottom-left-radius: 2px; }
+  .nota {
+    align-self: center; background: transparent; color: var(--tenue);
+    font-size: 12px; text-align: center; max-width: 90%; box-shadow: none;
+  }
+  .error { align-self: center; color: #c0392b; font-size: 13px; text-align: center; }
+  form { display: flex; gap: 8px; padding: 10px 12px; background: var(--barra); flex: none; }
+  input[type=text] {
+    flex: 1; border: 0; border-radius: 20px; padding: 11px 15px; font-size: 16px;
+    background: var(--burbuja-bot); color: var(--texto);
+  }
+  button[type=submit] {
+    border: 0; border-radius: 50%; width: 44px; height: 44px; flex: none;
+    background: #25d366; color: #fff; font-size: 19px; cursor: pointer;
+  }
+  button:disabled { opacity: .5; cursor: default; }
+</style>
+</head>
+<body>
+<header>
+  <div class="avatar">🐾</div>
+  <div>
+    <h1>Felpuditos</h1>
+    <p id="estado">pantalla de pruebas</p>
+  </div>
+  <button id="reiniciar" type="button">De cero</button>
+</header>
+
+<div id="chat"></div>
+
+<form id="forma" autocomplete="off">
+  <input id="entrada" type="text" placeholder="Escribe como si fueras un cliente…" required>
+  <button type="submit" id="enviar">➤</button>
+</form>
+
+<script>
+  const chat = document.getElementById("chat");
+  const forma = document.getElementById("forma");
+  const entrada = document.getElementById("entrada");
+  const enviar = document.getElementById("enviar");
+  const estado = document.getElementById("estado");
+
+  // El token viaja en el # de la URL: esa parte nunca se manda al servidor
+  // ni queda en los registros. Se guarda para que un refresh no lo pierda.
+  let token = location.hash.slice(1);
+  if (token) {
+    sessionStorage.setItem("probar-token", token);
+    history.replaceState(null, "", location.pathname);
+  } else {
+    token = sessionStorage.getItem("probar-token") ?? "";
+  }
+
+  let sesion = String(Date.now());
+
+  const burbuja = (clase, texto) => {
+    const div = document.createElement("div");
+    div.className = "msg " + clase;
+    div.textContent = texto;
+    chat.append(div);
+    chat.scrollTop = chat.scrollHeight;
+    return div;
+  };
+
+  if (!token) {
+    burbuja("error", "Falta el token. Abre la página con #TU-TOKEN al final de la URL.");
+    entrada.disabled = enviar.disabled = true;
+  } else {
+    burbuja("nota", "Escríbele como si fueras un cliente. Pídele un precio que no tenga, menos de 50 piezas, o algo que no sepa: no debe inventar nunca.");
+  }
+
+  document.getElementById("reiniciar").onclick = () => {
+    sesion = String(Date.now());
+    chat.replaceChildren();
+    burbuja("nota", "Conversación nueva. El bot no recuerda nada de la anterior.");
+    entrada.focus();
+  };
+
+  forma.onsubmit = async (evento) => {
+    evento.preventDefault();
+    const texto = entrada.value.trim();
+    if (!texto) return;
+
+    burbuja("yo", texto);
+    entrada.value = "";
+    entrada.disabled = enviar.disabled = true;
+    estado.textContent = "escribiendo…";
+
+    try {
+      const res = await fetch("/api/probar", {
+        method: "POST",
+        headers: { "content-type": "application/json", "x-probar-token": token },
+        body: JSON.stringify({ texto, sesion }),
+      });
+      const datos = await res.json();
+
+      if (!res.ok) {
+        burbuja("error", res.status === 404
+          ? "Token incorrecto, o falta PROBAR_TOKEN en Vercel."
+          : `Error ${res.status}: ${datos.error ?? "algo falló"}`);
+      } else {
+        burbuja("bot", datos.respuesta);
+        if (datos.escalado) burbuja("nota", "Aquí el bot se hizo a un lado. En WhatsApp real, este chat te tocaría a ti.");
+      }
+    } catch {
+      burbuja("error", "No se pudo conectar. ¿Hay internet?");
+    } finally {
+      entrada.disabled = enviar.disabled = false;
+      estado.textContent = "pantalla de pruebas";
+      entrada.focus();
+    }
+  };
+
+  entrada.focus();
+</script>
+</body>
+</html>

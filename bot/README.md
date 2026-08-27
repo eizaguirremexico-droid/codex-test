@@ -14,6 +14,8 @@ bot/store.js          memoria de cada conversación
 bot/costo.mjs         estima el gasto con tu config
 bot/horario.mjs       si estamos abiertos y cuándo abrimos
 bot/chat.mjs          platica con el bot desde la terminal
+api/probar.js         el mismo bot, pero desde el navegador
+probar.html           la pantalla de pruebas
 bot/leads.mjs         lista los pedidos por cotizar que ha juntado
 bot/smoke.mjs         prueba local, sin tocar ninguna API real
 ```
@@ -72,9 +74,41 @@ En Meta → WhatsApp → Configuration → Webhook:
 
 ## Probarlo antes de tocar Meta
 
-Puedes platicar con el bot desde la terminal, como si fueras un cliente. No pasa
-por WhatsApp: no manda mensajes, no necesita Meta, no necesita Vercel. Es el
-mismo código que va a correr en producción.
+Hay una pantalla de pruebas: platicas con el bot real desde el navegador, en la
+compu o en el celular, sin WhatsApp y sin instalar nada. Es el mismo código y el
+mismo modelo que van a correr en producción.
+
+**1. Sube el proyecto a Vercel.** En [vercel.com/new](https://vercel.com/new)
+importa el repo, deja Build Command y Output Directory vacíos, y despliega.
+
+**2. Pon dos variables** en Project → Settings → Environment Variables:
+
+| Variable | Valor |
+|---|---|
+| `ANTHROPIC_API_KEY` | tu llave de [console.anthropic.com](https://console.anthropic.com) |
+| `PROBAR_TOKEN` | una contraseña larga que inventes, la que sea |
+
+Aquí es donde va la llave: Vercel sí es una bóveda de secretos. No la pongas en
+el chat de Claude, ni en las variables de un entorno de Claude Code —
+[la documentación dice expresamente que ahí no van credenciales](https://code.claude.com/docs/en/cloud-environments)
+porque cualquiera que use el entorno puede leerlas.
+
+**3. Abre** `https://tu-dominio.vercel.app/probar#TU-PROBAR-TOKEN`
+
+El token va después del `#`, que es la parte de la URL que **nunca** se manda al
+servidor ni queda en los registros. El navegador se lo guarda para el refresh.
+
+Sin `PROBAR_TOKEN` definido, la pantalla devuelve 404 y no gasta un token. Es
+decir, viene apagada: nadie va a topar con ella por accidente ni te va a quemar
+los créditos. Cuando el bot ya esté en WhatsApp, borra la variable y se cierra.
+
+**Pruébalo diciéndole cosas difíciles:** pídele un precio que no esté en las
+cuatro referencias, pídele 20 piezas, pregúntale si te hacen el diseño,
+pregúntale si facturan. Debe pasarte con un humano en todas, nunca inventar.
+
+## Probarlo desde la terminal
+
+Si ya tienes el repo bajado y Node instalado:
 
 ```bash
 npm install
@@ -82,38 +116,21 @@ export ANTHROPIC_API_KEY=sk-ant-...
 node bot/chat.mjs
 ```
 
-La llave se saca en [console.anthropic.com](https://console.anthropic.com) →
-API Keys → Create Key.
+Lo mismo que la pantalla web, pero en texto, y además te va sumando el gasto en
+pesos y te enseña el aviso que le llegaría al dueño. Con `/nuevo` empiezas otra
+conversación; con `/salir` terminas.
 
-```
-tú: cuanto cuestan?
-bot: Se cotizan por pieza, porque el precio depende de cuántas quieras,
-     de qué tamaño y en qué acabado. De referencia, 100 de 5 cm en blanco
-     brillante salen en ~$452 con IVA y envío incluidos. ¿Cuántas traes en mente?
-     $0.04 MXN en 1 mensaje
-```
-
-Va cobrando abajo lo que llevas gastado. Una plática completa cuesta centavos.
-
-Cuando el bot decide que un cliente vale la pena o que le toca a un humano, ves
-en pantalla el aviso que le llegaría al dueño. Con `/nuevo` empiezas otra
-conversación desde cero; con `/salir` terminas.
-
-**Pruébalo diciéndole cosas difíciles:** pídele un precio que no esté en las
-cuatro referencias, pídele 20 piezas, pregúntale si te hacen el diseño,
-pregúntale si facturan. Debe pasarte con un humano en todas, nunca inventar.
-
-## Probarlo sin gastar
+## Probarlo sin gastar## Probarlo sin gastar
 
 ```bash
 npm install
 node bot/smoke.mjs
 ```
 
-Simula 30 casos con las dos APIs interceptadas: firma inválida, reintentos de
+Simula 46 casos con las dos APIs interceptadas: firma inválida, reintentos de
 Meta, llamada a herramienta, escalamiento, audios, acuses de entrega y el cambio
-de modelo, coexistencia y el relevo del humano. No manda un solo mensaje ni
-gasta un token.
+de modelo, imágenes, coexistencia, el relevo del humano y la puerta de la
+pantalla de pruebas. No manda un solo mensaje ni gasta un token.
 
 ## Costo
 
