@@ -73,13 +73,18 @@ de modelo. No manda un solo mensaje ni gasta un token.
 
 ## Costo
 
-Por conversación de unos 8 mensajes, que son ~10 peticiones a la API:
+Por conversación de unos 8 mensajes, que son ~10 peticiones a la API. En pesos,
+presupuestados a 18 MXN por dólar (el spot del 27 de agosto de 2026 era 16.96;
+el resto es el spread que te cobra el banco por un cargo en dólares):
 
 | Modelo | Por conversación | 100 conv/mes | 500 conv/mes |
 |---|---|---|---|
-| Opus 5 | $0.12 – $0.21 | $12 – $21 | $59 – $103 |
-| Sonnet 5 | $0.05 – $0.08 | $5 – $8 | $24 – $41 |
-| Haiku 4.5 | $0.014 – $0.031 | $1.40 – $3.10 | $7 – $16 |
+| Opus 5 | $2.14 – $3.69 | $214 – $369 | $1,068 – $1,845 |
+| Sonnet 5 | $0.85 – $1.48 | $85 – $148 | $427 – $738 |
+| Haiku 4.5 | $0.25 – $0.56 | $25 – $56 | $124 – $279 |
+
+En dólares, que es como te va a llegar el cargo: $0.12–$0.21 por conversación
+con Opus, $0.05–$0.08 con Sonnet, $0.014–$0.031 con Haiku.
 
 El rango es por el cacheo del prompt: el extremo barato es con caché caliente
 (varias conversaciones seguidas dentro de la misma ventana de 5 minutos), el
@@ -91,7 +96,7 @@ Lo que domina el costo no es la respuesta, es el prompt de sistema: se reenvía
 casi el doble.
 
 WhatsApp no cobra las conversaciones que inicia el cliente; Vercel y el KV
-entran en el plan gratis.
+entran en el plan gratis. Anthropic te factura en dólares.
 
 **Para cambiar de modelo** edita `modelo.id` en `bot/config.js`. Solo esa línea:
 `capacidades` en ese mismo archivo se encarga de que la petición se arme con lo
