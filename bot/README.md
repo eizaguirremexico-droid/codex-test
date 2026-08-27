@@ -12,6 +12,7 @@ bot/agente.js         el ciclo con Claude y sus dos herramientas
 bot/whatsapp.js       enviar, firmar y leer los mensajes de Meta
 bot/store.js          memoria de cada conversación
 bot/costo.mjs         estima el gasto con tu config
+bot/horario.mjs       si estamos abiertos y cuándo abrimos
 bot/chat.mjs          platica con el bot desde la terminal
 bot/leads.mjs         lista los pedidos por cotizar que ha juntado
 bot/smoke.mjs         prueba local, sin tocar ninguna API real
@@ -121,16 +122,18 @@ de 24 horas. Lo que se cobra son los mensajes **del cliente** — cada uno dispa
 una petición a la API. Las respuestas del bot no cuentan aparte, van dentro de esa
 misma petición.
 
-Con **Haiku 4.5** y el config de Felpuditos ya lleno (2,178 tokens de prompt),
+Con **Haiku 4.5** y el config de Felpuditos ya lleno (2,443 tokens de prompt),
 en pesos a 18 MXN/USD:
 
 | Mensajes del cliente | Por conversación | 100 al mes | 500 al mes |
 |---|---|---|---|
-| 3 — pregunta y se va | $0.11 – $0.24 | $11 – $24 | $55 – $120 |
-| 5 — duda resuelta | $0.15 – $0.35 | $15 – $35 | $75 – $175 |
-| **8 — con los datos para cotizar** | **$0.21 – $0.52** | **$21 – $52** | **$107 – $260** |
-| 12 — cliente platicador | $0.33 – $0.77 | $33 – $77 | $165 – $385 |
-| 20 — se alargó | $0.56 – $1.29 | $56 – $129 | $280 – $645 |
+| 3 — pregunta y se va | $0.12 – $0.27 | $12 – $27 | $60 – $135 |
+| 5 — duda resuelta | $0.16 – $0.38 | $16 – $38 | $80 – $190 |
+| **8 — con los datos para cotizar** | **$0.22 – $0.57** | **$22 – $57** | **$110 – $285** |
+| 12 — cliente platicador | $0.34 – $0.84 | $34 – $84 | $170 – $420 |
+| 20 — se alargó | $0.57 – $1.39 | $57 – $139 | $285 – $695 |
+
+Una imagen suma como un mensaje largo: unos $0.03 más por foto.
 
 Ocho es lo típico: el cliente pregunta el precio, el bot le explica que se cotiza
 por pieza, le da una referencia, y de ahí salen cantidad, tamaño y acabado. Un
@@ -163,6 +166,26 @@ en el plan gratis. Anthropic te factura en dólares.
 que ese modelo acepta (Haiku 4.5, por ejemplo, devuelve un 400 si le mandas
 `effort`). Un modelo que no esté en esa tabla se trata como el mínimo común y
 funciona igual.
+
+## Ve imágenes y sabe qué hora es
+
+**Imágenes.** Si el cliente manda su diseño, el bot lo abre y lo comenta con algo
+concreto —qué tamaño le quedaría, qué acabado le luciría— y de ahí saca los datos
+que faltan. Mandar el arte es de las señales más fuertes de que alguien va en
+serio, así que lo trata como tal y te pasa el chat.
+
+Lo que no puede abrir (PDF, .ai, notas de voz, video) no lo ignora: le llega
+avisado de que llegó un archivo, lo agradece y te lo pasa. Una imagen de más de
+3.5 MB entra por ese mismo camino.
+
+**Horario.** Al bot le llega la hora de la Ciudad de México pegada a cada mensaje
+del cliente. Fuera de horario deja de prometer respuestas "en un momento" y dice
+cuándo le contestan de verdad: «mañana a las 9», «el lunes a las 9».
+
+Va en el mensaje del cliente y no en el prompt de sistema a propósito: el prompt
+tiene que ser idéntico byte a byte entre peticiones o se cae el cacheo y el costo
+se duplica. `horarioAtencion` en `config.js` tiene que coincidir con la línea de
+`horarios`; se cambian las dos juntas.
 
 ## Coexistencia: el bot y la app en el mismo número
 

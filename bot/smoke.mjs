@@ -90,10 +90,20 @@ enviados.length = 0;
 await post(entrante("wamid.3", "sigo esperando"));
 ok("no contesta durante la pausa", enviados.length === 0);
 
-// 7. mensaje no textual
+// 7. una nota de voz no se puede abrir: se le anuncia al modelo
 enviados.length = 0;
+turnos = 1;
 await post({ entry: [{ changes: [{ value: { messages: [{ id: "wamid.4", from: "5215559999999", type: "audio" }] } }] }] });
-ok("pide texto ante un audio", enviados.some((m) => m.text?.body.includes("texto")));
+ok("el audio llega anunciado, no ignorado",
+  JSON.stringify(peticionClaude.messages.at(-1).content).includes("no puedes abrir"));
+ok("contesta de todos modos", enviados.some((m) => m.to === "5215559999999" && m.text));
+
+// 7b. un PDF llega con su nombre de archivo
+enviados.length = 0;
+turnos = 1;
+await post({ entry: [{ changes: [{ value: { messages: [{ id: "wamid.4b", from: "5215559999999", type: "document", document: { id: "med.1", filename: "gatito.pdf" } }] } }] }] });
+ok("el PDF llega con su nombre",
+  JSON.stringify(peticionClaude.messages.at(-1).content).includes("gatito.pdf"));
 
 // 8. eventos que no son mensajes
 enviados.length = 0;
@@ -153,3 +163,48 @@ ok("sin avisos, solo le escribe al cliente",
   enviados.filter((m) => m.text).every((m) => m.to === "5215553333333"));
 ok("sin avisos, el cliente sí recibe respuesta",
   enviados.some((m) => m.to === "5215553333333" && m.text));
+
+
+// 12. una imagen sí se abre y se le enseña al modelo
+const PIXEL = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==";
+const realFetch = globalThis.fetch;
+globalThis.fetch = async (url, init) => {
+  const u = String(url);
+  if (u.includes("lookaside.fb")) {
+    return new Response(Buffer.from(PIXEL, "base64"), { status: 200 });
+  }
+  if (u.includes("/med.foto")) {
+    return new Response(JSON.stringify({ url: "https://lookaside.fb/med.foto/bin", mime_type: "image/png", file_size: 95 }), { status: 200 });
+  }
+  return realFetch(url, init);
+};
+
+enviados.length = 0;
+turnos = 1;
+await post({ entry: [{ changes: [{ value: { messages: [{ id: "wamid.11", from: "5215554444444", type: "image", image: { id: "med.foto", caption: "así lo quiero" } }] } }] }] });
+
+const ultimo = peticionClaude.messages.at(-1).content;
+ok("la imagen se le manda al modelo",
+  Array.isArray(ultimo) && ultimo[0]?.type === "image" && ultimo[0].source.data === PIXEL);
+ok("el pie de foto va junto", JSON.stringify(ultimo).includes("así lo quiero"));
+ok("el modelo la ve como png", ultimo[0]?.source?.media_type === "image/png");
+ok("contesta a la imagen", enviados.some((m) => m.to === "5215554444444" && m.text));
+
+// 13. la hora se le pasa en el mensaje, no en el prompt de sistema
+ok("el reloj viaja con el cliente", /\[(lunes|martes|miércoles|jueves|viernes|sábado|domingo) \d\d:\d\d/.test(JSON.stringify(ultimo)));
+ok("el prompt de sistema no trae la hora",
+  !/\d\d:\d\d,\s+estamos/.test(peticionClaude.system[0].text));
+
+// 14. una imagen demasiado pesada no se abre: se trata como archivo
+const antesDeGrande = globalThis.fetch;
+globalThis.fetch = async (url, init) => {
+  if (String(url).includes("/med.grande")) {
+    return new Response(JSON.stringify({ url: "https://lookaside.fb/x", mime_type: "image/png", file_size: 9e6 }), { status: 200 });
+  }
+  return antesDeGrande(url, init);
+};
+turnos = 1;
+await post({ entry: [{ changes: [{ value: { messages: [{ id: "wamid.12", from: "5215556666666", type: "image", image: { id: "med.grande" } }] } }] }] });
+const grande = peticionClaude.messages.at(-1).content;
+ok("la imagen pesada no se manda", !JSON.stringify(grande).includes('"type":"image"'));
+ok("pero sí se le anuncia al modelo", JSON.stringify(grande).includes("no puedes abrir"));

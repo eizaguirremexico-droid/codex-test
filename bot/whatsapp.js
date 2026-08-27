@@ -61,6 +61,32 @@ export const firmaValida = (crudo, cabecera) => {
   return a.length === b.length && crypto.timingSafeEqual(a, b);
 };
 
+// Formatos que el modelo puede ver. Lo que llegue en otro formato se trata como
+// archivo suelto: no se abre, se le avisa al modelo que llegó y él escala.
+const VISIBLES = ["image/jpeg", "image/png", "image/gif", "image/webp"];
+const TOPE_BYTES = 3.5 * 1024 * 1024;
+
+// Bajar una imagen son dos viajes: primero Meta da una URL temporal, luego se
+// descarga con el mismo token. Devuelve null si no se puede mostrar al modelo.
+export const descargarImagen = async (mediaId) => {
+  const meta = await fetch(`https://graph.facebook.com/${VERSION}/${mediaId}`, {
+    headers: { Authorization: `Bearer ${process.env.WHATSAPP_TOKEN}` },
+  });
+  if (!meta.ok) throw new Error(`WhatsApp media ${meta.status}: ${await meta.text()}`);
+  const { url, mime_type, file_size } = await meta.json();
+
+  if (!VISIBLES.includes(mime_type)) return null;
+  if (file_size > TOPE_BYTES) return null;
+
+  const bin = await fetch(url, {
+    headers: { Authorization: `Bearer ${process.env.WHATSAPP_TOKEN}` },
+  });
+  if (!bin.ok) throw new Error(`WhatsApp media descarga ${bin.status}`);
+
+  const datos = Buffer.from(await bin.arrayBuffer()).toString("base64");
+  return { mime: mime_type, datos };
+};
+
 // En coexistencia, lo que el dueño escribe a mano desde la app de WhatsApp
 // Business llega aquí como eco. Es la señal más limpia de "ya entró un humano".
 // En un eco, `from` es el número del negocio y `to` el del cliente.
@@ -79,7 +105,17 @@ export const extraerMensaje = (payload) => {
     id: mensaje.id,
     de: mensaje.from,
     tipo: mensaje.type,
-    texto: mensaje.text?.body ?? mensaje.button?.text ?? mensaje.interactive?.list_reply?.title ?? "",
+    texto:
+      mensaje.text?.body ??
+      mensaje.image?.caption ??
+      mensaje.document?.caption ??
+      mensaje.video?.caption ??
+      mensaje.button?.text ??
+      mensaje.interactive?.list_reply?.title ??
+      "",
+    // El id del archivo, cuando viene uno. Solo las imágenes se abren.
+    media: mensaje.image?.id ?? null,
+    archivo: mensaje.document?.filename ?? null,
     nombre: valor?.contacts?.[0]?.profile?.name ?? null,
   };
 };

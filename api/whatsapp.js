@@ -1,7 +1,7 @@
 import { responder } from "../bot/agente.js";
 import * as store from "../bot/store.js";
 import { escalamiento } from "../bot/config.js";
-import { acusarRecibo, enviar, extraerEco, extraerMensaje, firmaValida } from "../bot/whatsapp.js";
+import { acusarRecibo, descargarImagen, enviar, extraerEco, extraerMensaje, firmaValida } from "../bot/whatsapp.js";
 
 // Meta llama esto una sola vez, al dar de alta el webhook en el panel.
 export function GET(request) {
@@ -63,14 +63,30 @@ const atender = async (mensaje) => {
     console.error("no se pudo marcar como leído:", error.message);
   }
 
-  if (mensaje.tipo !== "text" || !mensaje.texto.trim()) {
-    await responderAlCliente(mensaje.de, "Por ahora solo puedo leer mensajes de texto. ¿Me lo escribes?");
-    return;
+  // Las imágenes se abren y se le enseñan al modelo. Lo demás (PDF, audio,
+  // video, sticker) solo se anuncia: el prompt le dice que eso se escala.
+  let imagen = null;
+  let texto = mensaje.texto.trim();
+
+  if (mensaje.media) {
+    try {
+      imagen = await descargarImagen(mensaje.media);
+    } catch (error) {
+      console.error("no se pudo bajar la imagen:", error.message);
+    }
   }
+
+  if (!imagen && mensaje.tipo !== "text") {
+    const que = mensaje.archivo ? `el archivo "${mensaje.archivo}"` : `algo de tipo ${mensaje.tipo}`;
+    texto = `[el cliente mandó ${que}, que no puedes abrir]${texto ? ` Escribió: ${texto}` : ""}`;
+  }
+
+  if (!imagen && !texto) return;
 
   const { respuesta } = await responder({
     telefono: mensaje.de,
-    texto: mensaje.texto.trim(),
+    texto,
+    imagen,
     nombre: mensaje.nombre,
   });
 

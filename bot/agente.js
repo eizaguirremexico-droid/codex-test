@@ -1,6 +1,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { negocio, calificacion, escalamiento, modelo, capacidadesDelModelo } from "./config.js";
 import { sistema, palabraDeEscape } from "./prompt.js";
+import { contexto as contextoHorario } from "./horario.mjs";
 import * as store from "./store.js";
 import { enviar } from "./whatsapp.js";
 
@@ -94,7 +95,7 @@ const ejecutar = async (nombre, entrada, contexto) => {
   return "Esa herramienta no existe.";
 };
 
-export const responder = async ({ telefono, texto, nombre }) => {
+export const responder = async ({ telefono, texto, nombre, imagen = null }) => {
   const clave = `wa:hist:${telefono}`;
   const historial = (await store.get(clave)) ?? [];
   const contexto = { telefono, escalado: false };
@@ -108,8 +109,19 @@ export const responder = async ({ telefono, texto, nombre }) => {
     return { respuesta: escalamiento.mensajeDeTransferencia, escalado: true, uso };
   }
 
-  const primerContacto = historial.length === 0 && nombre ? `[El contacto se llama ${nombre}]\n` : "";
-  const mensajes = [...historial, { role: "user", content: `${primerContacto}${texto}` }];
+  // El reloj va en el mensaje del cliente, nunca en el prompt de sistema: ese
+  // tiene que ser idéntico byte a byte entre peticiones o se cae el cacheo.
+  const encabezado =
+    contextoHorario() + (historial.length === 0 && nombre ? `\n[El contacto se llama ${nombre}]` : "");
+
+  const contenido = imagen
+    ? [
+        { type: "image", source: { type: "base64", media_type: imagen.mime, data: imagen.datos } },
+        { type: "text", text: `${encabezado}\n${texto || "[mandó esta imagen, sin texto]"}` },
+      ]
+    : `${encabezado}\n${texto}`;
+
+  const mensajes = [...historial, { role: "user", content: contenido }];
 
   let respuesta = "";
 
@@ -173,7 +185,7 @@ export const responder = async ({ telefono, texto, nombre }) => {
   // siguiente turno y sí gastan contexto en cada mensaje que llegue.
   const nuevo = [
     ...historial,
-    { role: "user", content: texto },
+    { role: "user", content: imagen ? `[mandó una imagen] ${texto}`.trim() : texto },
     { role: "assistant", content: respuesta },
   ].slice(-modelo.memoria);
 

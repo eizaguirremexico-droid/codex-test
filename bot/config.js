@@ -23,6 +23,15 @@ export const negocio = {
 
   horarios: "Lunes a viernes de 9:00 a 18:00. Sábados y domingos cerrado.",
 
+  // Lo mismo, pero en números, para que el bot sepa si ahorita están abiertos y
+  // pueda decir cuándo le contestan de verdad. Debe coincidir con la línea de arriba.
+  horarioAtencion: {
+    dias: [1, 2, 3, 4, 5], // 0 domingo … 6 sábado
+    abre: 9,
+    cierra: 18,
+    zona: "America/Mexico_City",
+  },
+
   precios: [
     "Se cotiza POR PIEZA, no hay lista de precios fija. Esto es lo que casi nadie sabe y es lo primero que hay que explicar.",
     "El precio depende de tres cosas: cuántas piezas, de qué tamaño en centímetros, y qué acabado.",
