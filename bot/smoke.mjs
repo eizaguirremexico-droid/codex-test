@@ -32,7 +32,7 @@ globalThis.fetch = async (url, init) => {
   return real(url, init);
 };
 
-const { escalamiento } = await import("./config.js");
+const { escalamiento, modelo, capacidadesDelModelo } = await import("./config.js");
 escalamiento.whatsappDueno = "5215550000000"; // el placeholder trae "X" y el guardia lo bloquea
 
 const { GET, POST } = await import("../api/whatsapp.js");
@@ -100,3 +100,16 @@ ok("pide texto ante un audio", enviados.some((m) => m.text?.body.includes("texto
 enviados.length = 0;
 r = await post({ entry: [{ changes: [{ value: { statuses: [{ id: "wamid.1", status: "delivered" }] } }] }] });
 ok("ignora los acuses de entrega", r.status === 200 && enviados.length === 0);
+
+// 9. cambiar de modelo desde el config no debe romper la petición
+enviados.length = 0;
+modelo.id = "claude-haiku-4-5";
+capacidadesDelModelo.esfuerzo = false;
+capacidadesDelModelo.respaldoPorRechazo = false;
+turnos = 1; // salta la vuelta de herramienta, solo queremos ver la petición
+await post(entrante("wamid.5", "a qué hora abren?", "5215557777777"));
+ok("con Haiku usa el modelo nuevo", peticionClaude.model === "claude-haiku-4-5");
+ok("con Haiku omite el esfuerzo", peticionClaude.output_config === undefined);
+ok("con Haiku omite el fallback", peticionClaude.fallbacks === undefined);
+ok("con Haiku no manda la beta", !cabecerasClaude.get("anthropic-beta")?.includes("server-side-fallback"));
+ok("con Haiku sigue contestando", enviados.some((m) => m.text?.body.includes("cotizo")));

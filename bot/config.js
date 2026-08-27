@@ -70,14 +70,31 @@ export const escalamiento = {
 };
 
 export const modelo = {
-  // Claude Opus 5. Para bajar costo: "claude-haiku-4-5" (~5x más barato, suficiente
-  // para preguntas frecuentes) o "claude-sonnet-5" a la mitad de camino.
+  // Claude Opus 5. Alternativas: "claude-sonnet-5" (~2.5x más barato) o
+  // "claude-haiku-4-5" (~6.6x más barato, suficiente para preguntas frecuentes).
+  // Cambia solo esta línea: lo demás se ajusta al modelo que elijas.
   id: "claude-opus-5",
 
-  // "low" es lo correcto para un bot de WhatsApp: responde rápido y gasta poco.
-  // Súbelo a "medium" si notas que se equivoca calificando.
+  // Cuánto piensa antes de responder. "low" es lo correcto para WhatsApp:
+  // rápido y barato. Súbelo a "medium" si notas que califica mal.
+  // Los modelos que no razonan (Haiku 4.5) lo ignoran.
   esfuerzo: "low",
 
   // Cuántos mensajes de la conversación recuerda.
   memoria: 20,
+};
+
+// No todos los modelos aceptan los mismos parámetros. Mandarle `effort` a
+// Haiku 4.5 devuelve un 400, así que aquí queda registrado qué acepta cada uno
+// y el agente arma la petición en consecuencia.
+const capacidades = {
+  "claude-opus-5": { esfuerzo: true, respaldoPorRechazo: true },
+  "claude-sonnet-5": { esfuerzo: true, respaldoPorRechazo: false },
+  "claude-haiku-4-5": { esfuerzo: false, respaldoPorRechazo: false },
+};
+
+// Un modelo desconocido se trata como el mínimo común: nada de extras.
+export const capacidadesDelModelo = capacidades[modelo.id] ?? {
+  esfuerzo: false,
+  respaldoPorRechazo: false,
 };

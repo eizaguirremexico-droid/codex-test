@@ -67,19 +67,37 @@ npm install
 node bot/smoke.mjs
 ```
 
-Simula 20 casos con las dos APIs interceptadas: firma inválida, reintentos de
-Meta, llamada a herramienta, escalamiento, audios, acuses de entrega. No manda un
-solo mensaje ni gasta un token.
+Simula 25 casos con las dos APIs interceptadas: firma inválida, reintentos de
+Meta, llamada a herramienta, escalamiento, audios, acuses de entrega y el cambio
+de modelo. No manda un solo mensaje ni gasta un token.
 
 ## Costo
 
-Con Opus 5 en esfuerzo `low`, unos $0.02–0.05 USD por conversación. Cien
-conversaciones al mes ≈ $3 USD. WhatsApp no cobra las que inicia el cliente, y
-Vercel y el KV entran en el plan gratis.
+Por conversación de unos 8 mensajes, que son ~10 peticiones a la API:
 
-Si te sale caro, cambia `modelo.id` a `claude-haiku-4-5` en el config: es como 5
-veces más barato y para responder preguntas frecuentes va sobrado. Calificar
-leads sí sale mejor con Opus.
+| Modelo | Por conversación | 100 conv/mes | 500 conv/mes |
+|---|---|---|---|
+| Opus 5 | $0.12 – $0.21 | $12 – $21 | $59 – $103 |
+| Sonnet 5 | $0.05 – $0.08 | $5 – $8 | $24 – $41 |
+| Haiku 4.5 | $0.014 – $0.031 | $1.40 – $3.10 | $7 – $16 |
+
+El rango es por el cacheo del prompt: el extremo barato es con caché caliente
+(varias conversaciones seguidas dentro de la misma ventana de 5 minutos), el
+caro es cada conversación empezando en frío. A volumen bajo espera el extremo
+caro.
+
+Lo que domina el costo no es la respuesta, es el prompt de sistema: se reenvía
+íntegro en cada una de las ~10 peticiones. Un config el doble de largo cuesta
+casi el doble.
+
+WhatsApp no cobra las conversaciones que inicia el cliente; Vercel y el KV
+entran en el plan gratis.
+
+**Para cambiar de modelo** edita `modelo.id` en `bot/config.js`. Solo esa línea:
+`capacidades` en ese mismo archivo se encarga de que la petición se arme con lo
+que ese modelo acepta (Haiku 4.5, por ejemplo, devuelve un 400 si le mandas
+`effort`). Un modelo que no esté en esa tabla se trata como el mínimo común y
+funciona igual.
 
 ## Cosas que conviene saber
 

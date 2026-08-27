@@ -1,5 +1,5 @@
 import Anthropic from "@anthropic-ai/sdk";
-import { negocio, escalamiento, modelo } from "./config.js";
+import { negocio, escalamiento, modelo, capacidadesDelModelo } from "./config.js";
 import { sistema, palabraDeEscape } from "./prompt.js";
 import * as store from "./store.js";
 import { enviar } from "./whatsapp.js";
@@ -107,11 +107,14 @@ export const responder = async ({ telefono, texto, nombre }) => {
     const salida = await claude.beta.messages.create({
       model: modelo.id,
       max_tokens: 1024,
-      output_config: { effort: modelo.esfuerzo },
+      // El orden de estas claves no importa para el caché (se serializa aparte),
+      // pero el prompt de sistema sí tiene que ser idéntico byte a byte.
+      ...(capacidadesDelModelo.esfuerzo ? { output_config: { effort: modelo.esfuerzo } } : {}),
       // Si un clasificador de seguridad rechaza el turno, el servidor lo reintenta
       // en otro modelo en vez de dejar al cliente sin respuesta.
-      betas: ["server-side-fallback-2026-07-01"],
-      fallbacks: "default",
+      ...(capacidadesDelModelo.respaldoPorRechazo
+        ? { betas: ["server-side-fallback-2026-07-01"], fallbacks: "default" }
+        : {}),
       system: [{ type: "text", text: sistema, cache_control: { type: "ephemeral" } }],
       tools: herramientas,
       messages: mensajes,
