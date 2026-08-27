@@ -1,7 +1,8 @@
-# Bot de WhatsApp
+# Bot de WhatsApp — Felpuditos
 
-Contesta preguntas frecuentes, califica al cliente mientras platica con él, y te
-pasa el chat cuando vale la pena que entres tú.
+Explica que los stickers se cotizan por pieza, saca los tres datos con los que sí
+se puede cotizar (cuántas, de qué tamaño, en qué acabado) y te pasa el chat con
+todo junto para que solo mandes el precio.
 
 ```
 api/whatsapp.js       el endpoint que llama Meta
@@ -79,19 +80,20 @@ de 24 horas. Lo que se cobra son los mensajes **del cliente** — cada uno dispa
 una petición a la API. Las respuestas del bot no cuentan aparte, van dentro de esa
 misma petición.
 
-Con **Haiku 4.5**, en pesos a 18 MXN/USD:
+Con **Haiku 4.5** y el config de Felpuditos ya lleno (2,178 tokens de prompt),
+en pesos a 18 MXN/USD:
 
 | Mensajes del cliente | Por conversación | 100 al mes | 500 al mes |
 |---|---|---|---|
-| 3 — pregunta y se va | $0.08 – $0.14 | $8 – $14 | $40 – $70 |
-| 5 — duda resuelta | $0.11 – $0.21 | $11 – $21 | $55 – $105 |
-| **8 — con calificación** | **$0.17 – $0.32** | **$17 – $32** | **$85 – $162** |
-| 12 — cliente platicador | $0.27 – $0.50 | $27 – $50 | $135 – $250 |
-| 20 — se alargó | $0.49 – $0.86 | $49 – $86 | $245 – $430 |
+| 3 — pregunta y se va | $0.11 – $0.24 | $11 – $24 | $55 – $120 |
+| 5 — duda resuelta | $0.15 – $0.35 | $15 – $35 | $75 – $175 |
+| **8 — con los datos para cotizar** | **$0.21 – $0.52** | **$21 – $52** | **$107 – $260** |
+| 12 — cliente platicador | $0.33 – $0.77 | $33 – $77 | $165 – $385 |
+| 20 — se alargó | $0.56 – $1.29 | $56 – $129 | $280 – $645 |
 
-Ocho es lo típico cuando el bot además califica: dos o tres preguntas del cliente,
-dos o tres del bot averiguando, y el cierre. Un cliente que solo pregunta el
-horario se va en tres.
+Ocho es lo típico: el cliente pregunta el precio, el bot le explica que se cotiza
+por pieza, le da una referencia, y de ahí salen cantidad, tamaño y acabado. Un
+cliente que solo pregunta el mínimo se va en tres.
 
 El rango es el cacheo: barato con caché caliente (varias conversaciones dentro de
 la misma ventana de 5 minutos), caro en frío. A volumen bajo cuenta con el caro.
@@ -105,9 +107,9 @@ node bot/costo.mjs        # conversación de 8 mensajes
 node bot/costo.mjs 15     # de 15
 ```
 
-Mide el prompt real, así que el número **sube conforme llenas `config.js`**. Con
-los placeholders el prefijo es de ~1,100 tokens; un config de verdad ronda los
-2,200 y cuesta casi el doble. Corre el script cuando termines de llenarlo.
+Mide el prompt real, así que el número **sube conforme creces `config.js`**. Cada
+acabado, política o pregunta frecuente que agregues se reenvía en cada petición.
+Corre el script después de editarlo.
 
 Lo que domina no es la respuesta, es el prompt de sistema: se reenvía íntegro en
 cada petición. Ahí es donde recortar si quieres bajar el costo.
@@ -120,6 +122,19 @@ en el plan gratis. Anthropic te factura en dólares.
 que ese modelo acepta (Haiku 4.5, por ejemplo, devuelve un 400 si le mandas
 `effort`). Un modelo que no esté en esa tabla se trata como el mínimo común y
 funciona igual.
+
+## Lo que el bot NO sabe (y por eso te lo pasa)
+
+No están en `config.js`, así que ante cualquiera de estas el bot escala en vez de
+inventar. Si quieres que las conteste solo, agrégalas al config:
+
+- Facturación
+- Si diseñan desde cero o solo imprimen lo que el cliente manda
+- Devoluciones, reimpresiones o qué pasa si el sticker sale mal
+- Troqueles o formas especiales
+- Pedidos fuera de México
+- Tiempos de producción concretos (a propósito: dependen del pedido)
+- Cualquier precio que no sea una de las cuatro referencias de 100 piezas
 
 ## Cosas que conviene saber
 

@@ -23,7 +23,7 @@ globalThis.fetch = async (url, init) => {
     peticionClaude = JSON.parse(init.body);
     cabecerasClaude = new Headers(init.headers);
     const cuerpo = turnos === 1
-      ? { content: [{ type: "tool_use", id: "tu_1", name: "registrar_lead", input: { nombre: "Ana", quiere: "cotización", cuando: "esta semana", zona: "CDMX", presupuesto: "", califica: true, porque: "va en serio" } }], stop_reason: "tool_use" }
+      ? { content: [{ type: "tool_use", id: "tu_1", name: "registrar_lead", input: { nombre: "Ana", piezas: "100", tamano: "5 cm", acabado: "holográfico clásico", disenos: "2", arte: "ya lo tiene", califica: true, porque: "sabe qué quiere y pasa del mínimo" } }], stop_reason: "tool_use" }
       : { content: [{ type: "text", text: "Claro, te cotizo hoy mismo." }], stop_reason: "end_turn" };
     return new Response(JSON.stringify({ id: "msg_1", type: "message", role: "assistant", model: "claude-opus-5", usage: { input_tokens: 1, output_tokens: 1 }, ...cuerpo }), {
       status: 200, headers: { "content-type": "application/json" },
@@ -64,7 +64,9 @@ let r = await post(entrante("wamid.1", "hola, cuánto cuesta?"));
 ok("responde 200", r.status === 200);
 ok("marca leído y escribiendo", enviados.some((m) => m.status === "read" && m.typing_indicator));
 ok("contesta al cliente", enviados.some((m) => m.to === "5215551234567" && m.text?.body.includes("cotizo")));
-ok("avisa al dueño del lead calificado", enviados.some((m) => m.text?.body.includes("Lead calificado")));
+ok("avisa al dueño del pedido por cotizar", enviados.some((m) => m.text?.body.includes("Pedido por cotizar")));
+ok("el aviso trae los datos de la cotización", enviados.some((m) =>
+  ["100", "5 cm", "holográfico clásico"].every((d) => m.text?.body.includes(d))));
 
 ok("usa el modelo del config", peticionClaude.model === modelo.id);
 ok("cachea el prompt de sistema", peticionClaude.system?.[0]?.cache_control?.type === "ephemeral");

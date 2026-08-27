@@ -1,28 +1,32 @@
 import Anthropic from "@anthropic-ai/sdk";
-import { negocio, escalamiento, modelo, capacidadesDelModelo } from "./config.js";
+import { negocio, calificacion, escalamiento, modelo, capacidadesDelModelo } from "./config.js";
 import { sistema, palabraDeEscape } from "./prompt.js";
 import * as store from "./store.js";
 import { enviar } from "./whatsapp.js";
 
 const claude = new Anthropic();
 
+// El esquema de registrar_lead sale de calificacion.datos, para que agregar o
+// quitar un dato en config.js sea suficiente: ni el esquema ni el aviso que te
+// llega hay que tocarlos aquí.
+const camposDelLead = Object.fromEntries(
+  calificacion.datos.map((d) => [d.campo, { type: "string", description: d.descripcion }])
+);
+
 export const herramientas = [
   {
     name: "registrar_lead",
     description:
-      "Registra al cliente una vez que sabes qué quiere y si vale la pena que el dueño lo atienda. Úsala una sola vez por conversación, en cuanto tengas lo suficiente para decidir.",
+      "Registra al cliente en cuanto sepas qué quiere. Úsala una sola vez por conversación, sin esperar a tener todos los datos.",
     input_schema: {
       type: "object",
       properties: {
         nombre: { type: "string", description: "Nombre del cliente si lo dio, si no cadena vacía" },
-        quiere: { type: "string", description: "Qué necesita, en una frase" },
-        cuando: { type: "string", description: "Para cuándo lo necesita" },
-        zona: { type: "string", description: "Ciudad o zona donde está" },
-        presupuesto: { type: "string", description: "Lo que dijo del presupuesto, o cadena vacía" },
+        ...camposDelLead,
         califica: { type: "boolean", description: "true si cumple los criterios de calificación" },
         porque: { type: "string", description: "Una frase explicando por qué sí o por qué no" },
       },
-      required: ["nombre", "quiere", "cuando", "zona", "presupuesto", "califica", "porque"],
+      required: ["nombre", ...calificacion.datos.map((d) => d.campo), "califica", "porque"],
       additionalProperties: false,
     },
     strict: true,
@@ -30,7 +34,7 @@ export const herramientas = [
   {
     name: "pasar_a_humano",
     description:
-      "Saca la conversación del bot y avisa al dueño. Úsala cuando el cliente pida una persona, esté molesto, quiera cerrar la compra, o te pregunte algo que no está en tus datos.",
+      "Saca la conversación del bot y avisa al dueño. Úsala cuando ya tengas los datos para cotizar, cuando el cliente pida una persona, cuando quiera pagar, o cuando pregunte algo que no está en tus datos.",
     input_schema: {
       type: "object",
       properties: {
@@ -58,13 +62,13 @@ const ejecutar = async (nombre, entrada, contexto) => {
     const lead = { ...entrada, telefono: contexto.telefono, fecha: new Date().toISOString() };
     await store.guardarLead(lead);
     if (entrada.califica) {
+      const detalle = calificacion.datos
+        .map((d) => `${d.campo}: ${entrada[d.campo] || "no dijo"}`)
+        .join("\n");
       await avisarAlDueno(
-        `🟢 Lead calificado\n\n` +
-          `${entrada.nombre || "Sin nombre"} · wa.me/${contexto.telefono}\n` +
-          `Quiere: ${entrada.quiere}\n` +
-          `Cuándo: ${entrada.cuando}\n` +
-          `Zona: ${entrada.zona}\n` +
-          `Presupuesto: ${entrada.presupuesto || "no dijo"}\n\n${entrada.porque}`
+        `🟢 Pedido por cotizar\n\n` +
+          `${entrada.nombre || "Sin nombre"} · wa.me/${contexto.telefono}\n\n` +
+          `${detalle}\n\n${entrada.porque}`
       );
     }
     return "Registrado. Sigue atendiendo al cliente con normalidad.";
@@ -151,7 +155,7 @@ export const responder = async ({ telefono, texto, nombre }) => {
   if (!respuesta) {
     respuesta = contexto.escalado
       ? escalamiento.mensajeDeTransferencia
-      : `Déjame confirmarlo con el equipo y te digo. Mientras, cualquier otra duda de ${negocio.nombre} aquí ando.`;
+      : `Déjame confirmarlo y te digo. Mientras, cualquier otra duda de ${negocio.nombre} aquí ando.`;
   }
 
   // Solo texto en el historial: los bloques de herramienta no aportan nada al
