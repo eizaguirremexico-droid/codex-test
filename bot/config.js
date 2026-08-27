@@ -73,7 +73,7 @@ export const modelo = {
   // Claude Opus 5. Alternativas: "claude-sonnet-5" (~2.5x más barato) o
   // "claude-haiku-4-5" (~6.6x más barato, suficiente para preguntas frecuentes).
   // Cambia solo esta línea: lo demás se ajusta al modelo que elijas.
-  id: "claude-opus-5",
+  id: "claude-haiku-4-5",
 
   // Cuánto piensa antes de responder. "low" es lo correcto para WhatsApp:
   // rápido y barato. Súbelo a "medium" si notas que califica mal.

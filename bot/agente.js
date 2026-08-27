@@ -6,7 +6,7 @@ import { enviar } from "./whatsapp.js";
 
 const claude = new Anthropic();
 
-const herramientas = [
+export const herramientas = [
   {
     name: "registrar_lead",
     description:

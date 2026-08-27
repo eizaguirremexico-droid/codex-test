@@ -10,6 +10,7 @@ bot/prompt.js         arma las instrucciones a partir del config
 bot/agente.js         el ciclo con Claude y sus dos herramientas
 bot/whatsapp.js       enviar, firmar y leer los mensajes de Meta
 bot/store.js          memoria de cada conversación
+bot/costo.mjs         estima el gasto con tu config
 bot/smoke.mjs         prueba local, sin tocar ninguna API real
 ```
 
@@ -73,30 +74,46 @@ de modelo. No manda un solo mensaje ni gasta un token.
 
 ## Costo
 
-Por conversación de unos 8 mensajes, que son ~10 peticiones a la API. En pesos,
-presupuestados a 18 MXN por dólar (el spot del 27 de agosto de 2026 era 16.96;
-el resto es el spread que te cobra el banco por un cargo en dólares):
+**Qué cuenta como una conversación:** un cliente escribiendo dentro de la ventana
+de 24 horas. Lo que se cobra son los mensajes **del cliente** — cada uno dispara
+una petición a la API. Las respuestas del bot no cuentan aparte, van dentro de esa
+misma petición.
 
-| Modelo | Por conversación | 100 conv/mes | 500 conv/mes |
+Con **Haiku 4.5**, en pesos a 18 MXN/USD:
+
+| Mensajes del cliente | Por conversación | 100 al mes | 500 al mes |
 |---|---|---|---|
-| Opus 5 | $2.14 – $3.69 | $214 – $369 | $1,068 – $1,845 |
-| Sonnet 5 | $0.85 – $1.48 | $85 – $148 | $427 – $738 |
-| Haiku 4.5 | $0.25 – $0.56 | $25 – $56 | $124 – $279 |
+| 3 — pregunta y se va | $0.08 – $0.14 | $8 – $14 | $40 – $70 |
+| 5 — duda resuelta | $0.11 – $0.21 | $11 – $21 | $55 – $105 |
+| **8 — con calificación** | **$0.17 – $0.32** | **$17 – $32** | **$85 – $162** |
+| 12 — cliente platicador | $0.27 – $0.50 | $27 – $50 | $135 – $250 |
+| 20 — se alargó | $0.49 – $0.86 | $49 – $86 | $245 – $430 |
 
-En dólares, que es como te va a llegar el cargo: $0.12–$0.21 por conversación
-con Opus, $0.05–$0.08 con Sonnet, $0.014–$0.031 con Haiku.
+Ocho es lo típico cuando el bot además califica: dos o tres preguntas del cliente,
+dos o tres del bot averiguando, y el cierre. Un cliente que solo pregunta el
+horario se va en tres.
 
-El rango es por el cacheo del prompt: el extremo barato es con caché caliente
-(varias conversaciones seguidas dentro de la misma ventana de 5 minutos), el
-caro es cada conversación empezando en frío. A volumen bajo espera el extremo
-caro.
+El rango es el cacheo: barato con caché caliente (varias conversaciones dentro de
+la misma ventana de 5 minutos), caro en frío. A volumen bajo cuenta con el caro.
 
-Lo que domina el costo no es la respuesta, es el prompt de sistema: se reenvía
-íntegro en cada una de las ~10 peticiones. Un config el doble de largo cuesta
-casi el doble.
+Con Opus 5 multiplica por ~7; con Sonnet 5, por ~2.7.
 
-WhatsApp no cobra las conversaciones que inicia el cliente; Vercel y el KV
-entran en el plan gratis. Anthropic te factura en dólares.
+### Sácale el número a tu propio config
+
+```bash
+node bot/costo.mjs        # conversación de 8 mensajes
+node bot/costo.mjs 15     # de 15
+```
+
+Mide el prompt real, así que el número **sube conforme llenas `config.js`**. Con
+los placeholders el prefijo es de ~1,100 tokens; un config de verdad ronda los
+2,200 y cuesta casi el doble. Corre el script cuando termines de llenarlo.
+
+Lo que domina no es la respuesta, es el prompt de sistema: se reenvía íntegro en
+cada petición. Ahí es donde recortar si quieres bajar el costo.
+
+WhatsApp no cobra las conversaciones que inicia el cliente; Vercel y el KV entran
+en el plan gratis. Anthropic te factura en dólares.
 
 **Para cambiar de modelo** edita `modelo.id` en `bot/config.js`. Solo esa línea:
 `capacidades` en ese mismo archivo se encarga de que la petición se arme con lo

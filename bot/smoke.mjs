@@ -66,10 +66,7 @@ ok("marca leído y escribiendo", enviados.some((m) => m.status === "read" && m.t
 ok("contesta al cliente", enviados.some((m) => m.to === "5215551234567" && m.text?.body.includes("cotizo")));
 ok("avisa al dueño del lead calificado", enviados.some((m) => m.text?.body.includes("Lead calificado")));
 
-ok("usa el modelo del config", peticionClaude.model === "claude-opus-5");
-ok("manda el esfuerzo", peticionClaude.output_config?.effort === "low");
-ok("manda el fallback por rechazo", peticionClaude.fallbacks === "default");
-ok("manda la beta del fallback", cabecerasClaude.get("anthropic-beta")?.includes("server-side-fallback-2026-07-01"));
+ok("usa el modelo del config", peticionClaude.model === modelo.id);
 ok("cachea el prompt de sistema", peticionClaude.system?.[0]?.cache_control?.type === "ephemeral");
 ok("declara las dos herramientas", peticionClaude.tools?.length === 2);
 
@@ -101,15 +98,24 @@ enviados.length = 0;
 r = await post({ entry: [{ changes: [{ value: { statuses: [{ id: "wamid.1", status: "delivered" }] } }] }] });
 ok("ignora los acuses de entrega", r.status === 200 && enviados.length === 0);
 
-// 9. cambiar de modelo desde el config no debe romper la petición
-enviados.length = 0;
-modelo.id = "claude-haiku-4-5";
-capacidadesDelModelo.esfuerzo = false;
-capacidadesDelModelo.respaldoPorRechazo = false;
-turnos = 1; // salta la vuelta de herramienta, solo queremos ver la petición
-await post(entrante("wamid.5", "a qué hora abren?", "5215557777777"));
-ok("con Haiku usa el modelo nuevo", peticionClaude.model === "claude-haiku-4-5");
-ok("con Haiku omite el esfuerzo", peticionClaude.output_config === undefined);
-ok("con Haiku omite el fallback", peticionClaude.fallbacks === undefined);
-ok("con Haiku no manda la beta", !cabecerasClaude.get("anthropic-beta")?.includes("server-side-fallback"));
-ok("con Haiku sigue contestando", enviados.some((m) => m.text?.body.includes("cotizo")));
+// 9. la petición se arma según lo que acepte cada modelo
+const conModelo = async (id, esfuerzo, respaldo, wamid, telefono) => {
+  modelo.id = id;
+  capacidadesDelModelo.esfuerzo = esfuerzo;
+  capacidadesDelModelo.respaldoPorRechazo = respaldo;
+  enviados.length = 0;
+  turnos = 1; // salta la vuelta de herramienta: aquí solo miramos la petición
+  await post(entrante(wamid, "a qué hora abren?", telefono));
+};
+
+await conModelo("claude-opus-5", true, true, "wamid.5", "5215557777777");
+ok("Opus manda el esfuerzo", peticionClaude.output_config?.effort === "low");
+ok("Opus manda el fallback", peticionClaude.fallbacks === "default");
+ok("Opus manda la beta", cabecerasClaude.get("anthropic-beta")?.includes("server-side-fallback-2026-07-01"));
+
+await conModelo("claude-haiku-4-5", false, false, "wamid.6", "5215558888888");
+ok("Haiku usa el modelo nuevo", peticionClaude.model === "claude-haiku-4-5");
+ok("Haiku omite el esfuerzo", peticionClaude.output_config === undefined);
+ok("Haiku omite el fallback", peticionClaude.fallbacks === undefined);
+ok("Haiku no manda la beta", !cabecerasClaude.get("anthropic-beta")?.includes("server-side-fallback"));
+ok("Haiku sigue contestando", enviados.some((m) => m.text?.body.includes("cotizo")));
