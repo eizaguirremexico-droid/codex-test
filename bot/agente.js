@@ -49,7 +49,12 @@ export const herramientas = [
 ];
 
 const avisarAlDueno = async (texto) => {
-  if (!escalamiento.whatsappDueno || escalamiento.whatsappDueno.includes("X")) return;
+  // Sin número configurado el aviso va a los logs. En Vercel queda en el
+  // registro de la función; probando en local, en la terminal.
+  if (!escalamiento.whatsappDueno || escalamiento.whatsappDueno.includes("X")) {
+    console.log(`\n[aviso al dueño]\n${texto}\n`);
+    return;
+  }
   try {
     await enviar(escalamiento.whatsappDueno, texto);
   } catch (error) {
@@ -93,13 +98,14 @@ export const responder = async ({ telefono, texto, nombre }) => {
   const clave = `wa:hist:${telefono}`;
   const historial = (await store.get(clave)) ?? [];
   const contexto = { telefono, escalado: false };
+  const uso = { entrada: 0, salida: 0, cacheLeido: 0, cacheEscrito: 0 };
 
   // Si pide una persona con todas sus letras, no hay nada que pensar:
   // lo pasamos sin gastar una llamada al modelo.
   if (palabraDeEscape(texto)) {
     await ejecutar("pasar_a_humano", { motivo: "lo pidió el cliente", resumen: texto }, contexto);
     await store.set(clave, [...historial, { role: "user", content: texto }].slice(-modelo.memoria), 24 * 3600);
-    return { respuesta: escalamiento.mensajeDeTransferencia, escalado: true };
+    return { respuesta: escalamiento.mensajeDeTransferencia, escalado: true, uso };
   }
 
   const primerContacto = historial.length === 0 && nombre ? `[El contacto se llama ${nombre}]\n` : "";
@@ -123,6 +129,11 @@ export const responder = async ({ telefono, texto, nombre }) => {
       tools: herramientas,
       messages: mensajes,
     });
+
+    uso.entrada += salida.usage?.input_tokens ?? 0;
+    uso.salida += salida.usage?.output_tokens ?? 0;
+    uso.cacheLeido += salida.usage?.cache_read_input_tokens ?? 0;
+    uso.cacheEscrito += salida.usage?.cache_creation_input_tokens ?? 0;
 
     if (salida.stop_reason === "refusal") {
       await ejecutar("pasar_a_humano", { motivo: "el modelo no pudo responder", resumen: texto }, contexto);
@@ -170,5 +181,5 @@ export const responder = async ({ telefono, texto, nombre }) => {
   // Pasada esa ventana la conversación está muerta de todos modos.
   await store.set(clave, nuevo, 24 * 3600);
 
-  return { respuesta, escalado: contexto.escalado };
+  return { respuesta, escalado: contexto.escalado, uso };
 };

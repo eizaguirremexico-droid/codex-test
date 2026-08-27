@@ -12,6 +12,7 @@ bot/agente.js         el ciclo con Claude y sus dos herramientas
 bot/whatsapp.js       enviar, firmar y leer los mensajes de Meta
 bot/store.js          memoria de cada conversación
 bot/costo.mjs         estima el gasto con tu config
+bot/chat.mjs          platica con el bot desde la terminal
 bot/leads.mjs         lista los pedidos por cotizar que ha juntado
 bot/smoke.mjs         prueba local, sin tocar ninguna API real
 ```
@@ -67,6 +68,39 @@ En Meta → WhatsApp → Configuration → Webhook:
 - Callback URL: `https://TU-DOMINIO.vercel.app/api/whatsapp`
 - Verify token: el mismo `WHATSAPP_VERIFY_TOKEN`
 - Suscríbete al campo **messages**
+
+## Probarlo antes de tocar Meta
+
+Puedes platicar con el bot desde la terminal, como si fueras un cliente. No pasa
+por WhatsApp: no manda mensajes, no necesita Meta, no necesita Vercel. Es el
+mismo código que va a correr en producción.
+
+```bash
+npm install
+export ANTHROPIC_API_KEY=sk-ant-...
+node bot/chat.mjs
+```
+
+La llave se saca en [console.anthropic.com](https://console.anthropic.com) →
+API Keys → Create Key.
+
+```
+tú: cuanto cuestan?
+bot: Se cotizan por pieza, porque el precio depende de cuántas quieras,
+     de qué tamaño y en qué acabado. De referencia, 100 de 5 cm en blanco
+     brillante salen en ~$452 con IVA y envío incluidos. ¿Cuántas traes en mente?
+     $0.04 MXN en 1 mensaje
+```
+
+Va cobrando abajo lo que llevas gastado. Una plática completa cuesta centavos.
+
+Cuando el bot decide que un cliente vale la pena o que le toca a un humano, ves
+en pantalla el aviso que le llegaría al dueño. Con `/nuevo` empiezas otra
+conversación desde cero; con `/salir` terminas.
+
+**Pruébalo diciéndole cosas difíciles:** pídele un precio que no esté en las
+cuatro referencias, pídele 20 piezas, pregúntale si te hacen el diseño,
+pregúntale si facturan. Debe pasarte con un humano en todas, nunca inventar.
 
 ## Probarlo sin gastar
 
