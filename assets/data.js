@@ -26,18 +26,15 @@ const DATA = {
      Verlo solo en la de nómina hacía aparecer un faltante de $5,066.08 que
      en realidad estaba en la otra. */
   efectivo: {
-    /* DERIVADO, no medido: $6,425.00 del 21 de agosto, menos el auto de
-       septiembre ($6,209 el 26), más la quincena del 30 ($17,500), menos el
-       pago a mamá ($10,659), la Gold Card ($341) y la BBVA ($539.02).
-       Falta confirmarlo con el saldo real de las dos cuentas. */
-    ahorro: 6176.98, asOf: "2026-08-31",
-    /* El desglose por cuenta es del 20 de agosto y ya no suma el total: la
-       app lo esconde solo hasta que lleguen los dos saldos nuevos. */
+    /* MEDIDO en las dos apps el 31 de agosto. La derivación daba $6,176.98,
+       así que hay $300.50 de gasto a débito que no está registrado. */
+    ahorro: 5876.48, asOf: "2026-08-31",
     cuentas: [
-      /* La cuenta ···5910 es Mifel. Es la que paga ~10% anual a la vista, así
-         que es el mejor lugar donde puede estar el dinero parado hoy. */
-      { nombre: "Mifel ···5910",       monto: 5100.00, nota: "a la vista · ~10% anual" },
-      { nombre: "Banamex Priority",    monto: 1116.00, nota: "" }
+      { nombre: "Banamex Priority ···329", monto: 5566.48, nota: "aquí cae la nómina" },
+      /* Mifel se vació: traía $5,100 el 20 de agosto. Es la única cuenta que
+         paga rendimiento (~10% a la vista) y quedó casi en cero, mientras que
+         el dinero se juntó en la de Banamex, que no paga nada. */
+      { nombre: "Mifel ···5910",           monto: 310.00,  nota: "a la vista · ~10% anual" }
     ],
     /* Quincenas que YA están dentro del saldo de arriba. El calendario de
        ingresos las descuenta para no prometerlas otra vez como dinero por
