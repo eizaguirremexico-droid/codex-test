@@ -221,8 +221,8 @@ const DATA = {
     /* La BBVA dejó de estar en ceros. Falta identificar qué fue: su estado de
        cuenta del corte del 24 cerró en $539.02 y solo $160.02 estaban
        registrados, así que hay $379.00 más sin identificar. */
-    { fecha:"2026-08-12", concepto:"Cargo sin identificar (BBVA)",       monto:160.02, tarjeta:"bbva" },
-    { fecha:"2026-08-20", concepto:"Cargos sin identificar (BBVA)",      monto:379.00, tarjeta:"bbva" },
+    { fecha:"2026-08-12", concepto:"Cargo sin identificar (BBVA)",       monto:160.02, tarjeta:"bbva", pagado:true },
+    { fecha:"2026-08-20", concepto:"Cargos sin identificar (BBVA)",      monto:379.00, tarjeta:"bbva", pagado:true },
     /* Cargos posteriores al corte del 13 de agosto: NO entran al pago del 2
        de septiembre. Caen en el corte del 13 de septiembre y se pagan el 2
        de octubre. Son gasto de agosto aunque el dinero salga en dos meses. */
@@ -233,7 +233,7 @@ const DATA = {
     /* Segunda compra en Sendero Ixtapaluca el mismo día, pero a la Gold
        Card. Cayó ANTES del corte del 22, así que entra al estado de cuenta
        que se paga el 11 de septiembre — el adelanto del 17 no la cubre. */
-    { fecha:"2026-08-15", concepto:"330 Sendero Ixtapaluca",             monto:599.00, tarjeta:"servicios" },
+    { fecha:"2026-08-15", concepto:"330 Sendero Ixtapaluca",             monto:599.00, tarjeta:"servicios", pagado:true },
     /* Tarde en Perisur del 16 de agosto, toda a la Elite. Cae en el corte
        del 3 de septiembre y se paga el 24 de septiembre. */
     { fecha:"2026-08-16", concepto:"MixUp Perisur",                      monto:436.00,  tarjeta:"elite" },
@@ -255,13 +255,13 @@ const DATA = {
     /* Datos extra de AT&T, compra de una sola vez. NO es una segunda línea:
        el plan mensual de $360 sigue siendo el de la Joy. Por eso va aquí como
        gasto suelto y no en `vidaFija`. */
-    { fecha:"2026-08-19", concepto:"AT&T · datos extra",                 monto:179.00,  tarjeta:"servicios" },
+    { fecha:"2026-08-19", concepto:"AT&T · datos extra",                 monto:179.00,  tarjeta:"servicios", pagado:true },
     /* Los 3,640 puntos de la Gold Card se aplicaron el 21 de agosto en dos
        créditos: −$185.00 y −$179.00. Salieron a $0.10 por punto, el doble de
        lo que suele pagar Amex por reducir compras. El segundo dejó el AT&T
        de arriba en cero. Va como gasto NEGATIVO: es gasto de agosto que se
        deshizo. */
-    { fecha:"2026-08-21", concepto:"Crédito por redención de puntos",    monto:-364.00, tarjeta:"servicios" },
+    { fecha:"2026-08-21", concepto:"Crédito por redención de puntos",    monto:-364.00, tarjeta:"servicios", pagado:true },
     { fecha:"2026-08-23", concepto:"Carl's Jr Bosques Esmeralda",        monto:220.00,  tarjeta:"servicios" },
     /* Tres compras en Costco después del corte del 13: van al corte del 13 de
        septiembre y se pagan el 2 de octubre. Las dos del 26 todavía están
