@@ -318,6 +318,12 @@ const DATA = {
        4 de julio en Ticketmaster por $5,942.50 diferida a 3 meses. Van 2 de
        3 pagados (el primero se liquidó con el abono del 15 de julio), queda
        $1,980.84 que se cobra en el corte del 4 de septiembre. */
+    /* Ottocast Ai Box P3 Pro comprado el 1 de septiembre en MercadoLibre a
+       15 MSI. Entra al corte del 24 de septiembre de la BBVA, así que el
+       primer pago cae el 14 de octubre y el último el 14 de diciembre de
+       2027. Es el plazo más largo de todos sus planes. */
+    { id:"bbva-otto", tarjeta:"BBVA TC M", label:"Ottocast Ai Box",
+      montoOriginal:3772.32, monto:251.49, desde:"2026-10", hasta:"2027-12", pagados:0, total:15 },
     { id:"joy-tm",    tarjeta:"Joy Banamex", label:"Ticketmaster",
       montoOriginal:5942.50, monto:1980.84, desde:"2026-09", hasta:"2026-09", pagados:2, total:3,
       nota:"último pago · vence el 24 de septiembre" },
@@ -539,8 +545,8 @@ const DATA = {
         nota:"MSI $1,155.58 + gasolina + $1,897 de compras del 14 al 26 de agosto, que entraron después del corte del 13" },
       /* En octubre el Amazon de la Gold Card ya se acabó (último pago en
          agosto): solo queda el gym. Lo que gastes en septiembre se suma. */
-      { fecha:"2026-10-14", concepto:"BBVA TC M",                      monto:1272.13,  cat:"tarjeta", estimado:true, tarjeta:"bbva",
-        nota:"lo que quedó después del adelanto del 31 de agosto" },
+      { fecha:"2026-10-14", concepto:"BBVA TC M",                      monto:1523.62,  cat:"tarjeta", estimado:true, tarjeta:"bbva",
+        nota:"lo que quedó del adelanto del 31 de agosto + primer pago del Ottocast" },
       { fecha:"2026-10-11", concepto:"Amex Gold Servicios",            monto:1576.40,  cat:"tarjeta", estimado:true, tarjeta:"servicios",
         nota:"gym $1,283.40 + Carl's Jr $220 + Maison Kayser $73, todo del 23 al 25 de agosto · falta sumarle tu consumo de septiembre" },
       { fecha:"2026-10-15", concepto:"Mensualidad auto BYD",           monto:6209.00,  cat:"auto" },
@@ -553,7 +559,10 @@ const DATA = {
   },
 
   /* ── Horizonte de la proyección de compromisos ── */
-  horizonte: { desde: "2026-08", hasta: "2027-09" },
+  /* Llega hasta diciembre de 2027 para alcanzar el último pago del Ottocast:
+     con el horizonte en septiembre, sus tres últimas mensualidades quedaban
+     fuera del modelo. */
+  horizonte: { desde: "2026-08", hasta: "2027-12" },
 
   /* ── Hasta dónde llega el calendario de quincenas ── */
   horizonteIngresos: { hasta: "2027-12" }
