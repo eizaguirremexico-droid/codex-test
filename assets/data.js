@@ -26,11 +26,11 @@ const DATA = {
      Verlo solo en la de nómina hacía aparecer un faltante de $5,066.08 que
      en realidad estaba en la otra. */
   efectivo: {
-    /* DERIVADO, no medido: $6,425.00 del 21 de agosto menos los $6,209 de la
-       mensualidad del auto que se adelantó el 26. Falta confirmarlo con el
-       saldo real — si hubo otros movimientos entre esas dos fechas, este
-       número y el colchón salen mal. */
-    ahorro: 216.00, asOf: "2026-08-26",
+    /* DERIVADO, no medido: $6,425.00 del 21 de agosto, menos el auto de
+       septiembre ($6,209 el 26), más la quincena del 30 ($17,500), menos el
+       pago a mamá ($10,659), la Gold Card ($341) y la BBVA ($539.02).
+       Falta confirmarlo con el saldo real de las dos cuentas. */
+    ahorro: 6176.98, asOf: "2026-08-31",
     /* El desglose por cuenta es del 20 de agosto y ya no suma el total: la
        app lo esconde solo hasta que lleguen los dos saldos nuevos. */
     cuentas: [
@@ -42,7 +42,7 @@ const DATA = {
     /* Quincenas que YA están dentro del saldo de arriba. El calendario de
        ingresos las descuenta para no prometerlas otra vez como dinero por
        llegar: el 15 cayó en sábado y se depositó el viernes 14. */
-    quincenasCobradas: ["2026-08-15"],
+    quincenasCobradas: ["2026-08-15", "2026-08-30"],
     /* Compromisos que YA salieron de este saldo pero que el modelo sigue
        cobrando en el mes al que pertenecen. Se revierten para recuperar el
        saldo con el que arrancó agosto ($5,500). Adelantar el pago de una
@@ -52,9 +52,14 @@ const DATA = {
       { concepto: "Costco Banamex",        monto: 2427.70,  fecha: "2026-08-17",
         nota: "adelantada · vencía el 2 de septiembre" },
       { concepto: "Amex Gold Servicios",   monto: 2206.49,  fecha: "2026-08-17",
-        nota: "adelantada antes de su corte del 22" }
+        nota: "adelantada antes de su corte del 22" },
+      { concepto: "Pago 2 de 5 a mamá",    monto: 10659.00, fecha: "2026-08-30" },
+      { concepto: "Amex Gold Servicios",   monto: 341.00,   fecha: "2026-08-31",
+        nota: "adelantada · vencía el 11 de septiembre" },
+      { concepto: "BBVA TC M",             monto: 539.02,   fecha: "2026-08-31",
+        nota: "adelantada · vencía el 14 de septiembre" }
     ],
-    nota: "medido el 17 de agosto, ya sin los tres adelantos"
+    nota: "cierre de agosto · seis adelantos y la quincena del 30 ya adentro"
   },
 
   /* ── Dinero de un mes que ya quedó apartado en un mes anterior ──
@@ -269,7 +274,14 @@ const DATA = {
        las dos del 26 son regalos, no gasolina. No hay doble cobro. */
     { fecha:"2026-08-21", concepto:"Costco",                             monto:60.00,   tarjeta:"costco" },
     { fecha:"2026-08-26", concepto:"Regalo para Aleli (Costco)",         monto:494.00,  tarjeta:"costco" },
-    { fecha:"2026-08-26", concepto:"Regalo para Aleli (Costco)",         monto:85.00,   tarjeta:"costco" }
+    { fecha:"2026-08-26", concepto:"Regalo para Aleli (Costco)",         monto:85.00,   tarjeta:"costco" },
+    { fecha:"2026-08-25", concepto:"Facebook",                           monto:12.49,   tarjeta:"santander" },
+    { fecha:"2026-08-30", concepto:"Google",                             monto:129.00,  tarjeta:"elite" },
+    /* Diferencias entre el saldo medido el 31 de agosto y lo registrado.
+       Falta identificarlas: son los últimos cargos sin nombre del modelo. */
+    { fecha:"2026-08-30", concepto:"Cargos sin identificar (Elite)",     monto:98.56,   tarjeta:"elite" },
+    { fecha:"2026-08-30", concepto:"Cargos sin identificar (BBVA)",      monto:733.11,  tarjeta:"bbva" },
+    { fecha:"2026-08-30", concepto:"Cargos sin identificar (Costco)",    monto:129.00,  tarjeta:"costco" }
     /* El Maison Kayser de $73 del 25 de agosto se cargó y se devolvió el
        mismo día: neto cero, no se registra. */
   ],
@@ -346,10 +358,10 @@ const DATA = {
       /* Al 19 de agosto los cargos de Perisur ya se aplicaron: el saldo pasó
          de $525.00 a $4,096.70 (los $3,291.70 más $280 de La Cuchara, FaceApp
          y Maison Kayser). Ya no hay nada pendiente. */
-      tipo:"revolvente", linea:92000, disponible:83938.00, saldo:4096.70, tasa:61.48,
+      tipo:"revolvente", linea:92000, disponible:83592.00, saldo:4324.26, tasa:61.48,
       corte:3, vence:24,
       proximoPago:{ fecha:"2026-09-24", monto:7823.09, estimado:true },
-      puntos:4251,
+      puntos:1310,
       tono:"grafito" },
     { id:"servicios", alias:"Amex Gold Servicios", term:"21009", emisor:"American Express",
       /* Adelantada el 17 de agosto, antes de su corte del 22: quedó en cero.
@@ -362,15 +374,15 @@ const DATA = {
          De ese saldo solo vencen $341.00 el 11 de septiembre: el gym y el
          Carl's Jr entraron el 23, un día DESPUÉS del corte del 22, así que
          se van al estado de cuenta que se paga el 11 de octubre. */
-      tipo:"cargo", linea:null, disponible:null, saldo:1917.40, tasa:null,
+      tipo:"cargo", linea:null, disponible:null, saldo:1576.40, tasa:null,
       /* Tiene tarjeta adicional a nombre de Aleli (cuenta ...21017): su
          gasto cae en este mismo estado de cuenta. */
       adicional: "Aleli Michel Pérez Martínez",
-      corte:22, vence:11, proximoPago:{ fecha:"2026-09-11", monto:2566.35, estimado:true },
-      /* Bajaron de 4,459 a 819 el 20 de agosto: se usaron 3,640 en "reducir
-         compras con puntos". El crédito todavía no aparece en el saldo — hay
-         que ver de cuánto sale para bajar el pago del 11 de septiembre. */
-      puntos:819,
+      /* Los $341 del corte del 22 se pagaron el 31 de agosto, adelantados.
+         Lo que queda son el gym y el Carl's Jr del 23, que van al corte del
+         22 de septiembre y se pagan el 11 de octubre. */
+      corte:22, vence:11, proximoPago:{ fecha:"2026-10-11", monto:1576.40, estimado:true },
+      puntos:912,
       tono:"oro" },
     { id:"costco", alias:"Costco Banamex Visa", term:"104", emisor:"Banamex",
       /* Al 26 de agosto. El adelanto del 17 funcionó: el estado de cuenta del
@@ -378,7 +390,7 @@ const DATA = {
          El saldo de $2,473.58 son los cargos del 14 al 21; las dos compras
          del 26 ($494 y $85) siguen "en proceso" y todavía no entran ahí,
          aunque el crédito disponible ya las descontó. */
-      tipo:"revolvente", linea:50000, disponible:42873.48, saldo:2473.58, tasa:60.58,
+      tipo:"revolvente", linea:50000, disponible:42777.48, saldo:3181.58, tasa:60.58,
       /* Corte del 13 de agosto YA EMITIDO: pago para no generar intereses
          $2,427.70, mínimo $630.00, fecha límite 2 de septiembre. Ya no es
          estimación — es el estado de cuenta. Estaba modelado en $1,997.11
@@ -392,8 +404,10 @@ const DATA = {
        Vence ANTES del corte, así que cada corte se paga hasta el mes
        siguiente: 21 días de flote. */
     { id:"bbva", alias:"BBVA TC M", term:"9871", emisor:"BBVA",
-      tipo:"revolvente", linea:81300, disponible:80760.98, saldo:539.02, tasa:null,
-      corte:24, vence:14, proximoPago:{ fecha:"2026-09-14", monto:539.02 },
+      tipo:"revolvente", linea:81300, disponible:80027.87, saldo:1272.13, tasa:null,
+      /* Los $539.02 del primer corte se pagaron el 31 de agosto, adelantados.
+         Lo que queda va al corte del 24 de septiembre y se paga el 14 de octubre. */
+      corte:24, vence:14, proximoPago:{ fecha:"2026-10-14", monto:1272.13, estimado:true },
       tono:"azul" },
     /* Estado de cuenta del corte del 4 de agosto. El saldo de $1,980.84 NO es
        consumo nuevo: es el capital que falta del Ticketmaster a 3 meses. Por
@@ -403,11 +417,11 @@ const DATA = {
        al menos una compra de $300. El cargo recurrente de AT&T la exenta,
        así que no muevas el teléfono de aquí sin darle otro uso a la tarjeta. */
     { id:"joy", alias:"Joy Banamex", term:"331", emisor:"Banamex",
-      tipo:"revolvente", linea:41000, disponible:39019.16, saldo:1980.84, tasa:62.98,
+      tipo:"revolvente", linea:41000, disponible:38659.16, saldo:2340.84, tasa:62.98,
       corte:4, vence:24, proximoPago:{ fecha:"2026-09-24", monto:2340.84, estimado:true },
       tono:"rojo" },
     { id:"santander", alias:"Santander LikeU", term:"6240", emisor:"Santander",
-      tipo:"revolvente", linea:170400, disponible:166984, saldo:3416.00, tasa:null,
+      tipo:"revolvente", linea:238500, disponible:234471.51, saldo:4028.49, tasa:null,
       /* corte desconocido. El 31 de julio la app marcaba pago mínimo $0 y pago
          para no generar intereses $0 con límite el 3 de agosto: o sea que los
          $880 son consumo POSTERIOR al último corte y no se deben todavía —
@@ -419,7 +433,7 @@ const DATA = {
          El corte sigue sin conocerse; `corteSupuesto` asume el estándar de
          ~20 días antes del vencimiento (vence día 1 → corta día 11). */
       corte:null, corteSupuesto:11, vence:1,
-      proximoPago:{ fecha:"2026-10-01", monto:3416.00, estimado:true },
+      proximoPago:{ fecha:"2026-10-01", monto:4028.49, estimado:true },
       tono:"rojo" }
   ],
 
@@ -492,7 +506,7 @@ const DATA = {
        el 14, ya con la quincena del 15 adentro. Si la ventana empezara antes,
        el mapa volvería a sumar esa quincena y a restar la Amex que ya se
        pagó. Del 1 al 15 de agosto ya no hay nada que proyectar: pasó. */
-    desde: "2026-08-16",
+    desde: "2026-09-01",
     hasta: "2026-10-31",
     colchonMinimo: 2000,
     /* `previo` = cuánto de ese pago es deuda de ANTES de la ventana (consumo
@@ -512,10 +526,7 @@ const DATA = {
       /* La LikeU ya no paga nada el 3 de septiembre: la app confirma $0.00 con
          límite el 1 de septiembre. Todo su saldo es consumo posterior al corte
          y cae hasta el 1 de octubre. */
-      { fecha:"2026-09-14", concepto:"BBVA TC M",                      monto:539.02,   cat:"tarjeta", tarjeta:"bbva",
-        nota:"primer estado de cuenta · corte del 24 de agosto" },
-      { fecha:"2026-09-11", concepto:"Amex Gold Servicios",            monto:341.00,   cat:"tarjeta", tarjeta:"servicios",
-        nota:"estado de cuenta emitido del corte del 22 de agosto · el gym y el Carl's Jr entraron el 23 y se van a octubre" },
+      /* La BBVA y la Gold Card de septiembre se adelantaron el 31 de agosto. */
       /* El auto de septiembre ya no aparece: se pagó el 26 de agosto. */
       { fecha:"2026-09-24", concepto:"Joy Banamex",                    monto:2340.84,  cat:"tarjeta", estimado:true, tarjeta:"joy",
         nota:"último pago del Ticketmaster $1,980.84 + teléfono AT&T $360" },
@@ -525,12 +536,14 @@ const DATA = {
         nota:"ya con el reparto que hay que negociar" },
       /* Octubre sale del mismo modelo de cortes: cada pago es lo que cerró en
          el corte anterior de esa tarjeta, con los MSI que siguen vivos. */
-      { fecha:"2026-10-01", concepto:"Santander LikeU",                monto:3416.00,  cat:"tarjeta", estimado:true, tarjeta:"santander",
+      { fecha:"2026-10-01", concepto:"Santander LikeU",                monto:4028.49,  cat:"tarjeta", estimado:true, tarjeta:"santander",
         nota:"tag $1,200 + MercadoPago de tu mamá $2,036 (te lo devuelve) + Samsung $383 — más lo que le cargues de aquí al corte" },
       { fecha:"2026-10-02", concepto:"Costco Banamex",                 monto:5252.58,  cat:"tarjeta", estimado:true, tarjeta:"costco",
         nota:"MSI $1,155.58 + gasolina + $1,897 de compras del 14 al 26 de agosto, que entraron después del corte del 13" },
       /* En octubre el Amazon de la Gold Card ya se acabó (último pago en
          agosto): solo queda el gym. Lo que gastes en septiembre se suma. */
+      { fecha:"2026-10-14", concepto:"BBVA TC M",                      monto:1272.13,  cat:"tarjeta", estimado:true, tarjeta:"bbva",
+        nota:"lo que quedó después del adelanto del 31 de agosto" },
       { fecha:"2026-10-11", concepto:"Amex Gold Servicios",            monto:1576.40,  cat:"tarjeta", estimado:true, tarjeta:"servicios",
         nota:"gym $1,283.40 + Carl's Jr $220 + Maison Kayser $73, todo del 23 al 25 de agosto · falta sumarle tu consumo de septiembre" },
       { fecha:"2026-10-15", concepto:"Mensualidad auto BYD",           monto:6209.00,  cat:"auto" },

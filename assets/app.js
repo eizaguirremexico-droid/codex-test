@@ -625,7 +625,9 @@ function renderTopbar() {
    ventana no limita el gasto y tener dos cifras distintas con el mismo
    nombre solo confundía. La ventana de efectivo queda como nota al pie. */
 function renderHero() {
-  const k = MESES[0];
+  /* El mes en curso, no el primero del horizonte: al cambiar de mes la
+     portada seguía enseñando agosto con septiembre ya empezado. */
+  const k = MESES.includes(MES_HOY) ? MES_HOY : MESES[0];
   const propio = byMonth[k].libre, ya = gastadoMes(k), queda = propio - ya;
   document.getElementById("hero").innerHTML = `
     <div class="h-label">${ya > 0 ? `Te queda de ${mLabel(k, true)}` : `Para gastar en ${mLabel(k, true)}`}</div>
@@ -639,10 +641,15 @@ function renderHero() {
       mismo dinero no aparezca dos veces.
       <br><br>
       ${queda < 0
-        ? `${mLabel(k, true)} ya se pasó <b>${money(-queda)}</b> de lo que genera. Eso salió de
-           tu colchón, que queda en <b>${money(COLCHON_HOY)}</b>.`
-        : `Aparte traes un colchón de <b>${money(COLCHON_HOY)}</b>. Es de una sola vez y no se
-           repone: es para imprevistos, no para gasto diario.`}
+        ? `${mLabel(k, true)} ya se pasó <b>${money(-queda)}</b> de lo que genera.`
+        : ""}
+      ${COLCHON_HOY < 0
+        ? `Y no hay colchón: vas <b>${money(-COLCHON_HOY)}</b> abajo, o sea que ya estás
+           gastando dinero que las tarjetas todavía no te cobran. Nada rebota, pero
+           si algo se rompe no hay de dónde.`
+        : `${queda < 0 ? "Eso salió de tu colchón, que queda en" : "Aparte traes un colchón de"}
+           <b>${money(COLCHON_HOY)}</b>. Es de una sola vez y no se repone: es para
+           imprevistos, no para gasto diario.`}
     </div>`;
 }
 
