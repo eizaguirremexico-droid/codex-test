@@ -278,7 +278,11 @@ const DATA = {
        Falta identificarlas: son los últimos cargos sin nombre del modelo. */
     { fecha:"2026-08-30", concepto:"Cargos sin identificar (Elite)",     monto:98.56,   tarjeta:"elite" },
     { fecha:"2026-08-30", concepto:"Cargos sin identificar (BBVA)",      monto:733.11,  tarjeta:"bbva" },
-    { fecha:"2026-08-30", concepto:"Cargos sin identificar (Costco)",    monto:129.00,  tarjeta:"costco" }
+    { fecha:"2026-08-30", concepto:"Cargos sin identificar (Costco)",    monto:129.00,  tarjeta:"costco" },
+    /* ── septiembre ── */
+    { fecha:"2026-09-03", concepto:"Google",                             monto:119.00,  tarjeta:"elite" },
+    { fecha:"2026-09-03", concepto:"Bodega Ayotla (adicional de Aleli)", monto:236.00,  tarjeta:"servicios" },
+    { fecha:"2026-09-03", concepto:"Cargos sin identificar (Costco)",    monto:179.00,  tarjeta:"costco" }
     /* El Maison Kayser de $73 del 25 de agosto se cargó y se devolvió el
        mismo día: neto cero, no se registra. */
   ],
@@ -361,10 +365,13 @@ const DATA = {
       /* Al 19 de agosto los cargos de Perisur ya se aplicaron: el saldo pasó
          de $525.00 a $4,096.70 (los $3,291.70 más $280 de La Cuchara, FaceApp
          y Maison Kayser). Ya no hay nada pendiente. */
-      tipo:"revolvente", linea:92000, disponible:83592.00, saldo:4324.26, tasa:61.48,
-      corte:3, vence:24,
-      proximoPago:{ fecha:"2026-09-24", monto:7823.09, estimado:true },
-      puntos:1310,
+      tipo:"revolvente", linea:92000, disponible:83463.00, saldo:7420.93, tasa:61.48,
+      /* Estado de cuenta del corte del 3 de septiembre, ya emitido: $7,420.93
+         con fecha límite el 23, no el 24 (mínimo $1,150). Salió $402.16 abajo
+         de lo proyectado porque ChatGPT ya no entró. */
+      corte:3, vence:23,
+      proximoPago:{ fecha:"2026-09-23", monto:7420.93 },
+      puntos:1318,
       tono:"grafito" },
     { id:"servicios", alias:"Amex Gold Servicios", term:"21009", emisor:"American Express",
       /* Adelantada el 17 de agosto, antes de su corte del 22: quedó en cero.
@@ -393,7 +400,7 @@ const DATA = {
          El saldo de $2,473.58 son los cargos del 14 al 21; las dos compras
          del 26 ($494 y $85) siguen "en proceso" y todavía no entran ahí,
          aunque el crédito disponible ya las descontó. */
-      tipo:"revolvente", linea:50000, disponible:42777.48, saldo:3181.58, tasa:60.58,
+      tipo:"revolvente", linea:50000, disponible:42535.48, saldo:3360.58, tasa:60.58,
       /* Corte del 13 de agosto YA EMITIDO: pago para no generar intereses
          $2,427.70, mínimo $630.00, fecha límite 2 de septiembre. Ya no es
          estimación — es el estado de cuenta. Estaba modelado en $1,997.11
@@ -533,8 +540,8 @@ const DATA = {
       /* El auto de septiembre ya no aparece: se pagó el 26 de agosto. */
       { fecha:"2026-09-24", concepto:"Joy Banamex",                    monto:2340.84,  cat:"tarjeta", estimado:true, tarjeta:"joy",
         nota:"último pago del Ticketmaster $1,980.84 + teléfono AT&T $360" },
-      { fecha:"2026-09-24", concepto:"Amex Gold Elite",                monto:7823.09,  cat:"tarjeta", estimado:true, tarjeta:"elite",
-        nota:"MSI julio 3/3 + Alo Yoga 2/3 + suscripciones + Headway + Perisur $3,291.70 + $280 del 18 y 19 de agosto" },
+      { fecha:"2026-09-23", concepto:"Amex Gold Elite",                monto:7420.93,  cat:"tarjeta", tarjeta:"elite",
+        nota:"estado de cuenta emitido del corte del 3 de septiembre · mínimo $1,150" },
       { fecha:"2026-09-30", concepto:"Pago 3 de 5 a mamá",             monto:7106.00,  cat:"mama",
         nota:"ya con el reparto que hay que negociar" },
       /* Octubre sale del mismo modelo de cortes: cada pago es lo que cerró en
