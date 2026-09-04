@@ -431,7 +431,9 @@ const DATA = {
       corte:4, vence:24, proximoPago:{ fecha:"2026-09-24", monto:2340.84, estimado:true },
       tono:"rojo" },
     { id:"santander", alias:"Santander LikeU", term:"6240", emisor:"Santander",
-      tipo:"revolvente", linea:238500, disponible:234471.51, saldo:4028.49, tasa:null,
+      /* Al 4 de septiembre. El alza desde $4,028.49 es la recarga del tag del
+         2 de septiembre, que ya va como gasto fijo — no se registra aparte. */
+      tipo:"revolvente", linea:238500, disponible:233871.51, saldo:4628.49, tasa:null,
       /* corte desconocido. El 31 de julio la app marcaba pago mínimo $0 y pago
          para no generar intereses $0 con límite el 3 de agosto: o sea que los
          $880 son consumo POSTERIOR al último corte y no se deben todavía —
