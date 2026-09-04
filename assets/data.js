@@ -131,12 +131,14 @@ const DATA = {
       { nombre: "A", dias: [1, 4, 5] },   // lunes, jueves, viernes
       { nombre: "B", dias: [2, 4] }       // martes, jueves
     ],
-    /* El viaje cuesta 156 y la comisión es de 10 pesos por recarga, sin
-       importar el monto. El saldo NO se pierde: se acumula. Por eso el
-       costo real depende de cada cuánto recargas, no de cuántos días vas.
-       Recargando 2,000 la comisión sale en 0.5% en vez del 5% que costaba
-       recargar de 200 en 200. */
-    costoCaseta: 156,
+    /* CONFIRMADO el 4 de septiembre: los $156 son SOLO LA IDA. Un día de
+       oficina son $312 de casetas, no $156 — el modelo llevaba semanas
+       contando la mitad. Se nota en las recargas: con $156 salían dos en
+       agosto y tú hiciste tres, más otra el 2 de septiembre.
+       La comisión son 10 pesos por recarga, sin importar el monto, y el
+       saldo NO se pierde: se acumula. Por eso el costo real depende de cada
+       cuánto recargas, no solo de cuántos días vas. */
+    costoCaseta: 312,
     montoRecarga: 600,
     comision: 10,
     /* Saldo REAL del tag, medido. Todas las simulaciones arrancan de aquí:
