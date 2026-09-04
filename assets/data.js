@@ -209,12 +209,15 @@ const DATA = {
          · $1,200 de PayPal*PASESERVICI son recargas del tag (13 y 19 de
            agosto). El tag ya va como gasto fijo en `vidaFija`, así que aquí
            NO se cuentan — se contaban dos veces.
-         · $2,036.00 de MercadoPago del 15 de agosto los pidió su mamá y los
-           paga ella. No es gasto suyo: es un préstamo que se recupera. Sigue
-           dentro del saldo de la tarjeta y del pago del 1 de octubre, porque
-           el dinero sí sale de su cuenta ese día.
+         · $2,036.00 de MercadoPago del 15 de agosto los pidió su mamá, pero
+           el 4 de septiembre dijo que no los va a devolver. Ya no es
+           préstamo: cuenta como gasto de agosto.
        Lo único suyo es el Samsung. */
     { fecha:"2026-08-12", concepto:"MercadoPago · Samsung",              monto:383.01, tarjeta:"santander" },
+    /* El MercadoPago del 15 de agosto que pidió su mamá: dijo el 4 de
+       septiembre que no lo va a devolver. Deja de ser préstamo y pasa a ser
+       gasto suyo, del mes en que se hizo. */
+    { fecha:"2026-08-15", concepto:"MercadoPago (lo pidió tu mamá)",      monto:2036.00, tarjeta:"santander" },
     /* Cargo de la tarjeta adicional de Aleli — cae en el mismo estado de
        cuenta de la Gold Card. */
     { fecha:"2026-08-11", concepto:"TikTok Shop (adicional de Aleli)",   monto:185.00, tarjeta:"servicios", pagado:true },
@@ -549,7 +552,7 @@ const DATA = {
       /* Octubre sale del mismo modelo de cortes: cada pago es lo que cerró en
          el corte anterior de esa tarjeta, con los MSI que siguen vivos. */
       { fecha:"2026-10-01", concepto:"Santander LikeU",                monto:4028.49,  cat:"tarjeta", estimado:true, tarjeta:"santander",
-        nota:"tag $1,200 + MercadoPago de tu mamá $2,036 (te lo devuelve) + Samsung $383 — más lo que le cargues de aquí al corte" },
+        nota:"tag + MercadoPago de $2,036 que pidió tu mamá y no devuelve + Samsung $383 — más lo que le cargues de aquí al corte" },
       { fecha:"2026-10-02", concepto:"Costco Banamex",                 monto:5252.58,  cat:"tarjeta", estimado:true, tarjeta:"costco",
         nota:"MSI $1,155.58 + gasolina + $1,897 de compras del 14 al 26 de agosto, que entraron después del corte del 13" },
       /* En octubre el Amazon de la Gold Card ya se acabó (último pago en
