@@ -161,8 +161,13 @@ function trayectoEntre(desde, hasta) {
 /* Desglose del efectivo por cuenta. `ahorro` manda; esto solo lo explica.
    Si las cuentas no suman, el desglose está viejo y no se muestra: mejor
    un número sin desglose que un desglose que no cuadra. */
+/* Una cuenta con `fuera` tiene dinero que no es del todo suyo (la de Mercado
+   Pago mezcla lo de él con lo de Felpuditos). Se enseña, pero no suma al
+   colchón ni entra en la comprobación de arriba: prometer como gastable un
+   dinero que a lo mejor es del negocio es justo el error que no se vale. */
+const CUENTAS_FUERA = (DATA.efectivo.cuentas || []).filter(c => c.fuera);
 const CUENTAS = (() => {
-  const cs = DATA.efectivo.cuentas || [];
+  const cs = (DATA.efectivo.cuentas || []).filter(c => !c.fuera);
   if (cs.length < 2) return cs;
   return Math.abs(sum(cs.map(c => c.monto)) - DATA.efectivo.ahorro) < 0.01 ? cs : [];
 })();
@@ -679,6 +684,13 @@ function renderEfectivo() {
           ${c.nota ? `<div class="row-d">${c.nota}</div>` : ""}</div>
         <div class="row-amt">${money2(c.monto)}</div>
       </div>`).join("") : ""}
+    ${CUENTAS_FUERA.map(c => `
+      <div class="row sub-row fuera">
+        <div class="row-ic">🏦</div>
+        <div class="row-main"><div class="row-t">${c.nombre} <span class="tag-fuera">fuera del colchón</span></div>
+          ${c.nota ? `<div class="row-d">${c.nota}</div>` : ""}</div>
+        <div class="row-amt">${money2(c.monto)}</div>
+      </div>`).join("")}
     ${/* Estas dos filas traían la fecha escrita a mano ("el 30 de julio") y
           se quedaban en $0.00 cuando la ventana ya no las contenía. Ahora
           salen solo si hay algo que mostrar, y con su fecha real. */""}
