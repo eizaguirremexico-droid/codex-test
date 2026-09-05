@@ -336,6 +336,13 @@ const DATA = {
     { id:"joy-tm",    tarjeta:"Joy Banamex", label:"Ticketmaster",
       montoOriginal:5942.50, monto:1980.84, desde:"2026-09", hasta:"2026-09", pagados:2, total:3,
       nota:"último pago · vence el 24 de septiembre" },
+    /* Laminadora en frío comprada el 5 de septiembre con la tarjeta Mercado
+       Pago recién emitida. Precio de lista $2,375.46, con promo de MeLi
+       $2,081.33, y la tarjeta bajó $300 más (20% con tope): pagó $1,781.33.
+       Entra al corte del 21 de septiembre, así que el primer pago cae el 1 de
+       octubre y el último el 1 de enero. La app marca $445.34 mensuales. */
+    { id:"mp-lam",    tarjeta:"Mercado Pago", label:"Laminadora en frío",
+      montoOriginal:1781.33, monto:445.34, desde:"2026-10", hasta:"2027-01", pagados:0, total:4 },
     { id:"serv-gym",  tarjeta:"Amex Gold Servicios", label:"Gym FITSI (anualidad)",
       montoOriginal:15400.80, monto:1283.40, desde:"2026-08", hasta:"2026-12", pagados:7, total:12,
       nota:"saldo pendiente $6,417.00 · renueva en enero 2027" }
@@ -451,7 +458,16 @@ const DATA = {
          ~20 días antes del vencimiento (vence día 1 → corta día 11). */
       corte:null, corteSupuesto:11, vence:1,
       proximoPago:{ fecha:"2026-10-01", monto:4028.49, estimado:true },
-      tono:"rojo" }
+      tono:"rojo" },
+    /* Emitida el 5 de septiembre de 2026 al comprar la laminadora. Sin
+       anualidad, 2% de cashback en MercadoLibre y supermercados. Su único
+       saldo son los 4 MSI de la laminadora; no traer nada más aquí sin
+       decidirlo antes. Los últimos 4 dígitos todavía no se conocen. */
+    { id:"mercadopago", alias:"Mercado Pago", term:null, emisor:"Mercado Lending",
+      tipo:"revolvente", linea:18900, disponible:17118.67, saldo:1781.33, tasa:null,
+      corte:21, vence:1,
+      proximoPago:{ fecha:"2026-10-01", monto:445.34 },
+      tono:"indigo" }
   ],
 
   /* ── Meta de mudanza ── */

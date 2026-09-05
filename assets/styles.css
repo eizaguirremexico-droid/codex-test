@@ -262,6 +262,7 @@ button { font: inherit; }
 .card-face.oro     { background: linear-gradient(140deg, #a8873f 0%, #5f4a1f 100%); }
 .card-face.azul    { background: linear-gradient(140deg, #2f5ea8 0%, #16305c 100%); }
 .card-face.rojo    { background: linear-gradient(140deg, #a83a3a 0%, #5e1d1d 100%); }
+.card-face.indigo  { background: linear-gradient(140deg, #4a5fd0 0%, #131a3c 100%); }
 .cf-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
 .cf-name { font-size: 14px; font-weight: 600; }
 .cf-em { font-size: 11.5px; color: rgba(255,255,255,.6); margin-top: 1px; }
