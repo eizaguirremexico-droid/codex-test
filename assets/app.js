@@ -1703,7 +1703,7 @@ function renderCardFaces() {
     return `<div class="card-face ${t.tono}">
       <div class="cf-top">
         <div><div class="cf-name">${t.alias}</div><div class="cf-em">${t.emisor}</div></div>
-        <div class="cf-term">•••• ${t.term}</div>
+        <div class="cf-term">${t.term ? `•••• ${t.term}` : "recién emitida"}</div>
       </div>
       <div>
         <div class="cf-lbl">Saldo actual</div>
@@ -1746,7 +1746,7 @@ function renderPagosTarjetas() {
       return `<div class="row">
         <div class="row-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="5" width="19" height="14" rx="3"/><path d="M2.5 10h19"/></svg></div>
         <div class="row-main">
-          <div class="row-t">${t.alias} ·••• ${t.term}</div>
+          <div class="row-t">${t.alias}${t.term ? ` ·••• ${t.term}` : ""}</div>
           <div class="row-d">${ciclo}${t.tasa ? ` · ${t.tasa}% anual` : ""}</div>
         </div>
         <div class="row-amt">${money2(p.monto)}
@@ -1755,7 +1755,7 @@ function renderPagosTarjetas() {
     }).join("")}
     ${alCorriente.map(t => `<div class="row">
       <div class="row-ic" style="background:var(--tint-3-bg);color:var(--tint-3-ink)">✓</div>
-      <div class="row-main"><div class="row-t">${t.alias} ·••• ${t.term}</div>
+      <div class="row-main"><div class="row-t">${t.alias}${t.term ? ` ·••• ${t.term}` : ""}</div>
         <div class="row-d">sin saldo por pagar</div></div>
       <div class="row-amt soft">$0.00</div>
     </div>`).join("")}`;
