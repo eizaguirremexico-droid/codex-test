@@ -28,7 +28,7 @@ const DATA = {
   efectivo: {
     /* MEDIDO en las dos apps el 31 de agosto. La derivación daba $6,176.98,
        así que hay $300.50 de gasto a débito que no está registrado. */
-    ahorro: 7181.97, asOf: "2026-09-05",
+    ahorro: 5876.48, asOf: "2026-08-31",
     cuentas: [
       { nombre: "Banamex Priority ···329", monto: 5566.48, nota: "aquí cae la nómina" },
       /* Mifel se vació: traía $5,100 el 20 de agosto. Es la única cuenta que
@@ -38,9 +38,12 @@ const DATA = {
       /* Tercera cuenta, medida el 5 de septiembre. Rinde 12% a la vista —
          más que Mifel y mucho más que Banamex. De aquí salió el adelanto de
          $445.34 de la laminadora, así que el saldo ya está neto de ese pago.
-         PENDIENTE DE CONFIRMAR: que este dinero sea suyo y no de Felpuditos.
-         Si es del negocio hay que sacarlo del colchón. */
-      { nombre: "Mercado Pago",            monto: 1305.49, nota: "a la vista · 12% anual" }
+         Confirmó que el dinero está MEZCLADO: una parte es suya y otra es de
+         Felpuditos, sin saber cuál es cuál. Por eso va con `fuera`: se ve en
+         el desglose pero no suma al colchón. En cuanto separe las dos bolsas
+         (un Apartado de Mercado Pago basta), su parte se pasa a `ahorro`. */
+      { nombre: "Mercado Pago",            monto: 1305.49, fuera: true,
+        nota: "a la vista · 12% anual · mezclado con dinero de Felpuditos" }
     ],
     /* Quincenas que YA están dentro del saldo de arriba. El calendario de
        ingresos las descuenta para no prometerlas otra vez como dinero por
