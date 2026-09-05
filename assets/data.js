@@ -28,13 +28,19 @@ const DATA = {
   efectivo: {
     /* MEDIDO en las dos apps el 31 de agosto. La derivación daba $6,176.98,
        así que hay $300.50 de gasto a débito que no está registrado. */
-    ahorro: 5876.48, asOf: "2026-08-31",
+    ahorro: 7181.97, asOf: "2026-09-05",
     cuentas: [
       { nombre: "Banamex Priority ···329", monto: 5566.48, nota: "aquí cae la nómina" },
       /* Mifel se vació: traía $5,100 el 20 de agosto. Es la única cuenta que
          paga rendimiento (~10% a la vista) y quedó casi en cero, mientras que
          el dinero se juntó en la de Banamex, que no paga nada. */
-      { nombre: "Mifel ···5910",           monto: 310.00,  nota: "a la vista · ~10% anual" }
+      { nombre: "Mifel ···5910",           monto: 310.00,  nota: "a la vista · ~10% anual" },
+      /* Tercera cuenta, medida el 5 de septiembre. Rinde 12% a la vista —
+         más que Mifel y mucho más que Banamex. De aquí salió el adelanto de
+         $445.34 de la laminadora, así que el saldo ya está neto de ese pago.
+         PENDIENTE DE CONFIRMAR: que este dinero sea suyo y no de Felpuditos.
+         Si es del negocio hay que sacarlo del colchón. */
+      { nombre: "Mercado Pago",            monto: 1305.49, nota: "a la vista · 12% anual" }
     ],
     /* Quincenas que YA están dentro del saldo de arriba. El calendario de
        ingresos las descuenta para no prometerlas otra vez como dinero por
@@ -79,7 +85,13 @@ const DATA = {
        lo mueve de mes, igual que adelantar una tarjeta. */
     { mes: "2026-09", monto: 6209,
       concepto: "Mensualidad del auto",
-      nota: "pagada por adelantado el 26 de agosto con dinero de agosto" }
+      nota: "pagada por adelantado el 26 de agosto con dinero de agosto" },
+    /* Adelantó el mes 1 de 4 de la laminadora el mismo 5 de septiembre, con
+       el saldo de Mercado Pago. Adelantar unos MSI no ahorra un peso —
+       aquí solo mueve el gasto de octubre a septiembre. */
+    { mes: "2026-10", monto: 445.34,
+      concepto: "Laminadora · mes 1 de 4",
+      nota: "adelantada el 5 de septiembre con el saldo de Mercado Pago" }
   ],
 
   /* ── Crédito a mamá ──
@@ -340,9 +352,13 @@ const DATA = {
        Pago recién emitida. Precio de lista $2,375.46, con promo de MeLi
        $2,081.33, y la tarjeta bajó $300 más (20% con tope): pagó $1,781.33.
        Entra al corte del 21 de septiembre, así que el primer pago cae el 1 de
-       octubre y el último el 1 de enero. La app marca $445.34 mensuales. */
+       octubre y el último el 1 de enero. La app marca $445.34 mensuales.
+       El mes 1 lo adelantó ese mismo día, así que el corte del 21 de
+       septiembre cierra en $0.00 y el 1 de octubre no se debe nada: va como
+       prefondeo de octubre. Quedan 3 pagos de $445.33. */
     { id:"mp-lam",    tarjeta:"Mercado Pago", label:"Laminadora en frío",
-      montoOriginal:1781.33, monto:445.34, desde:"2026-10", hasta:"2027-01", pagados:0, total:4 },
+      montoOriginal:1781.33, monto:445.33, desde:"2026-10", hasta:"2027-01", pagados:1, total:4,
+      nota:"mes 1 adelantado el 5 de septiembre · restan 3 pagos" },
     { id:"serv-gym",  tarjeta:"Amex Gold Servicios", label:"Gym FITSI (anualidad)",
       montoOriginal:15400.80, monto:1283.40, desde:"2026-08", hasta:"2026-12", pagados:7, total:12,
       nota:"saldo pendiente $6,417.00 · renueva en enero 2027" }
@@ -463,10 +479,14 @@ const DATA = {
        anualidad, 2% de cashback en MercadoLibre y supermercados. Su único
        saldo son los 4 MSI de la laminadora; no traer nada más aquí sin
        decidirlo antes. Los últimos 4 dígitos todavía no se conocen. */
+    /* Al 5 de septiembre, ya con el mes 1 adelantado: el disponible subió de
+       $17,118.67 a $17,564.01 y el corte del 21 cierra en $0.00, así que el
+       1 de octubre no se debe nada. El siguiente pago real es el 1 de
+       noviembre. */
     { id:"mercadopago", alias:"Mercado Pago", term:null, emisor:"Mercado Lending",
-      tipo:"revolvente", linea:18900, disponible:17118.67, saldo:1781.33, tasa:null,
+      tipo:"revolvente", linea:18900, disponible:17564.01, saldo:1335.99, tasa:null,
       corte:21, vence:1,
-      proximoPago:{ fecha:"2026-10-01", monto:445.34 },
+      proximoPago:{ fecha:"2026-11-01", monto:445.33 },
       tono:"indigo" }
   ],
 
