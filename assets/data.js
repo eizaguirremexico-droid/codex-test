@@ -226,15 +226,13 @@ const DATA = {
          · $1,200 de PayPal*PASESERVICI son recargas del tag (13 y 19 de
            agosto). El tag ya va como gasto fijo en `vidaFija`, así que aquí
            NO se cuentan — se contaban dos veces.
-         · $2,036.00 de MercadoPago del 15 de agosto los pidió su mamá, pero
-           el 4 de septiembre dijo que no los va a devolver. Ya no es
-           préstamo: cuenta como gasto de agosto.
+         · $2,036.00 de MercadoPago del 15 de agosto los pidió su mamá. El 4
+           de septiembre dijo que no los iba a devolver, pero el estado de
+           cuenta de la LikeU muestra un "ABONO CARGO TRASPASO" de −$2,036.00
+           el 25 de agosto — se revirtió antes de esa conversación. Neto
+           cero: no es gasto suyo, no aparece en `gastoLibre`.
        Lo único suyo es el Samsung. */
     { fecha:"2026-08-12", concepto:"MercadoPago · Samsung",              monto:383.01, tarjeta:"santander" },
-    /* El MercadoPago del 15 de agosto que pidió su mamá: dijo el 4 de
-       septiembre que no lo va a devolver. Deja de ser préstamo y pasa a ser
-       gasto suyo, del mes en que se hizo. */
-    { fecha:"2026-08-15", concepto:"MercadoPago (lo pidió tu mamá)",      monto:2036.00, tarjeta:"santander" },
     /* Cargo de la tarjeta adicional de Aleli — cae en el mismo estado de
        cuenta de la Gold Card. */
     { fecha:"2026-08-11", concepto:"TikTok Shop (adicional de Aleli)",   monto:185.00, tarjeta:"servicios", pagado:true },
@@ -305,7 +303,9 @@ const DATA = {
     { fecha:"2026-09-03", concepto:"Cargos sin identificar (Costco)",    monto:179.00,  tarjeta:"costco" },
     /* Regalo de cumpleaños para su hermana, pagado de un jalón (no a MSI).
        Cae después del corte del 3, así que se paga hasta el 23 de octubre. */
-    { fecha:"2026-09-06", concepto:"Regalo cumpleaños hermana (labial Dior Addict)", monto:970.00, tarjeta:"elite" }
+    { fecha:"2026-09-06", concepto:"Regalo cumpleaños hermana (labial Dior Addict)", monto:970.00, tarjeta:"elite" },
+    /* Cargo del 5 de septiembre, todavía "en proceso" en el estado de cuenta. */
+    { fecha:"2026-09-05", concepto:"Tidal",                              monto:74.00,   tarjeta:"santander" }
     /* El Maison Kayser de $73 del 25 de agosto se cargó y se devolvió el
        mismo día: neto cero, no se registra. */
   ],
@@ -471,9 +471,11 @@ const DATA = {
       corte:4, vence:24, proximoPago:{ fecha:"2026-09-24", monto:2340.84, estimado:true },
       tono:"rojo" },
     { id:"santander", alias:"Santander LikeU", term:"6240", emisor:"Santander",
-      /* Al 4 de septiembre. El alza desde $4,028.49 es la recarga del tag del
-         2 de septiembre, que ya va como gasto fijo — no se registra aparte. */
-      tipo:"revolvente", linea:238500, disponible:233871.51, saldo:4628.49, tasa:null,
+      /* Al 6 de septiembre. El alza desde $4,028.49 es la recarga del tag del
+         2 de septiembre, que ya va como gasto fijo — no se registra aparte.
+         Los $74.00 encima de eso son un cargo de Tidal del 5 de septiembre,
+         todavía "en proceso" en el estado de cuenta. */
+      tipo:"revolvente", linea:238500, disponible:233797.51, saldo:4702.49, tasa:null,
       /* corte desconocido. El 31 de julio la app marcaba pago mínimo $0 y pago
          para no generar intereses $0 con límite el 3 de agosto: o sea que los
          $880 son consumo POSTERIOR al último corte y no se deben todavía —
@@ -485,7 +487,7 @@ const DATA = {
          El corte sigue sin conocerse; `corteSupuesto` asume el estándar de
          ~20 días antes del vencimiento (vence día 1 → corta día 11). */
       corte:null, corteSupuesto:11, vence:1,
-      proximoPago:{ fecha:"2026-10-01", monto:4628.49, estimado:true },
+      proximoPago:{ fecha:"2026-10-01", monto:4702.49, estimado:true },
       tono:"rojo" },
     /* Emitida el 5 de septiembre de 2026 al comprar la laminadora. Sin
        anualidad, 2% de cashback en MercadoLibre y supermercados. Su único
@@ -601,8 +603,8 @@ const DATA = {
         nota:"ya con el reparto que hay que negociar" },
       /* Octubre sale del mismo modelo de cortes: cada pago es lo que cerró en
          el corte anterior de esa tarjeta, con los MSI que siguen vivos. */
-      { fecha:"2026-10-01", concepto:"Santander LikeU",                monto:4028.49,  cat:"tarjeta", estimado:true, tarjeta:"santander",
-        nota:"tag + MercadoPago de $2,036 que pidió tu mamá y no devuelve + Samsung $383 — más lo que le cargues de aquí al corte" },
+      { fecha:"2026-10-01", concepto:"Santander LikeU",                monto:4702.49,  cat:"tarjeta", estimado:true, tarjeta:"santander",
+        nota:"tag + Samsung $383 + Tidal $74 — el MercadoPago de $2,036 que pidió tu mamá se revirtió el 25 de agosto, ya no cuenta — más lo que le cargues de aquí al corte" },
       { fecha:"2026-10-02", concepto:"Costco Banamex",                 monto:5252.58,  cat:"tarjeta", estimado:true, tarjeta:"costco",
         nota:"MSI $1,155.58 + gasolina + $1,897 de compras del 14 al 26 de agosto, que entraron después del corte del 13" },
       /* En octubre el Amazon de la Gold Card ya se acabó (último pago en
