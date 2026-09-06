@@ -485,7 +485,7 @@ const DATA = {
          El corte sigue sin conocerse; `corteSupuesto` asume el estándar de
          ~20 días antes del vencimiento (vence día 1 → corta día 11). */
       corte:null, corteSupuesto:11, vence:1,
-      proximoPago:{ fecha:"2026-10-01", monto:4028.49, estimado:true },
+      proximoPago:{ fecha:"2026-10-01", monto:4628.49, estimado:true },
       tono:"rojo" },
     /* Emitida el 5 de septiembre de 2026 al comprar la laminadora. Sin
        anualidad, 2% de cashback en MercadoLibre y supermercados. Su único
