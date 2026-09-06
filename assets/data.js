@@ -302,7 +302,10 @@ const DATA = {
     /* ── septiembre ── */
     { fecha:"2026-09-03", concepto:"Google",                             monto:119.00,  tarjeta:"elite" },
     { fecha:"2026-09-03", concepto:"Bodega Ayotla (adicional de Aleli)", monto:236.00,  tarjeta:"servicios" },
-    { fecha:"2026-09-03", concepto:"Cargos sin identificar (Costco)",    monto:179.00,  tarjeta:"costco" }
+    { fecha:"2026-09-03", concepto:"Cargos sin identificar (Costco)",    monto:179.00,  tarjeta:"costco" },
+    /* Regalo de cumpleaños para su hermana, pagado de un jalón (no a MSI).
+       Cae después del corte del 3, así que se paga hasta el 23 de octubre. */
+    { fecha:"2026-09-06", concepto:"Regalo cumpleaños hermana (labial Dior Addict)", monto:970.00, tarjeta:"elite" }
     /* El Maison Kayser de $73 del 25 de agosto se cargó y se devolvió el
        mismo día: neto cero, no se registra. */
   ],
@@ -359,6 +362,12 @@ const DATA = {
        El mes 1 lo adelantó ese mismo día, así que el corte del 21 de
        septiembre cierra en $0.00 y el 1 de octubre no se debe nada: va como
        prefondeo de octubre. Quedan 3 pagos de $445.33. */
+    /* Sudadera $1,790 + otra prenda $1,990 en Abercrombie, compradas el 6 de
+       septiembre y diferidas a 3 MSI en la Elite. Compradas después del
+       corte del 3, así que el primer pago cae el 23 de octubre y el último
+       el 23 de diciembre. */
+    { id:"elite-ropa", tarjeta:"Amex Gold Elite", label:"Ropa Abercrombie",
+      montoOriginal:3780, monto:1260.00, desde:"2026-10", hasta:"2026-12", pagados:0, total:3 },
     { id:"mp-lam",    tarjeta:"Mercado Pago", label:"Laminadora en frío",
       montoOriginal:1781.33, monto:445.33, desde:"2026-10", hasta:"2027-01", pagados:1, total:4,
       nota:"mes 1 adelantado el 5 de septiembre · restan 3 pagos" },
