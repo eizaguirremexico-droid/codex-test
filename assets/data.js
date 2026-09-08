@@ -651,8 +651,12 @@ const DATA = {
       { fecha:"2026-10-15", concepto:"Mensualidad auto BYD",           monto:6209.00,  cat:"auto" },
       { fecha:"2026-10-24", concepto:"Joy Banamex",                    monto:360.00,   cat:"tarjeta", estimado:true, tarjeta:"joy",
         nota:"solo el teléfono AT&T — el Ticketmaster se acaba en septiembre" },
-      { fecha:"2026-10-24", concepto:"Amex Gold Elite",                monto:1755.39,  cat:"tarjeta", estimado:true, tarjeta:"elite",
-        nota:"Alo Yoga 3/3 + suscripciones — ya sin los MSI de junio y julio" },
+      /* Vence el 23, no el 24 — con la fecha mal, el regalo del 6 de
+         septiembre no se agrupaba aquí y salía como evento aparte.
+         El monto traía $399 de ChatGPT, que se canceló en agosto, y le
+         faltaba el primer pago de la ropa. */
+      { fecha:"2026-10-23", concepto:"Amex Gold Elite",                monto:3586.39,  cat:"tarjeta", estimado:true, tarjeta:"elite",
+        nota:"Alo Yoga 3/3 $996.67 + ropa Abercrombie 1/3 $1,260 + Claude $359.72 + el regalo de tu hermana $970 · más lo que le cargues antes del corte del 3" },
       { fecha:"2026-10-30", concepto:"Pago 4 de 5 a mamá",             monto:7106.00,  cat:"mama" }
     ]
   },
