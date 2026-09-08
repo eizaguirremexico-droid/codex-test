@@ -26,23 +26,26 @@ const DATA = {
      Verlo solo en la de nómina hacía aparecer un faltante de $5,066.08 que
      en realidad estaba en la otra. */
   efectivo: {
-    /* MEDIDO en las dos apps el 31 de agosto. La derivación daba $6,176.98,
-       así que hay $300.50 de gasto a débito que no está registrado. */
-    ahorro: 5876.48, asOf: "2026-08-31",
+    /* MEDIDO el 8 de septiembre, DESPUÉS de pagar los $7,420.93 de la Amex
+       Elite: vació Banamex y una parte de Mercado Pago para cubrirlo. El
+       modelo esperaba solo −$1,544.45 (con el efectivo del 31 de agosto sin
+       tocar); la diferencia contra el $0.00 real es dinero que ya traía
+       antes y no estaba en este modelo. */
+    ahorro: 310.00, asOf: "2026-09-08",
     cuentas: [
-      { nombre: "Banamex Priority ···329", monto: 5566.48, nota: "aquí cae la nómina" },
+      { nombre: "Banamex Priority ···329", monto: 0.00,
+        nota: "vaciada el 8 de septiembre para pagar la Amex Elite" },
       /* Mifel se vació: traía $5,100 el 20 de agosto. Es la única cuenta que
          paga rendimiento (~10% a la vista) y quedó casi en cero, mientras que
          el dinero se juntó en la de Banamex, que no paga nada. */
       { nombre: "Mifel ···5910",           monto: 310.00,  nota: "a la vista · ~10% anual" },
-      /* Tercera cuenta, medida el 5 de septiembre. Rinde 12% a la vista —
-         más que Mifel y mucho más que Banamex. De aquí salió el adelanto de
-         $445.34 de la laminadora, así que el saldo ya está neto de ese pago.
-         Confirmó que el dinero está MEZCLADO: una parte es suya y otra es de
-         Felpuditos, sin saber cuál es cuál. Por eso va con `fuera`: se ve en
-         el desglose pero no suma al colchón. En cuanto separe las dos bolsas
-         (un Apartado de Mercado Pago basta), su parte se pasa a `ahorro`. */
-      { nombre: "Mercado Pago",            monto: 1305.49, fuera: true,
+      /* Tercera cuenta. Rinde 12% a la vista — más que Mifel y mucho más que
+         Banamex. Sigue MEZCLADA con dinero de Felpuditos, sin saber cuál es
+         cuál — por eso sigue con `fuera`, aunque ahora esté en $0.00: parte
+         de esa mezcla se usó el 8 de septiembre para pagar la Amex Elite,
+         junto con todo Banamex. En cuanto separe las dos bolsas (un Apartado
+         de Mercado Pago basta) esto deja de importar. */
+      { nombre: "Mercado Pago",            monto: 0.00, fuera: true,
         nota: "a la vista · 12% anual · mezclado con dinero de Felpuditos" }
     ],
     /* Quincenas que YA están dentro del saldo de arriba. El calendario de
@@ -585,11 +588,11 @@ const DATA = {
      días de $0). El mapa muestra solo movimientos reales con fecha, y el
      gasto libre se maneja como bolsa mensual. */
   flujo: {
-    /* Arranca el 16 y no el 1 a propósito: el efectivo de arriba está medido
-       el 14, ya con la quincena del 15 adentro. Si la ventana empezara antes,
-       el mapa volvería a sumar esa quincena y a restar la Amex que ya se
-       pagó. Del 1 al 15 de agosto ya no hay nada que proyectar: pasó. */
-    desde: "2026-09-01",
+    /* Arranca el 9 y no el 8 a propósito: el efectivo de arriba ya está
+       medido AL 8 de septiembre, con el pago de la Elite adentro. Si la
+       ventana empezara el 8, el mapa volvería a restarlo — ya se restó al
+       llegar a $0.00 en las cuentas. */
+    desde: "2026-09-09",
     hasta: "2026-10-31",
     colchonMinimo: 2000,
     /* `previo` = cuánto de ese pago es deuda de ANTES de la ventana (consumo
@@ -613,8 +616,10 @@ const DATA = {
       /* El auto de septiembre ya no aparece: se pagó el 26 de agosto. */
       { fecha:"2026-09-24", concepto:"Joy Banamex",                    monto:2340.84,  cat:"tarjeta", estimado:true, tarjeta:"joy",
         nota:"último pago del Ticketmaster $1,980.84 + teléfono AT&T $360" },
-      { fecha:"2026-09-08", concepto:"Amex Gold Elite",                monto:7420.93,  cat:"tarjeta", tarjeta:"elite",
-        nota:"pagado anticipado en línea, 15 días antes del vencimiento del 23 · salió como \"pendiente\" en la app" },
+      /* El pago de la Elite del 8 de septiembre ($7,420.93, anticipado 15
+         días antes del vencimiento del 23) ya no aparece aquí: el efectivo
+         de arriba es posterior a ese pago — vació Banamex y parte de
+         Mercado Pago para cubrirlo. */
       { fecha:"2026-09-30", concepto:"Pago 3 de 5 a mamá",             monto:7106.00,  cat:"mama",
         nota:"ya con el reparto que hay que negociar" },
       /* Octubre sale del mismo modelo de cortes: cada pago es lo que cerró en
