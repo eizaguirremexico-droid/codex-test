@@ -97,7 +97,16 @@ const DATA = {
        aquí solo mueve el gasto de octubre a septiembre. */
     { mes: "2026-10", monto: 445.34,
       concepto: "Laminadora · mes 1 de 4",
-      nota: "adelantada el 5 de septiembre con el saldo de Mercado Pago" }
+      nota: "adelantada el 5 de septiembre con el saldo de Mercado Pago" },
+    /* El estado de cuenta de la Elite del corte del 3 ($7,420.93) se pagó el
+       8 de septiembre, antes de que cayera la primera quincena del mes —
+       tuvo que salir del efectivo que ya traía (vació Banamex y parte de
+       Mercado Pago), no del sueldo de septiembre. De ese pago, $2,967.67 son
+       MSI que sí le tocan a septiembre (jul $1,971 + Alo Yoga $996.67); el
+       resto ($4,443.26) es gasto suelto de agosto, ya contado en agosto. */
+    { mes: "2026-09", monto: 2967.67,
+      concepto: "MSI Elite de septiembre (jul + Alo Yoga)",
+      nota: "pagados el 8 de septiembre con efectivo de antes de la quincena" }
   ],
 
   /* ── Crédito a mamá ──
