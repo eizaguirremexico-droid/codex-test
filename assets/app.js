@@ -516,7 +516,10 @@ function construirFlujo() {
     if (recargas[f]) eventos.push({ concepto: "Recarga de tag", monto: -recargas[f], cat: "tag" });
     /* Si el tag se carga a una tarjeta, el efectivo no sale el día de la
        recarga sino cuando vence esa tarjeta. */
-    if (tagDiferido[f]) eventos.push({
+    /* Si ya hay un pago manual de esa tarjeta ese mismo día (viene de un
+       estado de cuenta real y ya trae el tag adentro — ver sus notas),
+       la recarga simulada no se agrega aparte: se contaba dos veces. */
+    if (tagDiferido[f] && !FL.pagos.some(p => p.fecha === f && p.tarjeta === OFI.via)) eventos.push({
       concepto: `Recarga${tagDiferido[f].n > 1 ? "s" : ""} de tag`,
       monto: -tagDiferido[f].monto, cat: "tag", estimado: tagDiferido[f].supuesto,
       nota: `cargada${tagDiferido[f].n > 1 ? "s" : ""} a ${t2(OFI.via).alias} el ${
