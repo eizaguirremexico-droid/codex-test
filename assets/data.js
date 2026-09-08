@@ -305,7 +305,11 @@ const DATA = {
        Cae después del corte del 3, así que se paga hasta el 23 de octubre. */
     { fecha:"2026-09-06", concepto:"Regalo cumpleaños hermana (labial Dior Addict)", monto:970.00, tarjeta:"elite" },
     /* Cargo del 5 de septiembre, todavía "en proceso" en el estado de cuenta. */
-    { fecha:"2026-09-05", concepto:"Tidal",                              monto:74.00,   tarjeta:"santander" }
+    { fecha:"2026-09-05", concepto:"Tidal",                              monto:74.00,   tarjeta:"santander" },
+    /* Cargos del 7 de septiembre, "en tránsito" en el estado de cuenta. */
+    { fecha:"2026-09-07", concepto:"Elevenlabs.io",                      monto:106.94,  tarjeta:"bbva" },
+    { fecha:"2026-09-07", concepto:"Uber Eats",                          monto:16.95,   tarjeta:"bbva" },
+    { fecha:"2026-09-07", concepto:"Uber Eats",                          monto:355.95,  tarjeta:"bbva" }
     /* El Maison Kayser de $73 del 25 de agosto se cargó y se devolvió el
        mismo día: neto cero, no se registra. */
   ],
@@ -405,13 +409,15 @@ const DATA = {
       /* Al 19 de agosto los cargos de Perisur ya se aplicaron: el saldo pasó
          de $525.00 a $4,096.70 (los $3,291.70 más $280 de La Cuchara, FaceApp
          y Maison Kayser). Ya no hay nada pendiente. */
-      tipo:"revolvente", linea:92000, disponible:83463.00, saldo:7420.93, tasa:61.48,
-      /* Estado de cuenta del corte del 3 de septiembre, ya emitido: $7,420.93
-         con fecha límite el 23, no el 24 (mínimo $1,150). Salió $402.16 abajo
-         de lo proyectado porque ChatGPT ya no entró. */
+      tipo:"revolvente", linea:92000, disponible:90401.00, saldo:5512.00, tasa:61.48,
+      /* Estado de cuenta del corte del 3 de septiembre: $7,420.93 con fecha
+         límite el 23. Lo pagó anticipado en línea el 8 de septiembre, 15 días
+         antes — el pago salió como "pendiente" en la app. El saldo de
+         $5,512.00 es lo nuevo que ya se acumuló para el corte del 3 de
+         octubre: el regalo de $970 del 6 de septiembre y lo que sigue. */
       corte:3, vence:23,
-      proximoPago:{ fecha:"2026-09-23", monto:7420.93 },
-      puntos:1318,
+      proximoPago:{ fecha:"2026-10-23", monto:5512.00, estimado:true },
+      puntos:1643,
       tono:"grafito" },
     { id:"servicios", alias:"Amex Gold Servicios", term:"21009", emisor:"American Express",
       /* Adelantada el 17 de agosto, antes de su corte del 22: quedó en cero.
@@ -424,15 +430,18 @@ const DATA = {
          De ese saldo solo vencen $341.00 el 11 de septiembre: el gym y el
          Carl's Jr entraron el 23, un día DESPUÉS del corte del 22, así que
          se van al estado de cuenta que se paga el 11 de octubre. */
-      tipo:"cargo", linea:null, disponible:null, saldo:1576.40, tasa:null,
+      tipo:"cargo", linea:null, disponible:null, saldo:1739.40, tasa:null,
       /* Tiene tarjeta adicional a nombre de Aleli (cuenta ...21017): su
          gasto cae en este mismo estado de cuenta. */
       adicional: "Aleli Michel Pérez Martínez",
       /* Los $341 del corte del 22 se pagaron el 31 de agosto, adelantados.
-         Lo que queda son el gym y el Carl's Jr del 23, que van al corte del
-         22 de septiembre y se pagan el 11 de octubre. */
-      corte:22, vence:11, proximoPago:{ fecha:"2026-10-11", monto:1576.40, estimado:true },
-      puntos:912,
+         Lo que queda son el gym y el Carl's Jr del 23, más consumo de
+         septiembre, que van al corte del 22 y se pagan el 11 de octubre.
+         Al 8 de septiembre subió a $1,739.40 — $163 más que el $1,576.40
+         conocido; no cuadra exacto con la Bodega Ayotla de $236, queda
+         $73 sin identificar. */
+      corte:22, vence:11, proximoPago:{ fecha:"2026-10-11", monto:1739.40, estimado:true },
+      puntos:561,
       tono:"oro" },
     { id:"costco", alias:"Costco Banamex Visa", term:"104", emisor:"Banamex",
       /* Al 26 de agosto. El adelanto del 17 funcionó: el estado de cuenta del
@@ -440,7 +449,8 @@ const DATA = {
          El saldo de $2,473.58 son los cargos del 14 al 21; las dos compras
          del 26 ($494 y $85) siguen "en proceso" y todavía no entran ahí,
          aunque el crédito disponible ya las descontó. */
-      tipo:"revolvente", linea:50000, disponible:42535.48, saldo:3360.58, tasa:60.58,
+      /* Al 8 de septiembre: subió a $3,519.58 / disponible $41,973.49. */
+      tipo:"revolvente", linea:50000, disponible:41973.49, saldo:3519.58, tasa:60.58,
       /* Corte del 13 de agosto YA EMITIDO: pago para no generar intereses
          $2,427.70, mínimo $630.00, fecha límite 2 de septiembre. Ya no es
          estimación — es el estado de cuenta. Estaba modelado en $1,997.11
@@ -454,7 +464,13 @@ const DATA = {
        Vence ANTES del corte, así que cada corte se paga hasta el mes
        siguiente: 21 días de flote. */
     { id:"bbva", alias:"BBVA TC M", term:"9871", emisor:"BBVA",
-      tipo:"revolvente", linea:81300, disponible:80027.87, saldo:1272.13, tasa:null,
+      /* Al 8 de septiembre saltó a $5,524.29. Cuadra exacto:
+         1,272.13 + 3,772.32 (el Ottocast completo, reservado de un jalón
+         contra la línea aunque se cobre en 15 MSI) + 479.84 de consumo suelto
+         nuevo del 7 de septiembre (Elevenlabs $106.94 + 2 Uber Eats $16.95 y
+         $355.95, "en tránsito"). El MSI sigue cobrándose a $251.49/mes — esto
+         solo es cómo la app reserva el crédito. */
+      tipo:"revolvente", linea:81300, disponible:75775.71, saldo:5524.29, tasa:null,
       /* Los $539.02 del primer corte se pagaron el 31 de agosto, adelantados.
          Lo que queda va al corte del 24 de septiembre y se paga el 14 de octubre. */
       corte:24, vence:14, proximoPago:{ fecha:"2026-10-14", monto:1272.13, estimado:true },
@@ -597,8 +613,8 @@ const DATA = {
       /* El auto de septiembre ya no aparece: se pagó el 26 de agosto. */
       { fecha:"2026-09-24", concepto:"Joy Banamex",                    monto:2340.84,  cat:"tarjeta", estimado:true, tarjeta:"joy",
         nota:"último pago del Ticketmaster $1,980.84 + teléfono AT&T $360" },
-      { fecha:"2026-09-23", concepto:"Amex Gold Elite",                monto:7420.93,  cat:"tarjeta", tarjeta:"elite",
-        nota:"estado de cuenta emitido del corte del 3 de septiembre · mínimo $1,150" },
+      { fecha:"2026-09-08", concepto:"Amex Gold Elite",                monto:7420.93,  cat:"tarjeta", tarjeta:"elite",
+        nota:"pagado anticipado en línea, 15 días antes del vencimiento del 23 · salió como \"pendiente\" en la app" },
       { fecha:"2026-09-30", concepto:"Pago 3 de 5 a mamá",             monto:7106.00,  cat:"mama",
         nota:"ya con el reparto que hay que negociar" },
       /* Octubre sale del mismo modelo de cortes: cada pago es lo que cerró en
@@ -609,10 +625,10 @@ const DATA = {
         nota:"MSI $1,155.58 + gasolina + $1,897 de compras del 14 al 26 de agosto, que entraron después del corte del 13" },
       /* En octubre el Amazon de la Gold Card ya se acabó (último pago en
          agosto): solo queda el gym. Lo que gastes en septiembre se suma. */
-      { fecha:"2026-10-14", concepto:"BBVA TC M",                      monto:1523.62,  cat:"tarjeta", estimado:true, tarjeta:"bbva",
-        nota:"lo que quedó del adelanto del 31 de agosto + primer pago del Ottocast" },
-      { fecha:"2026-10-11", concepto:"Amex Gold Servicios",            monto:1576.40,  cat:"tarjeta", estimado:true, tarjeta:"servicios",
-        nota:"gym $1,283.40 + Carl's Jr $220 + Maison Kayser $73, todo del 23 al 25 de agosto · falta sumarle tu consumo de septiembre" },
+      { fecha:"2026-10-14", concepto:"BBVA TC M",                      monto:2003.46,  cat:"tarjeta", estimado:true, tarjeta:"bbva",
+        nota:"lo que quedó del adelanto del 31 de agosto + primer pago del Ottocast + $479.84 de consumo suelto del 7 de septiembre (Elevenlabs + 2 Uber Eats)" },
+      { fecha:"2026-10-11", concepto:"Amex Gold Servicios",            monto:1739.40,  cat:"tarjeta", estimado:true, tarjeta:"servicios",
+        nota:"gym $1,283.40 + Carl's Jr $220 + Maison Kayser $73 + consumo de septiembre — ya reflejado en el saldo al 8 de septiembre" },
       { fecha:"2026-10-15", concepto:"Mensualidad auto BYD",           monto:6209.00,  cat:"auto" },
       { fecha:"2026-10-24", concepto:"Joy Banamex",                    monto:360.00,   cat:"tarjeta", estimado:true, tarjeta:"joy",
         nota:"solo el teléfono AT&T — el Ticketmaster se acaba en septiembre" },
