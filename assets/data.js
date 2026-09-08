@@ -103,9 +103,13 @@ const DATA = {
        tuvo que salir del efectivo que ya traía (vació Banamex y parte de
        Mercado Pago), no del sueldo de septiembre. De ese pago, $2,967.67 son
        MSI que sí le tocan a septiembre (jul $1,971 + Alo Yoga $996.67); el
-       resto ($4,443.26) es gasto suelto de agosto, ya contado en agosto. */
-    { mes: "2026-09", monto: 2967.67,
-      concepto: "MSI Elite de septiembre (jul + Alo Yoga)",
+       resto es gasto suelto de agosto, ya contado en agosto.
+       El estado de cuenta desglosado confirma los dos "MESES EN AUTOMÁTICO
+       NACIONAL" del 3 de septiembre ($1,971.00 y $996.67) y el Claude del
+       30 de agosto ($350.05) — los tres son compromisos de septiembre que
+       ya se pagaron con dinero de antes. */
+    { mes: "2026-09", monto: 3317.72,
+      concepto: "MSI Elite + Claude de septiembre",
       nota: "pagados el 8 de septiembre con efectivo de antes de la quincena" }
   ],
 
@@ -309,18 +313,27 @@ const DATA = {
     { fecha:"2026-08-26", concepto:"Regalo para Aleli (Costco)",         monto:85.00,   tarjeta:"costco" },
     { fecha:"2026-08-25", concepto:"Facebook",                           monto:12.49,   tarjeta:"santander" },
     { fecha:"2026-08-30", concepto:"Google",                             monto:129.00,  tarjeta:"elite", pagado:true },
-    /* Diferencias entre el saldo medido el 31 de agosto y lo registrado.
-       Falta identificarlas: son los últimos cargos sin nombre del modelo. */
-    { fecha:"2026-08-30", concepto:"Cargos sin identificar (Elite)",     monto:98.56,   tarjeta:"elite", pagado:true },
+    /* Ajuste para cuadrar contra el estado de cuenta real del corte del 3:
+       $7,420.93 = MSI $2,967.67 + Claude $350.05 + $4,103.21 de gasto
+       suelto. Lo registrado sumaba $4,225.70, así que sobran $122.49 —
+       algún cargo de agosto está de más o con monto inflado. Va negativo
+       para que el total cuadre al peso mientras se identifica. */
+    { fecha:"2026-08-30", concepto:"Ajuste al corte real (Elite)",       monto:-122.49, tarjeta:"elite", pagado:true },
     { fecha:"2026-08-30", concepto:"Cargos sin identificar (BBVA)",      monto:733.11,  tarjeta:"bbva" },
     { fecha:"2026-08-30", concepto:"Cargos sin identificar (Costco)",    monto:129.00,  tarjeta:"costco" },
     /* ── septiembre ── */
-    { fecha:"2026-09-03", concepto:"Google",                             monto:119.00,  tarjeta:"elite", pagado:true },
+    /* Se compró el 3 pero NO entró al corte de ese día: la app lo agrupa en
+       el ciclo "sep 04 - presente", que se paga hasta el 23 de octubre. Va
+       fechado el 4 para que caiga en el ciclo correcto — con fecha 3 el
+       modelo lo mandaba al pago del 23 de septiembre, que ya está pagado. */
+    { fecha:"2026-09-04", concepto:"Google · Cafe Live Video",           monto:119.00,  tarjeta:"elite" },
     { fecha:"2026-09-03", concepto:"Bodega Ayotla (adicional de Aleli)", monto:236.00,  tarjeta:"servicios" },
     { fecha:"2026-09-03", concepto:"Cargos sin identificar (Costco)",    monto:179.00,  tarjeta:"costco" },
     /* Regalo de cumpleaños para su hermana, pagado de un jalón (no a MSI).
        Cae después del corte del 3, así que se paga hasta el 23 de octubre. */
     { fecha:"2026-09-06", concepto:"Regalo cumpleaños hermana (labial Dior Addict)", monto:970.00, tarjeta:"elite" },
+    { fecha:"2026-09-06", concepto:"Café Sirena",                        monto:84.00,   tarjeta:"elite" },
+    { fecha:"2026-09-07", concepto:"Maison Kayser Salinas Tlalpan",      monto:160.00,  tarjeta:"elite" },
     /* Cargo del 5 de septiembre, todavía "en proceso" en el estado de cuenta. */
     { fecha:"2026-09-05", concepto:"Tidal",                              monto:74.00,   tarjeta:"santander" },
     /* Cargos del 7 de septiembre, "en tránsito" en el estado de cuenta. */
@@ -335,9 +348,17 @@ const DATA = {
   /* `hasta` = último mes en que se cobra. Sin ese campo, cancelar una
      suscripción la borraba también de los meses en que SÍ se pagó. */
   suscripciones: [
-    { servicio: "Claude (Anthropic)", monto: 359.72, nota: "USD $20 · cobrado el 30 jul", tarjeta: "Amex Gold Elite" },
-    { servicio: "ChatGPT",            monto: 399.00, hasta: "2026-08", tarjeta: "Amex Gold Elite",
-      nota: "cancelada el 21 de agosto · su último cobro entró al corte del 3 de agosto" }
+    /* Monto real del estado de cuenta de la Elite: $350.05 el 30 de agosto,
+       no los $359.72 que se venían suponiendo. Es cargo en dólares, así que
+       se mueve con el tipo de cambio. */
+    { servicio: "Claude (Anthropic)", monto: 350.05, nota: "USD $20 · cobrado el 30 de cada mes", tarjeta: "Amex Gold Elite" },
+    /* REVIVIÓ. Se había cancelado el 21 de agosto, pero el 5 de septiembre
+       volvió a cobrar $399.00 ("OPENAI SAN FRANCISCO" en la Elite). Vuelve
+       al modelo desde septiembre: son $399 al mes que no se estaban
+       contando. Cae después del corte del 3, así que su primer cobro nuevo
+       se paga hasta el 23 de octubre. */
+    { servicio: "ChatGPT",            monto: 399.00, desde: "2026-09", tarjeta: "Amex Gold Elite",
+      nota: "reactivada · volvió a cobrar el 5 de septiembre" }
   ],
 
   /* ── Meses sin intereses vigentes ──
@@ -655,8 +676,13 @@ const DATA = {
          septiembre no se agrupaba aquí y salía como evento aparte.
          El monto traía $399 de ChatGPT, que se canceló en agosto, y le
          faltaba el primer pago de la ropa. */
-      { fecha:"2026-10-23", concepto:"Amex Gold Elite",                monto:3586.39,  cat:"tarjeta", estimado:true, tarjeta:"elite",
-        nota:"Alo Yoga 3/3 $996.67 + ropa Abercrombie 1/3 $1,260 + Claude $359.72 + el regalo de tu hermana $970 · más lo que le cargues antes del corte del 3" },
+      /* El ciclo "sep 04 - presente" ya lleva $5,512.00 en 6 movimientos:
+         Google $119 + OpenAI $399 + los dos Liverpool ($3,780 de ropa y
+         $970 del regalo) + Café Sirena $84 + Maison Kayser $160. Al corte
+         del 3 de octubre, los $3,780 de la ropa se cambian por su primer
+         pago de $1,260, y se suman el Alo Yoga 3/3 y el Claude del 30. */
+      { fecha:"2026-10-23", concepto:"Amex Gold Elite",                monto:4338.72,  cat:"tarjeta", estimado:true, tarjeta:"elite",
+        nota:"ropa 1/3 $1,260 + Alo Yoga 3/3 $996.67 + regalo $970 + OpenAI $399 + Claude $350.05 + Maison Kayser $160 + Google $119 + Café Sirena $84" },
       { fecha:"2026-10-30", concepto:"Pago 4 de 5 a mamá",             monto:7106.00,  cat:"mama" }
     ]
   },
