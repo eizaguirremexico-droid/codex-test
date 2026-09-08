@@ -213,7 +213,12 @@ const DATA = {
     { fecha:"2026-08-01", concepto:"Liverpool Atizapán",        monto:278.60, tarjeta:"servicios", pagado:true },
     { fecha:"2026-08-01", concepto:"Miniso Cúspide",            monto:329.80, tarjeta:"servicios", pagado:true },
     { fecha:"2026-08-01", concepto:"Cinépolis dulcería",        monto:728.00, tarjeta:"servicios", pagado:true },
-    { fecha:"2026-08-04", concepto:"Headway (suscripción anual)", monto:525.00, tarjeta:"elite" },
+    /* Todos los sueltos de la Elite del 4 de agosto al 3 de septiembre van
+       `pagado:true`: ya están dentro de los $7,420.93 del estado de cuenta
+       "ya emitido" del corte del 3, que se pagó el 8 de septiembre. Sin la
+       bandera, el mapa de caja los volvía a cobrar aparte el 23 de
+       septiembre — se descubrió al mover el pago de la Elite del 23 al 8. */
+    { fecha:"2026-08-04", concepto:"Headway (suscripción anual)", monto:525.00, tarjeta:"elite", pagado:true },
     /* Cargos a la Costco después de liquidarla el 1 de agosto.
        El cargo de $824.70 del 7 de agosto NO está aquí: es la gasolina,
        que ya se cuenta como gasto fijo. Meterla también aquí la cobraría
@@ -257,22 +262,22 @@ const DATA = {
     { fecha:"2026-08-15", concepto:"330 Sendero Ixtapaluca",             monto:599.00, tarjeta:"servicios", pagado:true },
     /* Tarde en Perisur del 16 de agosto, toda a la Elite. Cae en el corte
        del 3 de septiembre y se paga el 24 de septiembre. */
-    { fecha:"2026-08-16", concepto:"MixUp Perisur",                      monto:436.00,  tarjeta:"elite" },
-    { fecha:"2026-08-16", concepto:"L'Occitane Perisur",                 monto:660.00,  tarjeta:"elite" },
-    { fecha:"2026-08-16", concepto:"H&M Perisur",                        monto:249.00,  tarjeta:"elite" },
+    { fecha:"2026-08-16", concepto:"MixUp Perisur",                      monto:436.00,  tarjeta:"elite", pagado:true },
+    { fecha:"2026-08-16", concepto:"L'Occitane Perisur",                 monto:660.00,  tarjeta:"elite", pagado:true },
+    { fecha:"2026-08-16", concepto:"H&M Perisur",                        monto:249.00,  tarjeta:"elite", pagado:true },
     /* En la app salen TRES líneas de $843.70: el cargo, una devolución en
        verde ("Restaurante Mifel") y el cargo otra vez. Es un solo consumo
        que se duplicó y el banco ya revirtió el duplicado: neto uno. */
-    { fecha:"2026-08-16", concepto:"Café Bucra Perisur",                 monto:843.70,  tarjeta:"elite",
+    { fecha:"2026-08-16", concepto:"Café Bucra Perisur",                 monto:843.70,  tarjeta:"elite", pagado:true,
       nota:"aparece duplicado con su devolución — es un solo cargo" },
-    { fecha:"2026-08-16", concepto:"Mango Perisur",                      monto:1103.00, tarjeta:"elite" },
+    { fecha:"2026-08-16", concepto:"Mango Perisur",                      monto:1103.00, tarjeta:"elite", pagado:true },
     /* A débito, no a tarjeta: reembolso a su mamá por el cargador del BYD que
        ella compró. No tiene nada que ver con el crédito de los $42,636 — es
        gasto suelto y sale de la bolsa del mes. Ya salió de la cuenta. */
     { fecha:"2026-08-17", concepto:"Cargador del BYD (reembolso a mamá)", monto:1000.00, tarjeta:"debito", pagado:true },
-    { fecha:"2026-08-18", concepto:"Restaurante La Cuchara 2",           monto:110.00,  tarjeta:"elite" },
-    { fecha:"2026-08-19", concepto:"Google · FaceApp",                   monto:100.00,  tarjeta:"elite" },
-    { fecha:"2026-08-19", concepto:"Maison Kayser Tlalpan",              monto:70.00,   tarjeta:"elite" },
+    { fecha:"2026-08-18", concepto:"Restaurante La Cuchara 2",           monto:110.00,  tarjeta:"elite", pagado:true },
+    { fecha:"2026-08-19", concepto:"Google · FaceApp",                   monto:100.00,  tarjeta:"elite", pagado:true },
+    { fecha:"2026-08-19", concepto:"Maison Kayser Tlalpan",              monto:70.00,   tarjeta:"elite", pagado:true },
     /* Datos extra de AT&T, compra de una sola vez. NO es una segunda línea:
        el plan mensual de $360 sigue siendo el de la Joy. Por eso va aquí como
        gasto suelto y no en `vidaFija`. */
@@ -294,14 +299,14 @@ const DATA = {
     { fecha:"2026-08-26", concepto:"Regalo para Aleli (Costco)",         monto:494.00,  tarjeta:"costco" },
     { fecha:"2026-08-26", concepto:"Regalo para Aleli (Costco)",         monto:85.00,   tarjeta:"costco" },
     { fecha:"2026-08-25", concepto:"Facebook",                           monto:12.49,   tarjeta:"santander" },
-    { fecha:"2026-08-30", concepto:"Google",                             monto:129.00,  tarjeta:"elite" },
+    { fecha:"2026-08-30", concepto:"Google",                             monto:129.00,  tarjeta:"elite", pagado:true },
     /* Diferencias entre el saldo medido el 31 de agosto y lo registrado.
        Falta identificarlas: son los últimos cargos sin nombre del modelo. */
-    { fecha:"2026-08-30", concepto:"Cargos sin identificar (Elite)",     monto:98.56,   tarjeta:"elite" },
+    { fecha:"2026-08-30", concepto:"Cargos sin identificar (Elite)",     monto:98.56,   tarjeta:"elite", pagado:true },
     { fecha:"2026-08-30", concepto:"Cargos sin identificar (BBVA)",      monto:733.11,  tarjeta:"bbva" },
     { fecha:"2026-08-30", concepto:"Cargos sin identificar (Costco)",    monto:129.00,  tarjeta:"costco" },
     /* ── septiembre ── */
-    { fecha:"2026-09-03", concepto:"Google",                             monto:119.00,  tarjeta:"elite" },
+    { fecha:"2026-09-03", concepto:"Google",                             monto:119.00,  tarjeta:"elite", pagado:true },
     { fecha:"2026-09-03", concepto:"Bodega Ayotla (adicional de Aleli)", monto:236.00,  tarjeta:"servicios" },
     { fecha:"2026-09-03", concepto:"Cargos sin identificar (Costco)",    monto:179.00,  tarjeta:"costco" },
     /* Regalo de cumpleaños para su hermana, pagado de un jalón (no a MSI).
