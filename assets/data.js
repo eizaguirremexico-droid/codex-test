@@ -418,6 +418,12 @@ const DATA = {
        el 23 de diciembre. */
     { id:"elite-ropa", tarjeta:"Amex Gold Elite", label:"Ropa Abercrombie",
       montoOriginal:3780, monto:1260.00, desde:"2026-10", hasta:"2026-12", pagados:0, total:3 },
+    /* Alo Yoga Satélite, comprado el 12 de septiembre a 3 MSI en la Elite.
+       Distinto del plan "Alo Yoga Antara" que ya traía corriendo (termina en
+       octubre) — este es nuevo. Cae después del corte del 3, así que el
+       primer pago es el 23 de octubre y el último el 23 de diciembre. */
+    { id:"elite-alo2", tarjeta:"Amex Gold Elite", label:"Alo Yoga Satélite",
+      montoOriginal:3690, monto:1230.00, desde:"2026-10", hasta:"2026-12", pagados:0, total:3 },
     { id:"mp-lam",    tarjeta:"Mercado Pago", label:"Laminadora en frío",
       montoOriginal:1781.33, monto:445.33, desde:"2026-10", hasta:"2027-01", pagados:1, total:4,
       nota:"mes 1 adelantado el 5 de septiembre · restan 3 pagos" },
@@ -686,13 +692,13 @@ const DATA = {
          septiembre no se agrupaba aquí y salía como evento aparte.
          El monto traía $399 de ChatGPT, que se canceló en agosto, y le
          faltaba el primer pago de la ropa. */
-      /* El ciclo "sep 04 - presente" ya lleva $5,512.00 en 6 movimientos:
-         Google $119 + OpenAI $399 + los dos Liverpool ($3,780 de ropa y
-         $970 del regalo) + Café Sirena $84 + Maison Kayser $160. Al corte
-         del 3 de octubre, los $3,780 de la ropa se cambian por su primer
-         pago de $1,260, y se suman el Alo Yoga 3/3 y el Claude del 30. */
-      { fecha:"2026-10-23", concepto:"Amex Gold Elite",                monto:4338.72,  cat:"tarjeta", estimado:true, tarjeta:"elite",
-        nota:"ropa 1/3 $1,260 + Alo Yoga 3/3 $996.67 + regalo $970 + OpenAI $399 + Claude $350.05 + Maison Kayser $160 + Google $119 + Café Sirena $84" },
+      /* El ciclo "sep 04 - presente" venía con $5,512.00 en 6 movimientos, más
+         el Alo Yoga Satélite de $3,690 del 12 de septiembre a 3 MSI. Al corte
+         del 3 de octubre, los $3,780 de la ropa se cambian por su primer pago
+         de $1,260 y los $3,690 del Alo Yoga nuevo por su primer pago de
+         $1,230, y se suman el Alo Yoga Antara 3/3 y el Claude del 30. */
+      { fecha:"2026-10-23", concepto:"Amex Gold Elite",                monto:5568.72,  cat:"tarjeta", estimado:true, tarjeta:"elite",
+        nota:"ropa 1/3 $1,260 + Alo Yoga Satélite 1/3 $1,230 + Alo Yoga Antara 3/3 $996.67 + regalo $970 + OpenAI $399 + Claude $350.05 + Maison Kayser $160 + Google $119 + Café Sirena $84" },
       { fecha:"2026-10-30", concepto:"Pago 4 de 5 a mamá",             monto:7106.00,  cat:"mama" }
     ]
   },
