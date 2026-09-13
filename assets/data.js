@@ -328,6 +328,7 @@ const DATA = {
        modelo lo mandaba al pago del 23 de septiembre, que ya está pagado. */
     { fecha:"2026-09-04", concepto:"Google · Cafe Live Video",           monto:119.00,  tarjeta:"elite" },
     { fecha:"2026-09-03", concepto:"Bodega Ayotla (adicional de Aleli)", monto:236.00,  tarjeta:"servicios" },
+    { fecha:"2026-09-11", concepto:"Uber Eats (adicional de Aleli)",     monto:300.82,  tarjeta:"servicios" },
     { fecha:"2026-09-03", concepto:"Cargos sin identificar (Costco)",    monto:179.00,  tarjeta:"costco" },
     /* Regalo de cumpleaños para su hermana, pagado de un jalón (no a MSI).
        Cae después del corte del 3, así que se paga hasta el 23 de octubre. */
@@ -537,18 +538,19 @@ const DATA = {
          De ese saldo solo vencen $341.00 el 11 de septiembre: el gym y el
          Carl's Jr entraron el 23, un día DESPUÉS del corte del 22, así que
          se van al estado de cuenta que se paga el 11 de octubre. */
-      tipo:"cargo", linea:null, disponible:null, saldo:1739.40, tasa:null,
+      tipo:"cargo", linea:null, disponible:null, saldo:2040.22, tasa:null,
       /* Tiene tarjeta adicional a nombre de Aleli (cuenta ...21017): su
          gasto cae en este mismo estado de cuenta. */
       adicional: "Aleli Michel Pérez Martínez",
       /* Los $341 del corte del 22 se pagaron el 31 de agosto, adelantados.
          Lo que queda son el gym y el Carl's Jr del 23, más consumo de
          septiembre, que van al corte del 22 y se pagan el 11 de octubre.
-         Al 8 de septiembre subió a $1,739.40 — $163 más que el $1,576.40
-         conocido; no cuadra exacto con la Bodega Ayotla de $236, queda
-         $73 sin identificar. */
-      corte:22, vence:11, proximoPago:{ fecha:"2026-10-11", monto:1739.40, estimado:true },
-      puntos:561,
+         Al 8 de septiembre subió a $1,739.40 — el faltante de $73 contra la
+         Bodega Ayotla de $236 era un crédito por redención de Membership
+         Rewards del 7 de septiembre, ya identificado. Al 13 de septiembre
+         sube a $2,040.22 con el Uber Eats de Aleli ($300.82). */
+      corte:22, vence:11, proximoPago:{ fecha:"2026-10-11", monto:2040.22, estimado:true },
+      puntos:579,
       tono:"oro" },
     { id:"costco", alias:"Costco Banamex Visa", term:"104", emisor:"Banamex",
       /* Al 26 de agosto. El adelanto del 17 funcionó: el estado de cuenta del
@@ -745,8 +747,8 @@ const DATA = {
          agosto): solo queda el gym. Lo que gastes en septiembre se suma. */
       { fecha:"2026-10-14", concepto:"BBVA TC M",                      monto:2003.46,  cat:"tarjeta", estimado:true, tarjeta:"bbva",
         nota:"lo que quedó del adelanto del 31 de agosto + primer pago del Ottocast + $479.84 de consumo suelto del 7 de septiembre (Elevenlabs + 2 Uber Eats)" },
-      { fecha:"2026-10-11", concepto:"Amex Gold Servicios",            monto:1739.40,  cat:"tarjeta", estimado:true, tarjeta:"servicios",
-        nota:"gym $1,283.40 + Carl's Jr $220 + Maison Kayser $73 + consumo de septiembre — ya reflejado en el saldo al 8 de septiembre" },
+      { fecha:"2026-10-11", concepto:"Amex Gold Servicios",            monto:2040.22,  cat:"tarjeta", estimado:true, tarjeta:"servicios",
+        nota:"gym $1,283.40 + Carl's Jr $220 + Bodega Ayotla $236 + Uber Eats de Aleli $300.82 − crédito MR $73 — ya reflejado en el saldo al 13 de septiembre" },
       { fecha:"2026-10-15", concepto:"Mensualidad auto BYD",           monto:6209.00,  cat:"auto" },
       { fecha:"2026-10-24", concepto:"Joy Banamex",                    monto:360.00,   cat:"tarjeta", estimado:true, tarjeta:"joy",
         nota:"solo el teléfono AT&T — el Ticketmaster se acaba en septiembre" },
