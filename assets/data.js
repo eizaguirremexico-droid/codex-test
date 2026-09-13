@@ -334,6 +334,11 @@ const DATA = {
     { fecha:"2026-09-06", concepto:"Regalo cumpleaños hermana (labial Dior Addict)", monto:970.00, tarjeta:"elite" },
     { fecha:"2026-09-06", concepto:"Café Sirena",                        monto:84.00,   tarjeta:"elite" },
     { fecha:"2026-09-07", concepto:"Maison Kayser Salinas Tlalpan",      monto:160.00,  tarjeta:"elite" },
+    /* Cargo distinto al "Google · Cafe Live Video" del 4 de septiembre: mismo
+       comercio (mismo texto "GOOGLE *CAFE LIVE VIDE" en el estado de cuenta),
+       pero fecha y monto diferentes — confirmado con la captura del 13 de
+       septiembre, NO es un duplicado. */
+    { fecha:"2026-09-08", concepto:"Google · Cafe Live Video (cargo aparte)", monto:169.00, tarjeta:"elite" },
     /* Cargo del 5 de septiembre, todavía "en proceso" en el estado de cuenta. */
     { fecha:"2026-09-06", concepto:"Tidal",                              monto:74.00,   tarjeta:"santander" },
     { fecha:"2026-09-08", concepto:"Cojines para tu mamá (MercadoPago)", monto:187.60,  tarjeta:"santander" },
@@ -495,15 +500,23 @@ const DATA = {
       /* Al 19 de agosto los cargos de Perisur ya se aplicaron: el saldo pasó
          de $525.00 a $4,096.70 (los $3,291.70 más $280 de La Cuchara, FaceApp
          y Maison Kayser). Ya no hay nada pendiente. */
-      tipo:"revolvente", linea:92000, disponible:90401.00, saldo:5512.00, tasa:61.48,
+      tipo:"revolvente", linea:92000, disponible:81632.00, saldo:9371.00, tasa:61.48,
       /* Estado de cuenta del corte del 3 de septiembre: $7,420.93 con fecha
          límite el 23. Lo pagó anticipado en línea el 8 de septiembre, 15 días
-         antes — el pago salió como "pendiente" en la app. El saldo de
-         $5,512.00 es lo nuevo que ya se acumuló para el corte del 3 de
-         octubre: el regalo de $970 del 6 de septiembre y lo que sigue. */
+         antes — el pago salió como "pendiente" en la app.
+         Confirmado con la captura del 13 de septiembre: saldo $9,371.00,
+         disponible $81,632.00, puntos 1,870. Cuadra al peso desde el checkpoint
+         anterior ($5,512.00): + Alo Yoga Satélite completo ($3,690.00, ya
+         reservado como capital de MSI) + un cargo de Google *Cafe Live Vide
+         separado del 8 de septiembre ($169.00, no antes registrado) =
+         $9,371.00. El disponible bajó más de lo que explican esos dos cargos
+         solos — probablemente porque el capital completo de la ropa
+         Abercrombie ($3,780.00, comprada el 6) apenas se reservó contra la
+         línea — pero no afecta ningún cálculo de gasto libre, solo la vista
+         de la tarjeta. */
       corte:3, vence:23,
-      proximoPago:{ fecha:"2026-10-23", monto:5512.00, estimado:true },
-      puntos:1643,
+      proximoPago:{ fecha:"2026-10-23", monto:5737.72, estimado:true },
+      puntos:1870,
       tono:"grafito" },
     { id:"servicios", alias:"Amex Gold Servicios", term:"21009", emisor:"American Express",
       /* Adelantada el 17 de agosto, antes de su corte del 22: quedó en cero.
@@ -734,8 +747,8 @@ const DATA = {
          del 3 de octubre, los $3,780 de la ropa se cambian por su primer pago
          de $1,260 y los $3,690 del Alo Yoga nuevo por su primer pago de
          $1,230, y se suman el Alo Yoga Antara 3/3 y el Claude del 30. */
-      { fecha:"2026-10-23", concepto:"Amex Gold Elite",                monto:5568.72,  cat:"tarjeta", estimado:true, tarjeta:"elite",
-        nota:"ropa 1/3 $1,260 + Alo Yoga Satélite 1/3 $1,230 + Alo Yoga Antara 3/3 $996.67 + regalo $970 + OpenAI $399 + Claude $350.05 + Maison Kayser $160 + Google $119 + Café Sirena $84" },
+      { fecha:"2026-10-23", concepto:"Amex Gold Elite",                monto:5737.72,  cat:"tarjeta", estimado:true, tarjeta:"elite",
+        nota:"ropa 1/3 $1,260 + Alo Yoga Satélite 1/3 $1,230 + Alo Yoga Antara 3/3 $996.67 + regalo $970 + OpenAI $399 + Claude $350.05 + Maison Kayser $160 + Google $119 + Google (cargo aparte) $169 + Café Sirena $84" },
       { fecha:"2026-10-30", concepto:"Pago 4 de 5 a mamá",             monto:7106.00,  cat:"mama" }
     ]
   },
