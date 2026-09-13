@@ -344,6 +344,17 @@ const DATA = {
        septiembre hasta que se lo reembolsen. */
     { fecha:"2026-09-08", concepto:"Muestras de China (Felpuditos) — PayPal AISGECO", monto:623.10, tarjeta:"santander",
       nota:"gasto del negocio pagado con tarjeta personal · pendiente de reembolso" },
+    /* Confirmó que SkyDropX (paquetería) y Facebook (publicidad) son de
+       Felpuditos, pagados con la misma tarjeta personal — mismo patrón que
+       las muestras de China y la laminadora. Los $153 y $157 de SkyDropX
+       ya se identificaron; el par de +$1.00/-$1.00 del 9 de septiembre neta
+       en cero y no se registra. */
+    { fecha:"2026-09-09", concepto:"SkyDropX (envío, Felpuditos)",          monto:153.00,  tarjeta:"santander",
+      nota:"gasto del negocio pagado con tarjeta personal · pendiente de reembolso" },
+    { fecha:"2026-09-09", concepto:"Facebook (publicidad, Felpuditos)",     monto:60.74,   tarjeta:"santander",
+      nota:"gasto del negocio pagado con tarjeta personal · pendiente de reembolso" },
+    { fecha:"2026-09-11", concepto:"SkyDropX (envío, Felpuditos)",          monto:157.00,  tarjeta:"santander",
+      nota:"gasto del negocio pagado con tarjeta personal · pendiente de reembolso" },
     /* Cargos del 7 de septiembre, "en tránsito" en el estado de cuenta. */
     { fecha:"2026-09-07", concepto:"Elevenlabs.io",                      monto:106.94,  tarjeta:"bbva" },
     { fecha:"2026-09-07", concepto:"Uber Eats",                          monto:16.95,   tarjeta:"bbva" },
