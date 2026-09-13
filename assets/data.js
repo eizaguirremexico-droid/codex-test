@@ -372,7 +372,10 @@ const DATA = {
     /* Segundo vinil de la semana, esta vez en la BBVA — igual que el de
        Santander, es insumo de Felpuditos pagado con tarjeta personal. */
     { fecha:"2026-09-08", concepto:"Vinil (Felpuditos, Amazon)",          monto:1286.00, tarjeta:"bbva",
-      nota:"gasto del negocio pagado con tarjeta personal · pendiente de reembolso" }
+      nota:"gasto del negocio pagado con tarjeta personal · pendiente de reembolso" },
+    { fecha:"2026-09-08", concepto:"Pluma (Amazon)",                      monto:20.00,   tarjeta:"bbva" },
+    { fecha:"2026-09-11", concepto:"Melimas (suscripción)",                monto:49.90,   tarjeta:"bbva",
+      nota:"ya la canceló · este es el último cobro" }
     /* El Maison Kayser de $73 del 25 de agosto se cargó y se devolvió el
        mismo día: neto cero, no se registra. */
   ],
