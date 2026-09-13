@@ -355,6 +355,10 @@ const DATA = {
       nota:"gasto del negocio pagado con tarjeta personal · pendiente de reembolso" },
     { fecha:"2026-09-11", concepto:"SkyDropX (envío, Felpuditos)",          monto:157.00,  tarjeta:"santander",
       nota:"gasto del negocio pagado con tarjeta personal · pendiente de reembolso" },
+    { fecha:"2026-09-12", concepto:"Estacionamiento (Parco)",               monto:28.00,   tarjeta:"santander" },
+    { fecha:"2026-09-12", concepto:"Estacionamiento (Parco)",               monto:10.00,   tarjeta:"santander" },
+    { fecha:"2026-09-13", concepto:"Vinil (Felpuditos)",                    monto:463.66,  tarjeta:"santander",
+      nota:"gasto del negocio pagado con tarjeta personal · pendiente de reembolso" },
     /* Cargos del 7 de septiembre, "en tránsito" en el estado de cuenta. */
     { fecha:"2026-09-07", concepto:"Elevenlabs.io",                      monto:106.94,  tarjeta:"bbva" },
     { fecha:"2026-09-07", concepto:"Uber Eats",                          monto:16.95,   tarjeta:"bbva" },
@@ -573,11 +577,11 @@ const DATA = {
          cuenta oficial del corte del 12 de agosto (saldo deudor real ese
          día: $180.00, no los supuestos de antes). Desde ahí a hoy: sube por
          el pago 11/18 del MSI Samsung ($383.01, confirmado — ver `msi`), el
-         primer pago de la mesa de inversión ($678.67), varios SkyDropX
-         (posible envío de Felpuditos), Facebook (posible ads de Felpuditos),
-         MERPAGO*PARCO y MERCADOPAGO*ME sin identificar. Con todo lo
-         confirmado sigue faltando ~$974 sin identificar — hay movimientos
-         entre el 13 de agosto y hoy que ninguna captura alcanzó a mostrar. */
+         primer pago de la mesa de inversión ($678.67), SkyDropX y Facebook
+         (confirmados como envío/publicidad de Felpuditos), estacionamiento
+         Parco ($38) y vinil de Felpuditos ($463.66). Con todo lo confirmado
+         sigue faltando ~$974 sin identificar — hay movimientos entre el 13
+         de agosto y hoy que ninguna captura alcanzó a mostrar. */
       tipo:"revolvente", linea:238500, disponible:232114.41, saldo:6385.59, tasa:null,
       /* corte desconocido. El 31 de julio la app marcaba pago mínimo $0 y pago
          para no generar intereses $0 con límite el 3 de agosto: o sea que los
