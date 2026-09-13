@@ -367,7 +367,8 @@ const DATA = {
     /* Cargos del 7 de septiembre, "en tránsito" en el estado de cuenta. */
     { fecha:"2026-09-07", concepto:"Elevenlabs.io",                      monto:106.94,  tarjeta:"bbva" },
     { fecha:"2026-09-07", concepto:"Uber Eats",                          monto:16.95,   tarjeta:"bbva" },
-    { fecha:"2026-09-07", concepto:"Uber Eats",                          monto:355.95,  tarjeta:"bbva" },
+    /* Corregido con el estado de cuenta real: no eran $355.95, son $339.00. */
+    { fecha:"2026-09-07", concepto:"Uber Eats",                          monto:339.00,  tarjeta:"bbva" },
     /* Segundo vinil de la semana, esta vez en la BBVA — igual que el de
        Santander, es insumo de Felpuditos pagado con tarjeta personal. */
     { fecha:"2026-09-08", concepto:"Vinil (Felpuditos, Amazon)",          monto:1286.00, tarjeta:"bbva",
@@ -567,13 +568,17 @@ const DATA = {
        Vence ANTES del corte, así que cada corte se paga hasta el mes
        siguiente: 21 días de flote. */
     { id:"bbva", alias:"BBVA TC M", term:"9871", emisor:"BBVA",
-      /* Al 8 de septiembre saltó a $5,524.29. Cuadra exacto:
-         1,272.13 + 3,772.32 (el Ottocast completo, reservado de un jalón
-         contra la línea aunque se cobre en 15 MSI) + 479.84 de consumo suelto
-         nuevo del 7 de septiembre (Elevenlabs $106.94 + 2 Uber Eats $16.95 y
-         $355.95, "en tránsito"). El MSI sigue cobrándose a $251.49/mes — esto
-         solo es cómo la app reserva el crédito. */
-      tipo:"revolvente", linea:81300, disponible:75775.71, saldo:5524.29, tasa:null,
+      /* Confirmado con el estado de cuenta oficial del corte del 24 de agosto:
+         el $539.02 adelantado el 31 de agosto es EXACTO al "pago para no
+         generar intereses" de ese corte — cuadra al peso.
+         Al 13 de septiembre: $6,863.24. Sube desde el $5,524.29 del 8 de
+         septiembre así: el Uber Eats del 7 se corrige de $355.95 a $339.00
+         (−$16.95, visto en la app), más el vinil de Felpuditos ($1,286.00),
+         un Amazon de $20.00 "en tránsito" y un Merpago*Melimas de $49.90,
+         ambos del 8-11 de septiembre y todavía sin identificar. El MSI del
+         Ottocast sigue cobrándose a $251.49/mes — esto solo es cómo la app
+         reserva el crédito. */
+      tipo:"revolvente", linea:81300, disponible:74436.76, saldo:6863.24, tasa:null,
       /* Los $539.02 del primer corte se pagaron el 31 de agosto, adelantados.
          Lo que queda va al corte del 24 de septiembre y se paga el 14 de octubre. */
       corte:24, vence:14, proximoPago:{ fecha:"2026-10-14", monto:1272.13, estimado:true },
