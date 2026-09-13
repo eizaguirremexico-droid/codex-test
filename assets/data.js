@@ -252,8 +252,8 @@ const DATA = {
            cuenta de la LikeU muestra un "ABONO CARGO TRASPASO" de −$2,036.00
            el 25 de agosto — se revirtió antes de esa conversación. Neto
            cero: no es gasto suyo, no aparece en `gastoLibre`.
-       Lo único suyo es el Samsung. */
-    { fecha:"2026-08-12", concepto:"MercadoPago · Samsung",              monto:383.01, tarjeta:"santander" },
+       El Samsung del 12 de agosto NO es gasto suelto: es el pago 10 de 18
+       de un MSI que arrancó en octubre de 2025 — vive en `msi`, no aquí. */
     /* Cargo de la tarjeta adicional de Aleli — cae en el mismo estado de
        cuenta de la Gold Card. */
     { fecha:"2026-08-11", concepto:"TikTok Shop (adicional de Aleli)",   monto:185.00, tarjeta:"servicios", pagado:true },
@@ -436,6 +436,16 @@ const DATA = {
     { id:"sant-mesa", tarjeta:"Santander LikeU", label:"Mesa de inversión (mamá)",
       montoOriginal:2036.01, monto:678.67, desde:"2026-09", hasta:"2026-11", pagados:1, total:3,
       nota:"recobrada el 11 de septiembre tras la reversión de agosto · sin confirmar quién la paga" },
+    /* CONFIRMADO en el estado de cuenta oficial del corte del 12 de agosto
+       (página 3, "Compras y cargos diferidos a meses sin interés"): MSI de
+       18 meses desde el 28 de octubre de 2025 por $6,894.24, tasa 0%. El
+       pago del 12 de agosto fue el 10 de 18 — el mismo cargo que se veía
+       "duplicado" en septiembre es el pago 11 de 18, no un error ni fraude.
+       Llevaba desde octubre de 2025 sin contarse como compromiso recurrente
+       en el modelo; solo se registraba como gasto suelto de un mes. */
+    { id:"sant-samsung", tarjeta:"Santander LikeU", label:"Samsung (MSI 18 meses)",
+      montoOriginal:6894.24, monto:383.01, desde:"2026-09", hasta:"2027-04", pagados:10, total:18,
+      nota:"confirmado en el estado de cuenta del 12 de agosto · pago 10 de 18 ya hecho, restan 8" },
     { id:"serv-gym",  tarjeta:"Amex Gold Servicios", label:"Gym FITSI (anualidad)",
       montoOriginal:15400.80, monto:1283.40, desde:"2026-08", hasta:"2026-12", pagados:7, total:12,
       nota:"saldo pendiente $6,417.00 · renueva en enero 2027" }
@@ -548,13 +558,15 @@ const DATA = {
       corte:4, vence:24, proximoPago:{ fecha:"2026-09-24", monto:2340.84, estimado:true },
       tono:"rojo" },
     { id:"santander", alias:"Santander LikeU", term:"6240", emisor:"Santander",
-      /* Al 13 de septiembre: $6,385.59. Sube desde $4,891.09 — incluye el
-         primer pago ($678.67) de la mesa de inversión recobrada el 11 de
-         septiembre a 3 MSI, un MERPAGO*SAMSUNG de $383.01 que aparece de
-         nuevo (posible duplicado del cargo de agosto, sin confirmar), y
-         movimientos del 9 de septiembre (Facebook $60.74, un crédito de
-         Skydropx de $1.00). Quedan ~$373 sin identificar entre esa fecha y
-         hoy — la vista de movimientos no alcanzó a mostrar todo. */
+      /* Al 13 de septiembre: $6,385.59. Reconciliado contra el estado de
+         cuenta oficial del corte del 12 de agosto (saldo deudor real ese
+         día: $180.00, no los supuestos de antes). Desde ahí a hoy: sube por
+         el pago 11/18 del MSI Samsung ($383.01, confirmado — ver `msi`), el
+         primer pago de la mesa de inversión ($678.67), varios SkyDropX
+         (posible envío de Felpuditos), Facebook (posible ads de Felpuditos),
+         MERPAGO*PARCO y MERCADOPAGO*ME sin identificar. Con todo lo
+         confirmado sigue faltando ~$974 sin identificar — hay movimientos
+         entre el 13 de agosto y hoy que ninguna captura alcanzó a mostrar. */
       tipo:"revolvente", linea:238500, disponible:232114.41, saldo:6385.59, tasa:null,
       /* corte desconocido. El 31 de julio la app marcaba pago mínimo $0 y pago
          para no generar intereses $0 con límite el 3 de agosto: o sea que los
