@@ -427,6 +427,15 @@ const DATA = {
     { id:"mp-lam",    tarjeta:"Mercado Pago", label:"Laminadora en frío",
       montoOriginal:1781.33, monto:445.33, desde:"2026-10", hasta:"2027-01", pagados:1, total:4,
       nota:"mes 1 adelantado el 5 de septiembre · restan 3 pagos" },
+    /* La mesa de inversión de $2,036 del 15 de agosto (la que pidió su mamá)
+       se había dado por revertida el 25 de agosto. Reapareció el 11 de
+       septiembre como "3msi nueva línea" en la Santander — misma tarjeta,
+       mismo monto exacto ($678.67 x 3 = $2,036.01): Mercado Libre la
+       recobró, ahora diferida. PENDIENTE DE CONFIRMAR si su mamá la cubre
+       esta vez o vuelve a quedar como gasto suyo. */
+    { id:"sant-mesa", tarjeta:"Santander LikeU", label:"Mesa de inversión (mamá)",
+      montoOriginal:2036.01, monto:678.67, desde:"2026-09", hasta:"2026-11", pagados:1, total:3,
+      nota:"recobrada el 11 de septiembre tras la reversión de agosto · sin confirmar quién la paga" },
     { id:"serv-gym",  tarjeta:"Amex Gold Servicios", label:"Gym FITSI (anualidad)",
       montoOriginal:15400.80, monto:1283.40, desde:"2026-08", hasta:"2026-12", pagados:7, total:12,
       nota:"saldo pendiente $6,417.00 · renueva en enero 2027" }
@@ -539,13 +548,14 @@ const DATA = {
       corte:4, vence:24, proximoPago:{ fecha:"2026-09-24", monto:2340.84, estimado:true },
       tono:"rojo" },
     { id:"santander", alias:"Santander LikeU", term:"6240", emisor:"Santander",
-      /* Al 8 de septiembre: $4,891.09. El alza desde $4,028.49 es la recarga
-         del tag del 2 de septiembre (gasto fijo, no se registra aparte) más
-         el Tidal del 6 de septiembre ($74). Los $623.10 de AISGECO (muestras
-         de China para Felpuditos) y los $187.60 de MercadoPago (cojines para
-         su mamá) del 8 de septiembre siguen "en proceso" — el disponible ya
-         los descontó pero el saldo actual todavía no los refleja del todo. */
-      tipo:"revolvente", linea:238500, disponible:233608.91, saldo:4891.09, tasa:null,
+      /* Al 13 de septiembre: $6,385.59. Sube desde $4,891.09 — incluye el
+         primer pago ($678.67) de la mesa de inversión recobrada el 11 de
+         septiembre a 3 MSI, un MERPAGO*SAMSUNG de $383.01 que aparece de
+         nuevo (posible duplicado del cargo de agosto, sin confirmar), y
+         movimientos del 9 de septiembre (Facebook $60.74, un crédito de
+         Skydropx de $1.00). Quedan ~$373 sin identificar entre esa fecha y
+         hoy — la vista de movimientos no alcanzó a mostrar todo. */
+      tipo:"revolvente", linea:238500, disponible:232114.41, saldo:6385.59, tasa:null,
       /* corte desconocido. El 31 de julio la app marcaba pago mínimo $0 y pago
          para no generar intereses $0 con límite el 3 de agosto: o sea que los
          $880 son consumo POSTERIOR al último corte y no se deben todavía —
@@ -557,7 +567,7 @@ const DATA = {
          El corte sigue sin conocerse; `corteSupuesto` asume el estándar de
          ~20 días antes del vencimiento (vence día 1 → corta día 11). */
       corte:null, corteSupuesto:11, vence:1,
-      proximoPago:{ fecha:"2026-10-01", monto:4891.09, estimado:true },
+      proximoPago:{ fecha:"2026-10-01", monto:6385.59, estimado:true },
       tono:"rojo" },
     /* Emitida el 5 de septiembre de 2026 al comprar la laminadora. Sin
        anualidad, 2% de cashback en MercadoLibre y supermercados. Su único
@@ -675,8 +685,8 @@ const DATA = {
         nota:"ya con el reparto que hay que negociar" },
       /* Octubre sale del mismo modelo de cortes: cada pago es lo que cerró en
          el corte anterior de esa tarjeta, con los MSI que siguen vivos. */
-      { fecha:"2026-10-01", concepto:"Santander LikeU",                monto:4891.09,  cat:"tarjeta", estimado:true, tarjeta:"santander",
-        nota:"tag + Samsung $383 + Tidal $74 + cojines para tu mamá $187.60 + muestras de China para Felpuditos $623.10 — más lo que le cargues de aquí al corte" },
+      { fecha:"2026-10-01", concepto:"Santander LikeU",                monto:6385.59,  cat:"tarjeta", estimado:true, tarjeta:"santander",
+        nota:"tag + Samsung $383 + Tidal $74 + cojines $187.60 + muestras de China $623.10 + mesa de inversión 1/3 $678.67 + ~$373 sin identificar — más lo que le cargues de aquí al corte" },
       { fecha:"2026-10-02", concepto:"Costco Banamex",                 monto:5252.58,  cat:"tarjeta", estimado:true, tarjeta:"costco",
         nota:"MSI $1,155.58 + gasolina + $1,897 de compras del 14 al 26 de agosto, que entraron después del corte del 13" },
       /* En octubre el Amazon de la Gold Card ya se acabó (último pago en
