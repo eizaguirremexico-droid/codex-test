@@ -367,7 +367,11 @@ const DATA = {
     /* Cargos del 7 de septiembre, "en tránsito" en el estado de cuenta. */
     { fecha:"2026-09-07", concepto:"Elevenlabs.io",                      monto:106.94,  tarjeta:"bbva" },
     { fecha:"2026-09-07", concepto:"Uber Eats",                          monto:16.95,   tarjeta:"bbva" },
-    { fecha:"2026-09-07", concepto:"Uber Eats",                          monto:355.95,  tarjeta:"bbva" }
+    { fecha:"2026-09-07", concepto:"Uber Eats",                          monto:355.95,  tarjeta:"bbva" },
+    /* Segundo vinil de la semana, esta vez en la BBVA — igual que el de
+       Santander, es insumo de Felpuditos pagado con tarjeta personal. */
+    { fecha:"2026-09-08", concepto:"Vinil (Felpuditos, Amazon)",          monto:1286.00, tarjeta:"bbva",
+      nota:"gasto del negocio pagado con tarjeta personal · pendiente de reembolso" }
     /* El Maison Kayser de $73 del 25 de agosto se cargó y se devolvió el
        mismo día: neto cero, no se registra. */
   ],
