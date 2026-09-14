@@ -162,14 +162,14 @@ const DATA = {
       { nombre: "A", dias: [1, 4, 5] },   // lunes, jueves, viernes
       { nombre: "B", dias: [2, 4] }       // martes, jueves
     ],
-    /* CONFIRMADO el 4 de septiembre: los $156 son SOLO LA IDA. Un día de
-       oficina son $312 de casetas, no $156 — el modelo llevaba semanas
-       contando la mitad. Se nota en las recargas: con $156 salían dos en
-       agosto y tú hiciste tres, más otra el 2 de septiembre.
+    /* CORREGIDO el 14 de septiembre: solo paga caseta DE REGRESO, nunca de
+       ida — son $152 por día de oficina, no $312. La nota anterior del 4 de
+       septiembre (que decía $312, cobro en los dos sentidos) quedó mal;
+       esta es la que vale.
        La comisión son 10 pesos por recarga, sin importar el monto, y el
        saldo NO se pierde: se acumula. Por eso el costo real depende de cada
        cuánto recargas, no solo de cuántos días vas. */
-    costoCaseta: 312,
+    costoCaseta: 152,
     montoRecarga: 600,
     comision: 10,
     /* Saldo REAL del tag, medido. Todas las simulaciones arrancan de aquí:
