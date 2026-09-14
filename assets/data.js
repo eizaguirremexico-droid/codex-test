@@ -174,8 +174,14 @@ const DATA = {
     comision: 10,
     /* Saldo REAL del tag, medido. Todas las simulaciones arrancan de aquí:
        antes de esta fecha las recargas eran de $200 y ya están pagadas, así
-       que back-simular desde el ancla daba un saldo inventado. */
-    saldo: { monto: 418.72, fecha: "2026-08-08" },  /* medido en la app de PASE */
+       que back-simular desde el ancla daba un saldo inventado.
+       Recalibrado el 14 de septiembre: la app de PASE marcaba $111.95, muy
+       por debajo del $562.72 que la simulación traía acumulado desde el 8 de
+       agosto — el modelo se había ido desviando (probablemente el costo real
+       por caseta anda algo arriba de $312, o hay viajes fuera del commute
+       que también jalan del mismo saldo). Se recalibra aquí para no seguir
+       arrastrando el error. */
+    saldo: { monto: 111.95, fecha: "2026-09-14" },  /* medido en la app de PASE */
     /* "cada-dia"  = recargas por reflejo cada día de oficina
        "cuando-falta" = recargas solo cuando el saldo no alcanza el viaje */
     estrategia: "cuando-falta",
