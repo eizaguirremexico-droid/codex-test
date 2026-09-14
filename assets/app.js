@@ -102,9 +102,14 @@ function simularTag(estrategia, montoRecarga) {
   let saldo = OFI.saldo.monto;
   const desde = OFI.saldo.fecha;
 
-  /* arranca en el saldo medido: las idas anteriores ya se pagaron, contarlas
-     otra vez inventaría recargas que no van a ocurrir */
-  mRange(desde.slice(0, 7), DATA.horizonteIngresos.hasta).forEach(k => {
+  /* El rango de meses siempre arranca en el horizonte completo de la app
+     (agosto), no en el mes del checkpoint: si el checkpoint cae a medio mes
+     (o en un mes posterior, tras recalibrar), los meses anteriores igual
+     necesitan existir como llave en `porMes` con ceros — otras partes del
+     código los leen directo por mes. Lo que sí filtra por `desde` son los
+     DÍAS dentro de cada mes: las idas anteriores al checkpoint ya se
+     pagaron, contarlas otra vez inventaría recargas que no van a ocurrir. */
+  mRange(DATA.horizonte.desde, DATA.horizonteIngresos.hasta).forEach(k => {
     const dias = diasOficinaMes(k).filter(f => f >= desde);
     let recargas = 0;
     dias.forEach(() => {
