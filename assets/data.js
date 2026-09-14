@@ -601,8 +601,12 @@ const DATA = {
        al menos una compra de $300. El cargo recurrente de AT&T la exenta,
        así que no muevas el teléfono de aquí sin darle otro uso a la tarjeta. */
     { id:"joy", alias:"Joy Banamex", term:"331", emisor:"Banamex",
-      tipo:"revolvente", linea:41000, disponible:38659.16, saldo:2340.84, tasa:62.98,
-      corte:4, vence:24, proximoPago:{ fecha:"2026-09-24", monto:2340.84, estimado:true },
+      /* Pagada anticipada el 13 de septiembre (confirmado en la app: saldo
+         $0.00, disponible $41,000.00). El Ticketmaster ya se acabó; lo único
+         que sigue es el teléfono AT&T, que entra al corte del 4 de octubre y
+         se paga el 24. */
+      tipo:"revolvente", linea:41000, disponible:41000.00, saldo:0.00, tasa:62.98,
+      corte:4, vence:24, proximoPago:{ fecha:"2026-10-24", monto:360.00, estimado:true },
       tono:"rojo" },
     { id:"santander", alias:"Santander LikeU", term:"6240", emisor:"Santander",
       /* Al 13 de septiembre: $6,385.59. Reconciliado contra el estado de
@@ -624,9 +628,15 @@ const DATA = {
          cerró en cero y TODO el saldo actual es consumo posterior, que se
          cobra hasta el 1 de octubre.
          El corte sigue sin conocerse; `corteSupuesto` asume el estándar de
-         ~20 días antes del vencimiento (vence día 1 → corta día 11). */
-      corte:null, corteSupuesto:11, vence:1,
-      proximoPago:{ fecha:"2026-10-01", monto:6385.59, estimado:true },
+         ~20 días antes del vencimiento (vence día 1 → corta día 11).
+         CONFIRMADO el 14 de septiembre en la app: la fecha límite real es el
+         2 de octubre, no el 1 — y el corte cae el 12, no el 11 (coincide con
+         el corte del estado de cuenta oficial de agosto). Pago mínimo y pago
+         para no generar intereses: $1,688.47, no el saldo completo — el
+         resto es capital de MSI (Samsung + mesa de inversión) que sigue su
+         propio calendario aunque no lo pagues de un jalón. */
+      corte:12, vence:2,
+      proximoPago:{ fecha:"2026-10-02", monto:6385.59, minimo:1688.47, estimado:true },
       tono:"rojo" },
     /* Emitida el 5 de septiembre de 2026 al comprar la laminadora. Sin
        anualidad, 2% de cashback en MercadoLibre y supermercados. Su único
@@ -746,8 +756,8 @@ const DATA = {
         nota:"ya con el reparto que hay que negociar" },
       /* Octubre sale del mismo modelo de cortes: cada pago es lo que cerró en
          el corte anterior de esa tarjeta, con los MSI que siguen vivos. */
-      { fecha:"2026-10-01", concepto:"Santander LikeU",                monto:6385.59,  cat:"tarjeta", estimado:true, tarjeta:"santander",
-        nota:"tag + Samsung $383 + Tidal $74 + cojines $187.60 + muestras de China $623.10 + mesa de inversión 1/3 $678.67 + ~$373 sin identificar — más lo que le cargues de aquí al corte" },
+      { fecha:"2026-10-02", concepto:"Santander LikeU",                monto:6385.59,  cat:"tarjeta", estimado:true, tarjeta:"santander",
+        nota:"tag + Samsung $383 + Tidal $74 + cojines $187.60 + muestras de China $623.10 + mesa de inversión 1/3 $678.67 + ~$373 sin identificar — más lo que le cargues de aquí al corte · el mínimo real para no generar intereses es $1,688.47" },
       { fecha:"2026-10-05", concepto:"Costco Banamex",                 monto:4961.57,  cat:"tarjeta", estimado:false, tarjeta:"costco",
         nota:"confirmado con el estado de cuenta real del corte del 11 de septiembre" },
       /* En octubre el Amazon de la Gold Card ya se acabó (último pago en
