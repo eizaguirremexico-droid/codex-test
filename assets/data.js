@@ -734,8 +734,10 @@ const DATA = {
          y cae hasta el 1 de octubre. */
       /* La BBVA y la Gold Card de septiembre se adelantaron el 31 de agosto. */
       /* El auto de septiembre ya no aparece: se pagó el 26 de agosto. */
-      { fecha:"2026-09-24", concepto:"Joy Banamex",                    monto:2340.84,  cat:"tarjeta", estimado:true, tarjeta:"joy",
-        nota:"último pago del Ticketmaster $1,980.84 + teléfono AT&T $360" },
+      /* Se adelantó: la pagó el 13 de septiembre, no hasta el 24 — confirmado
+         en la app (saldo $0.00) y en el movimiento de débito de ese día. */
+      { fecha:"2026-09-13", concepto:"Joy Banamex",                    monto:2340.84,  cat:"tarjeta", estimado:false, tarjeta:"joy",
+        nota:"último pago del Ticketmaster $1,980.84 + teléfono AT&T $360 · pagada anticipada" },
       /* El pago de la Elite del 8 de septiembre ($7,420.93, anticipado 15
          días antes del vencimiento del 23) ya no aparece aquí: el efectivo
          de arriba es posterior a ese pago — vació Banamex y parte de
