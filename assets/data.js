@@ -408,10 +408,15 @@ const DATA = {
       montoOriginal:5913,  monto:1971.00, desde:"2026-08", hasta:"2026-09", pagados:1, total:3 },
     { id:"elite-alo", tarjeta:"Amex Gold Elite", label:"Alo Yoga Antara",
       montoOriginal:2990,  monto:996.67,  desde:"2026-08", hasta:"2026-10", pagados:0, total:3 },
+    /* Corregido con el estado de cuenta real: el pago del 14 de agosto dice
+       explícito "9 de 12" (no 7 de 12 como tenía yo) — quedan 3 pagos
+       (sep, oct, nov), así que termina en noviembre, no en diciembre. */
     { id:"costco-a",  tarjeta:"Costco Banamex", label:"Amazon",
-      montoOriginal:10998, monto:916.50,  desde:"2026-08", hasta:"2026-12", pagados:7, total:12 },
+      montoOriginal:10998, monto:916.50,  desde:"2026-08", hasta:"2026-11", pagados:9, total:12 },
+    /* Mismo estado de cuenta: "7 de 12" (no 5 de 12) — quedan 5 pagos
+       (sep-ene), termina en enero de 2027, no en febrero. */
     { id:"costco-b",  tarjeta:"Costco Banamex", label:"Amazon",
-      montoOriginal:2869,  monto:239.08,  desde:"2026-08", hasta:"2027-02", pagados:5, total:12 },
+      montoOriginal:2869,  monto:239.08,  desde:"2026-08", hasta:"2027-01", pagados:7, total:12 },
     /* Del estado de cuenta del corte del 22 de julio de 2026, sección
        "Resumen de Planes de Pagos Diferidos". Ya no hay nada supuesto aquí. */
     { id:"serv-amz",  tarjeta:"Amex Gold Servicios", label:"Amazon",
@@ -558,14 +563,14 @@ const DATA = {
          El saldo de $2,473.58 son los cargos del 14 al 21; las dos compras
          del 26 ($494 y $85) siguen "en proceso" y todavía no entran ahí,
          aunque el crédito disponible ya las descontó. */
-      /* Al 8 de septiembre: subió a $3,519.58 / disponible $41,973.49. */
-      tipo:"revolvente", linea:50000, disponible:41973.49, saldo:3519.58, tasa:60.58,
-      /* Corte del 13 de agosto YA EMITIDO: pago para no generar intereses
-         $2,427.70, mínimo $630.00, fecha límite 2 de septiembre. Ya no es
-         estimación — es el estado de cuenta. Estaba modelado en $1,997.11
-         (MSI + gasolina) y le faltaban $430.59 de consumo del ciclo.
-         Ojo: vence el 2, no el 3 como se venía suponiendo. */
-      corte:13, vence:2, proximoPago:{ fecha:"2026-10-02", monto:4613.58, estimado:true },
+      /* Confirmado con el estado de cuenta real del corte del 11 de
+         septiembre: saldo $4,961.57, disponible $40,912.49, pago para no
+         generar intereses $4,961.57 (todo, no hay revolvente), mínimo
+         $630.00, fecha límite 5 de octubre. El corte es el 11, no el 13
+         como se venía suponiendo, y vence el 5, no el 2. Los 17 movimientos
+         del periodo (14 ago - 9 sep) suman exacto: $4,961.57. */
+      tipo:"revolvente", linea:50000, disponible:40912.49, saldo:4961.57, tasa:60.58,
+      corte:11, vence:5, proximoPago:{ fecha:"2026-10-05", monto:4961.57, estimado:false },
       tono:"azul" },
     /* PRIMER ESTADO DE CUENTA, corte del 24 de agosto: $539.02 con fecha
        límite el 14 de septiembre. Con eso quedan confirmados el corte (24) y
@@ -741,8 +746,8 @@ const DATA = {
          el corte anterior de esa tarjeta, con los MSI que siguen vivos. */
       { fecha:"2026-10-01", concepto:"Santander LikeU",                monto:6385.59,  cat:"tarjeta", estimado:true, tarjeta:"santander",
         nota:"tag + Samsung $383 + Tidal $74 + cojines $187.60 + muestras de China $623.10 + mesa de inversión 1/3 $678.67 + ~$373 sin identificar — más lo que le cargues de aquí al corte" },
-      { fecha:"2026-10-02", concepto:"Costco Banamex",                 monto:5252.58,  cat:"tarjeta", estimado:true, tarjeta:"costco",
-        nota:"MSI $1,155.58 + gasolina + $1,897 de compras del 14 al 26 de agosto, que entraron después del corte del 13" },
+      { fecha:"2026-10-05", concepto:"Costco Banamex",                 monto:4961.57,  cat:"tarjeta", estimado:false, tarjeta:"costco",
+        nota:"confirmado con el estado de cuenta real del corte del 11 de septiembre" },
       /* En octubre el Amazon de la Gold Card ya se acabó (último pago en
          agosto): solo queda el gym. Lo que gastes en septiembre se suma. */
       { fecha:"2026-10-14", concepto:"BBVA TC M",                      monto:2003.46,  cat:"tarjeta", estimado:true, tarjeta:"bbva",
