@@ -569,8 +569,15 @@ const DATA = {
          $630.00, fecha límite 5 de octubre. El corte es el 11, no el 13
          como se venía suponiendo, y vence el 5, no el 2. Los 17 movimientos
          del periodo (14 ago - 9 sep) suman exacto: $4,961.57. */
-      tipo:"revolvente", linea:50000, disponible:40912.49, saldo:4961.57, tasa:60.58,
-      corte:11, vence:5, proximoPago:{ fecha:"2026-10-05", monto:4961.57, estimado:false },
+      /* Liquidada el 14 de septiembre por decisión suya (le daba paz mental,
+         no por ahorro real — no cambia ni un peso de gasto libre). Saldo y
+         mínimo en $0.00, confirmado en la app. El disponible ($45,874.06)
+         no cuadra exacto contra línea−capital MSI restante ($46,055.06,
+         los 3 pagos que faltan del Amazon grande + los 5 del chico) — queda
+         un ~$181 sin explicar, sin impacto en ningún cálculo. */
+      tipo:"revolvente", linea:50000, disponible:45874.06, saldo:0.00, tasa:60.58,
+      corte:11, vence:5,
+      proximoPago:{ fecha:"2026-10-05", monto:1155.58, estimado:true },
       tono:"azul" },
     /* PRIMER ESTADO DE CUENTA, corte del 24 de agosto: $539.02 con fecha
        límite el 14 de septiembre. Con eso quedan confirmados el corte (24) y
@@ -758,8 +765,13 @@ const DATA = {
          el corte anterior de esa tarjeta, con los MSI que siguen vivos. */
       { fecha:"2026-10-02", concepto:"Santander LikeU",                monto:6385.59,  cat:"tarjeta", estimado:true, tarjeta:"santander",
         nota:"tag + Samsung $383 + Tidal $74 + cojines $187.60 + muestras de China $623.10 + mesa de inversión 1/3 $678.67 + ~$373 sin identificar — más lo que le cargues de aquí al corte · el mínimo real para no generar intereses es $1,688.47" },
-      { fecha:"2026-10-05", concepto:"Costco Banamex",                 monto:4961.57,  cat:"tarjeta", estimado:false, tarjeta:"costco",
-        nota:"confirmado con el estado de cuenta real del corte del 11 de septiembre" },
+      /* Liquidada anticipada el 14 de septiembre — no hace falta pagar nada
+         más el 5 de octubre por lo ya cargado. Lo que sigue vivo es el MSI
+         que se sigue acumulando (ver `proximoPago` de la tarjeta) más lo que
+         se cargue de aquí al corte del 11 de octubre. */
+      { fecha:"2026-09-14", concepto:"Costco Banamex (adelantado)",     monto:4961.57,  cat:"tarjeta", estimado:false, tarjeta:"costco" },
+      { fecha:"2026-10-05", concepto:"Costco Banamex",                 monto:1155.58,  cat:"tarjeta", estimado:true, tarjeta:"costco",
+        nota:"solo el MSI de los dos Amazon que se sigue acumulando — más lo que gastes de aquí al corte del 11 de octubre" },
       /* En octubre el Amazon de la Gold Card ya se acabó (último pago en
          agosto): solo queda el gym. Lo que gastes en septiembre se suma. */
       { fecha:"2026-10-14", concepto:"BBVA TC M",                      monto:2003.46,  cat:"tarjeta", estimado:true, tarjeta:"bbva",
