@@ -122,7 +122,11 @@ function simularTag(estrategia, montoRecarga) {
       dias: dias.length, recargas,
       casetas: dias.length * OFI.costoCaseta,
       comision: recargas * OFI.comision,
-      salida: recargas * (monto + OFI.comision),
+      /* CORREGIDO el 18 de sept: la comisión no se suma al cargo, se
+         descuenta de él — a la tarjeta llegan $590 por recarga, no $610,
+         aunque el saldo del tag sí recibe los $600 completos. Esto explica
+         el hueco de ~$590 sin identificar que traía la Santander. */
+      salida: recargas * (monto - OFI.comision),
       saldoFin: saldo
     };
   });
@@ -492,7 +496,9 @@ function construirFlujo() {
     if (!esDiaOficina(f)) continue;
     if (saldoTag < OFI.costoCaseta) {
       saldoTag += OFI.montoRecarga;
-      recargas[f] = (recargas[f] || 0) + OFI.montoRecarga + OFI.comision;
+      /* Igual que en simularTag(): la comisión se descuenta del cargo a la
+         tarjeta, no se suma — llegan $590 por recarga, no $610. */
+      recargas[f] = (recargas[f] || 0) + OFI.montoRecarga - OFI.comision;
     }
     saldoTag -= OFI.costoCaseta;
   }
