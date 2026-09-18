@@ -166,10 +166,13 @@ const DATA = {
        ida — son $152 por día de oficina, no $312. La nota anterior del 4 de
        septiembre (que decía $312, cobro en los dos sentidos) quedó mal;
        esta es la que vale.
-       La comisión son 10 pesos por recarga, sin importar el monto, y el
-       saldo NO se pierde: se acumula. Por eso el costo real depende de cada
-       cuánto recargas, no solo de cuántos días vas. */
+       El saldo NO se pierde: se acumula. Por eso el costo real depende de
+       cada cuánto recargas, no solo de cuántos días vas. */
     costoCaseta: 152,
+    /* CORREGIDO el 18 de sept: la comisión se DESCUENTA del cargo a la
+       tarjeta, no se suma — cada recarga abona los $600 completos al saldo
+       del tag, pero a la tarjeta solo llegan $590. Esto explica el hueco de
+       ~$590 sin identificar que traía la Santander. */
     montoRecarga: 600,
     comision: 10,
     /* Saldo REAL del tag, medido. Todas las simulaciones arrancan de aquí:
@@ -346,8 +349,6 @@ const DATA = {
        pero fecha y monto diferentes — confirmado con la captura del 13 de
        septiembre, NO es un duplicado. */
     { fecha:"2026-09-08", concepto:"Google · Cafe Live Video (cargo aparte)", monto:169.00, tarjeta:"elite" },
-    /* Cargo del 5 de septiembre, todavía "en proceso" en el estado de cuenta. */
-    { fecha:"2026-09-06", concepto:"Tidal",                              monto:74.00,   tarjeta:"santander" },
     { fecha:"2026-09-08", concepto:"Cojines para tu mamá (MercadoPago)", monto:187.60,  tarjeta:"santander" },
     /* Muestras de China para Felpuditos, pagadas con SU tarjeta personal.
        Es gasto del negocio, no suyo — igual que la laminadora, Felpuditos
@@ -371,8 +372,6 @@ const DATA = {
     { fecha:"2026-09-12", concepto:"Estacionamiento (Parco)",               monto:10.00,   tarjeta:"santander" },
     { fecha:"2026-09-13", concepto:"Vinil (Felpuditos)",                    monto:463.66,  tarjeta:"santander",
       nota:"gasto del negocio pagado con tarjeta personal · pendiente de reembolso" },
-    /* Cargos del 7 de septiembre, "en tránsito" en el estado de cuenta. */
-    { fecha:"2026-09-07", concepto:"Elevenlabs.io",                      monto:106.94,  tarjeta:"bbva" },
     { fecha:"2026-09-07", concepto:"Uber Eats",                          monto:16.95,   tarjeta:"bbva" },
     /* Corregido con el estado de cuenta real: no eran $355.95, son $339.00. */
     { fecha:"2026-09-07", concepto:"Uber Eats",                          monto:339.00,  tarjeta:"bbva" },
@@ -401,7 +400,20 @@ const DATA = {
        contando. Cae después del corte del 3, así que su primer cobro nuevo
        se paga hasta el 23 de octubre. */
     { servicio: "ChatGPT",            monto: 399.00, desde: "2026-09", tarjeta: "Amex Gold Elite",
-      nota: "reactivada · volvió a cobrar el 5 de septiembre" }
+      nota: "reactivada · volvió a cobrar el 5 de septiembre" },
+    /* Confirmado el 18 de sept: SÍ es una suscripción recurrente, no un
+       gasto suelto — se saca de `gastoLibre` y se mete aquí para que
+       recurra cada mes. */
+    { servicio: "Tidal", monto: 74.00, desde: "2026-09", tarjeta: "Santander LikeU" },
+    /* Confirmado el 18 de sept: SÍ es recurrente. El cargo del 7 de agosto
+       ($196.05, visto en el estado de cuenta oficial de la BBVA) y el del 7
+       de septiembre ($106.94) son dos cobros del mismo servicio, no un
+       duplicado — el monto se mueve con el tipo de cambio, igual que Claude.
+       El de agosto ya está cubierto dentro del $539.02 que se liquidó el 31
+       de agosto (`efectivo.compromisosPagados`), así que aquí arranca en
+       septiembre para no contarlo dos veces. */
+    { servicio: "Elevenlabs.io", monto: 106.94, desde: "2026-09", tarjeta: "BBVA TC M",
+      nota: "USD · el monto se mueve con el tipo de cambio" }
   ],
 
   /* ── Meses sin intereses vigentes ──
